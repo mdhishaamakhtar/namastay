@@ -16,6 +16,7 @@ A calmer take on Indian matchbox labels. Each card is one framed label with a re
 - **Brand:** marigold #F2B52B with #2B2108 text, on paper #FFF8E6.
 - **Warnings:** charcoal #1C1B1A with white text and a warning icon. Never used for a place.
 - **Places:** 16 fixed families, defined in `docs/design/place-themes.md`. Saffron is reserved for Hindu sites.
+- **The journey:** every visitor starts on marigold, on phone and desktop. Each card keeps its own family in its frame. The stage stays marigold until one interest clearly leads, then eases to that family, and moves again if the lead changes.
 - **Trips:** the family with the most days sets the base, and each stop keeps its own family.
 
 ## Components
@@ -31,6 +32,10 @@ A calmer take on Indian matchbox labels. Each card is one framed label with a re
 - **Themes:** a photo where one fits, otherwise a full illustration.
 - **Full illustrations:** ideas, brand moments, the route map, and loading, empty and error states.
 - **Photos stay consistent:** a shared crop and light colour treatment, about 100-200 KB each, with credits shown where licences need them.
+
+## Desktop
+
+Desktop has its own layouts, never a stretched phone. Colour is always a full-height panel or stage, not a wide strip over a narrow column. Guides and itineraries use a colour panel beside the content, home splits into two, and the swipe puts the card on a full stage with the taste mix and buttons beside it.
 
 ## Motion
 
@@ -48,4 +53,4 @@ Swipes always have button alternatives. Touch targets are at least 44px, text co
 
 ## Still to design
 
-The framed photo card; questions for dates, trip length, budget and who's travelling; desktop layouts; all final illustrations.
+Desktop question screens; tablet checks; all final illustrations.
