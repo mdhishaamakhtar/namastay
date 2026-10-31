@@ -2,12 +2,12 @@ module Namastay.Data.Places.Search
 
 open System.Threading.Tasks
 open Npgsql
-open Namastay.Data.Sql
+open Namastay.Data.Places.Rows
 open Namastay.Shared.Contracts
 
 let private searchSql =
     "with matches as (
-        select p.slug, p.name, r.name as region, f.deep, p.published,
+        select p.slug, p.name, r.name as region, f.deep as family_deep, p.published,
                greatest(
                    similarity(p.name, @query),
                    case when position(lower(@query) in lower(p.name)) > 0 then 1 else 0 end,
@@ -20,17 +20,23 @@ let private searchSql =
         join colour_families f on f.slug = p.family_slug
         where p.retired_at is null
      )
-     select slug, name, region, deep, published
+     select slug, name, region, family_deep, published
      from matches
      where score > 0.25
      order by score desc, name
      limit 8"
 
 let run (source: NpgsqlDataSource) (query: string) : Task<PlaceSummary list> =
-    Namastay.Data.Sql.query source searchSql [ arg "query" query ] (fun reader -> {
-        Slug = reader.GetString 0
-        Name = reader.GetString 1
-        Region = reader.GetString 2
-        FamilyDeep = reader.GetString 3
-        Published = reader.GetBoolean 4
-    })
+    task {
+        let! rows = Namastay.Data.Sql.query<SummaryRow> source searchSql {| query = query |}
+
+        return
+            rows
+            |> List.map (fun row -> {
+                Slug = row.Slug
+                Name = row.Name
+                Region = row.Region
+                FamilyDeep = row.FamilyDeep
+                Published = row.Published
+            })
+    }

@@ -1,8 +1,8 @@
 module Namastay.Data.Sql
 
 open System
-open System.Threading
 open System.Threading.Tasks
+open Dapper
 open Npgsql
 open Namastay.Domain.Catalog
 
@@ -30,38 +30,33 @@ let scalar transaction sql args =
     use prepared = command transaction sql args
     prepared.ExecuteScalar()
 
-let text (reader: NpgsqlDataReader) (index: int) =
-    if reader.IsDBNull index then
-        None
-    else
-        Some(reader.GetString index)
+type private OptionHandler<'Value>() =
+    inherit SqlMapper.TypeHandler<'Value option>()
 
-let number (reader: NpgsqlDataReader) (index: int) =
-    if reader.IsDBNull index then
-        None
-    else
-        Some(reader.GetInt32 index)
+    override _.SetValue(parameter, value) =
+        parameter.Value <-
+            match value with
+            | Some inner -> box inner
+            | None -> box DBNull.Value
 
-/// Runs a read and maps each row.
-let query
-    (source: NpgsqlDataSource)
-    (sql: string)
-    (args: (string * obj) list)
-    (read: NpgsqlDataReader -> 'Row)
-    : Task<'Row list> =
+    override _.Parse value =
+        match value with
+        | null -> None
+        | :? DBNull -> None
+        | inner -> Some(inner :?> 'Value)
+
+let private setup =
+    lazy
+        (DefaultTypeMap.MatchNamesWithUnderscores <- true
+         SqlMapper.AddTypeHandler(OptionHandler<string>())
+         SqlMapper.AddTypeHandler(OptionHandler<int>()))
+
+/// Runs a read, filling `'Row` by column name.
+let query<'Row> (source: NpgsqlDataSource) (sql: string) (parameters: obj) : Task<'Row list> =
     task {
+        setup.Force()
         use! connection = source.OpenConnectionAsync()
-        use command = new NpgsqlCommand(sql, connection)
-
-        for name, value in args do
-            command.Parameters.AddWithValue(name, value) |> ignore
-
-        use! reader = command.ExecuteReaderAsync(CancellationToken.None)
-        let rows = ResizeArray<'Row>()
-
-        while! reader.ReadAsync() do
-            rows.Add(read reader)
-
+        let! rows = connection.QueryAsync<'Row>(sql, parameters)
         return List.ofSeq rows
     }
 

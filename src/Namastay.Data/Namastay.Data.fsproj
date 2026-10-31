@@ -4,6 +4,7 @@
     <Compile Include="Sql.fs" />
     <Compile Include="Migrate.fs" />
     <Compile Include="Media/MediaStore.fs" />
+    <Compile Include="Places/Rows.fs" />
     <Compile Include="Places/Search.fs" />
     <Compile Include="Places/Guide.fs" />
     <Compile Include="Import/Encode.fs" />
@@ -19,6 +20,7 @@
 
   <ItemGroup>
     <PackageReference Include="AWSSDK.S3" />
+    <PackageReference Include="Dapper" />
     <PackageReference Include="dbup-postgresql" />
     <PackageReference Include="FSharp.SystemTextJson" />
     <PackageReference Include="Npgsql" />
