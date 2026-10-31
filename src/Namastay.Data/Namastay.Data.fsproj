@@ -3,6 +3,7 @@
   <ItemGroup>
     <Compile Include="Sql.fs" />
     <Compile Include="Migrate.fs" />
+    <Compile Include="Media/MediaStore.fs" />
     <Compile Include="Import/Encode.fs" />
     <Compile Include="Import/Geography.fs" />
     <Compile Include="Import/Places.fs" />
@@ -15,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="AWSSDK.S3" />
     <PackageReference Include="dbup-postgresql" />
     <PackageReference Include="FSharp.SystemTextJson" />
     <PackageReference Include="Npgsql" />

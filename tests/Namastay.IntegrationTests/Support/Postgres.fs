@@ -3,6 +3,8 @@ namespace Namastay.IntegrationTests
 open System
 open System.Threading.Tasks
 open Npgsql
+open DotNet.Testcontainers.Builders
+open Namastay.Data.Media
 open Testcontainers.PostgreSql
 open Xunit
 
@@ -35,6 +37,34 @@ type PrivateDataFactAttribute() as this =
             this.Skip <- "The private data folder isn't available."
 
     static member Folder = IO.Path.Combine(__SOURCE_DIRECTORY__, "..", "..", "..", "data")
+
+/// One RustFS container, the same S3 store that local development uses.
+type MediaFixture() =
+    let container =
+        ContainerBuilder("rustfs/rustfs:1.0.4")
+            .WithEnvironment("RUSTFS_ACCESS_KEY", "namastay")
+            .WithEnvironment("RUSTFS_SECRET_KEY", "namastay-local")
+            .WithPortBinding(9000, true)
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(9000))
+            .Build()
+
+    member _.Settings(bucket: string) : MediaSettings =
+        let port: uint16 = container.GetMappedPublicPort 9000
+
+        {
+            Endpoint = $"http://{container.Hostname}:{port}"
+            Bucket = bucket
+            AccessKey = "namastay"
+            SecretKey = "namastay-local"
+        }
+
+    interface IAsyncLifetime with
+        member _.InitializeAsync() = container.StartAsync()
+        member _.DisposeAsync() = container.DisposeAsync().AsTask()
+
+[<CollectionDefinition("media")>]
+type MediaCollection() =
+    interface ICollectionFixture<MediaFixture>
 
 [<CollectionDefinition("postgres")>]
 type PostgresCollection() =

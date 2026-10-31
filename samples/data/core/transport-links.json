@@ -1,0 +1,32 @@
+[
+  {
+    "slug": "example-valley-example-bay",
+    "fromSlug": "example-valley",
+    "toSlug": "example-bay",
+    "mode": "road",
+    "minutesMin": 120,
+    "minutesMax": 180,
+    "distanceKm": 80,
+    "trains": [],
+    "evidence": {
+      "status": "editorial",
+      "lastChecked": "2026-01-01",
+      "sourceIds": []
+    }
+  },
+  {
+    "slug": "example-bay-example-valley",
+    "fromSlug": "example-bay",
+    "toSlug": "example-valley",
+    "mode": "road",
+    "minutesMin": 120,
+    "minutesMax": 180,
+    "distanceKm": 80,
+    "trains": [],
+    "evidence": {
+      "status": "editorial",
+      "lastChecked": "2026-01-01",
+      "sourceIds": []
+    }
+  }
+]

@@ -1,0 +1,12 @@
+[
+  {
+    "slug": "example-valley-river",
+    "placeSlug": "example-valley",
+    "filePath": "photos/example-valley.svg",
+    "alt": "A simple drawing of a green valley.",
+    "credit": "Namastay",
+    "licence": "MIT",
+    "sourceUrl": "https://example.org/sample",
+    "sort": 1
+  }
+]

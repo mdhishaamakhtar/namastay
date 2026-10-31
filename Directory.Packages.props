@@ -3,6 +3,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="AWSSDK.S3" Version="4.0.104.8" />
     <PackageVersion Include="coverlet.msbuild" Version="10.1.0" />
     <PackageVersion Include="Fable.Browser.Dom" Version="2.20.0" />
     <PackageVersion Include="Fable.Core" Version="5.6.1" />

@@ -1,0 +1,15 @@
+[
+  {
+    "slug": "example-valley-notice",
+    "scope": "place_scope",
+    "scopeRef": "example-valley",
+    "kind": "safety",
+    "severity": "warn",
+    "body": "Warnings appear on the guide and on any trip that stops here.",
+    "evidence": {
+      "status": "editorial",
+      "lastChecked": "2026-01-01",
+      "sourceIds": []
+    }
+  }
+]

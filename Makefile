@@ -1,4 +1,4 @@
-.PHONY: setup up down dev import import-check test test-unit test-integration coverage format lint check
+.PHONY: setup up down dev import import-check media-sync sample test test-unit test-integration coverage format lint check
 
 setup:
 	dotnet tool restore
@@ -18,6 +18,13 @@ import-check:
 
 import:
 	dotnet run --project src/Namastay.Importer -- data
+
+media-sync:
+	dotnet run --project src/Namastay.Importer -- --media data/media
+
+sample:
+	dotnet run --project src/Namastay.Importer -- samples/data
+	dotnet run --project src/Namastay.Importer -- --media samples/media
 
 test: test-unit test-integration
 

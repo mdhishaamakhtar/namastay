@@ -21,3 +21,15 @@ src/Namastay.Client/build/
 /docs/design/place-themes.md
 /docs/design/mockups/
 /.idea/
+
+# Images live in the object store, never in git. Only the public samples are allowed.
+*.jpg
+*.jpeg
+*.png
+*.webp
+*.avif
+*.heic
+*.tif
+*.tiff
+*.raw
+!/samples/**

@@ -1,0 +1,20 @@
+[
+  {
+    "slug": "pine",
+    "name": "Pine",
+    "usedFor": "Green valleys",
+    "deep": "#2F5D3A",
+    "mid": "#4C7A52",
+    "pale": "#DCE6C8",
+    "textOnDeep": "#FFFFFF"
+  },
+  {
+    "slug": "ocean",
+    "name": "Ocean",
+    "usedFor": "Blue-water coast",
+    "deep": "#17427A",
+    "mid": "#1F5FA8",
+    "pale": "#D9E6F4",
+    "textOnDeep": "#FFFFFF"
+  }
+]

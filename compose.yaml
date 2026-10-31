@@ -16,5 +16,18 @@ services:
       - "1025:1025"
       - "8025:8025"
 
+  media:
+    image: rustfs/rustfs:1.0.4
+    environment:
+      RUSTFS_ACCESS_KEY: namastay
+      RUSTFS_SECRET_KEY: namastay-local
+      RUSTFS_CONSOLE_ENABLE: "true"
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - media-data:/data
+
 volumes:
   postgres-data:
+  media-data:

@@ -219,6 +219,19 @@ type ImporterTests(postgres: PostgresFixture) =
             Assert.Equal(box true, retired)
         }
 
+    [<Fact>]
+    member _.``public sample data imports cleanly``() =
+        task {
+            let! db = database ()
+            let folder = Path.Combine(__SOURCE_DIRECTORY__, "..", "..", "..", "samples", "data")
+            let catalog = Load.fromFolder folder |> expectOk
+            Run.run db Run.Apply "sample" catalog |> expectOk |> ignore
+            let! published = count db "places where published"
+            let! photos = count db "photos"
+            Assert.Equal(2, published)
+            Assert.Equal(1, photos)
+        }
+
     [<PrivateDataFact>]
     member _.``core data imports with the expected counts``() =
         task {

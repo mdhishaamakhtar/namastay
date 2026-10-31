@@ -3,6 +3,7 @@ open System.IO
 open System.Security.Cryptography
 open Namastay.Data
 open Namastay.Data.Import
+open Namastay.Data.Media
 
 let private localDatabase =
     "Host=localhost;Port=5433;Database=namastay;Username=namastay;Password=namastay"
@@ -49,11 +50,31 @@ let private import mode (folder: string) =
         0
     | Error errors -> fail errors
 
+let private setting (name: string) (fallback: string) =
+    match Environment.GetEnvironmentVariable name with
+    | null
+    | "" -> fallback
+    | value -> value
+
+let private syncMedia (folder: string) =
+    let store =
+        MediaStore.create {
+            Endpoint = setting "MEDIA_ENDPOINT" "http://localhost:9000"
+            Bucket = setting "MEDIA_BUCKET" "namastay-media"
+            AccessKey = setting "MEDIA_ACCESS_KEY" "namastay"
+            SecretKey = setting "MEDIA_SECRET_KEY" "namastay-local"
+        }
+
+    let sent = (MediaStore.sync store folder).GetAwaiter().GetResult()
+    printfn "Uploaded %d file(s)." sent
+    0
+
 [<EntryPoint>]
 let main args =
     match List.ofArray args with
     | [ "--dry-run"; folder ] -> import Run.DryRun folder
+    | [ "--media"; folder ] -> syncMedia folder
     | [ folder ] -> import Run.Apply folder
     | _ ->
-        eprintfn "Usage: Namastay.Importer [--dry-run] <data-folder>"
+        eprintfn "Usage: Namastay.Importer [--dry-run | --media] <folder>"
         2

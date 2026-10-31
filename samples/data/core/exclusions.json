@@ -1,0 +1,7 @@
+[
+  {
+    "slug": "example-excluded-place",
+    "name": "An excluded place",
+    "reason": "Places left out on purpose are recorded with a reason."
+  }
+]
