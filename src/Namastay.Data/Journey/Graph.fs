@@ -17,6 +17,7 @@ type private CardRow = {
     PhotoCredit: string option
     MarkPath: string option
     MarkAlt: string option
+    Interest: string option
     Deep: string option
     Mid: string option
     Pale: string option
@@ -35,6 +36,10 @@ let private cardsSql =
     "select c.slug, c.title, c.line, c.is_start,
             photo.file_path as photo_path, photo.alt as photo_alt, photo.credit as photo_credit,
             mark.file_path as mark_path, mark.alt as mark_alt,
+            (select i.name from card_signals signal
+             join interests i on signal.signal = 'interest:' || i.slug
+             where signal.card_slug = c.slug
+             order by signal.weight desc, i.name limit 1) as interest,
             f.deep, f.mid, f.pale, f.text_on_deep
      from cards c
      left join photos photo on photo.slug = c.photo_slug
@@ -72,6 +77,7 @@ let private toCard (branches: BranchRow list) (row: CardRow) : JourneyCard =
                 row.MarkPath |> Option.map Routes.mediaUrl
             else
                 None
+        Interest = row.Interest
         Colours = colours row
         Branches =
             branches

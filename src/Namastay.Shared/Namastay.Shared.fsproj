@@ -7,6 +7,7 @@
     <Compile Include="Contracts/Trips.fs" />
     <Compile Include="Contracts/Journey.fs" />
     <Compile Include="Routes.fs" />
+    <Compile Include="JourneyPath.fs" />
   </ItemGroup>
 
 </Project>

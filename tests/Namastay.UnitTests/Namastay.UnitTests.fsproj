@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <Compile Include="RoutingTests.fs" />
+    <Compile Include="JourneyPathTests.fs" />
     <Compile Include="Catalog/ValidationTests.fs" />
     <Compile Include="Catalog/ContractMappingTests.fs" />
     <Compile Include="Trip/TripBuilderTests.fs" />

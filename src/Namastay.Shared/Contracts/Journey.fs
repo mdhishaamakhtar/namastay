@@ -15,6 +15,7 @@ type JourneyCard = {
     ImageAlt: string option
     ImageCredit: string option
     MarkUrl: string option
+    Interest: string option
     Colours: PlaceColours option
     Branches: JourneyBranch list
 }
