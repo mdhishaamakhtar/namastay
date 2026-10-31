@@ -6,6 +6,7 @@
     <Compile Include="Http/Errors.fs" />
     <Compile Include="Http/Endpoint.fs" />
     <Compile Include="Media/MediaRoute.fs" />
+    <Compile Include="Places/PlacesApi.fs" />
     <Compile Include="Server.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

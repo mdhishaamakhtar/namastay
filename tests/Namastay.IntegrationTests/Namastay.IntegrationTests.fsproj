@@ -7,6 +7,7 @@
     <Compile Include="Http/ErrorHandlingTests.fs" />
     <Compile Include="Data/MigrationTests.fs" />
     <Compile Include="Media/MediaTests.fs" />
+    <Compile Include="Places/PlacesApiTests.fs" />
     <Compile Include="Data/ImporterTests.fs" />
   </ItemGroup>
 

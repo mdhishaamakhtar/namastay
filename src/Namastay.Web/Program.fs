@@ -2,9 +2,11 @@ open System
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.Configuration
+open Npgsql
 open Namastay.Data.Media
 open Namastay.Web
 open Namastay.Web.Media
+open Namastay.Web.Places
 
 [<EntryPoint>]
 let main args =
@@ -27,6 +29,11 @@ let main args =
                 AccessKey = media["AccessKey"]
                 SecretKey = media["SecretKey"]
             })
+
+    let database = builder.Configuration.GetConnectionString "Namastay"
+
+    if not (isNull database) then
+        PlacesApi.map app (NpgsqlDataSource.Create database)
 
     Server.mapApiFallback app
     app.Run()

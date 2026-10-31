@@ -4,6 +4,8 @@
     <Compile Include="Sql.fs" />
     <Compile Include="Migrate.fs" />
     <Compile Include="Media/MediaStore.fs" />
+    <Compile Include="Places/Search.fs" />
+    <Compile Include="Places/Guide.fs" />
     <Compile Include="Import/Encode.fs" />
     <Compile Include="Import/Geography.fs" />
     <Compile Include="Import/Places.fs" />
@@ -24,6 +26,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Namastay.Domain\Namastay.Domain.fsproj" />
+    <ProjectReference Include="..\Namastay.Shared\Namastay.Shared.fsproj" />
   </ItemGroup>
 
 </Project>
