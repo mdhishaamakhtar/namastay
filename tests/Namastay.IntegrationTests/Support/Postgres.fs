@@ -26,6 +26,16 @@ type PostgresFixture() =
         member _.InitializeAsync() = container.StartAsync()
         member _.DisposeAsync() = container.DisposeAsync().AsTask()
 
+/// Runs only where the private data folder exists, and shows as skipped elsewhere.
+type PrivateDataFactAttribute() as this =
+    inherit FactAttribute()
+
+    do
+        if not (IO.Directory.Exists PrivateDataFactAttribute.Folder) then
+            this.Skip <- "The private data folder isn't available."
+
+    static member Folder = IO.Path.Combine(__SOURCE_DIRECTORY__, "..", "..", "..", "data")
+
 [<CollectionDefinition("postgres")>]
 type PostgresCollection() =
     interface ICollectionFixture<PostgresFixture>

@@ -13,6 +13,7 @@ type Catalog = {
     Exclusions: Exclusion list
     Sources: Source list
     Illustrations: Illustration list
+    Photos: Photo list
     Cards: Card list
 }
 
@@ -31,5 +32,6 @@ module Catalog =
         Exclusions = []
         Sources = []
         Illustrations = []
+        Photos = []
         Cards = []
     }

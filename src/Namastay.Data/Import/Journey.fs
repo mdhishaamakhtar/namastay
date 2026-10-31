@@ -19,6 +19,27 @@ let private upsertIllustration transaction (illustration: Illustration) =
         ]
     |> ignore
 
+let private upsertPhoto transaction (photo: Photo) =
+    exec
+        transaction
+        "insert into photos (slug, place_slug, file_path, alt, credit, licence, source_url, sort)
+         values (@slug, @place, @filePath, @alt, @credit, @licence, @sourceUrl, @sort)
+         on conflict (slug) do update set
+            place_slug = excluded.place_slug, file_path = excluded.file_path, alt = excluded.alt,
+            credit = excluded.credit, licence = excluded.licence, source_url = excluded.source_url,
+            sort = excluded.sort"
+        [
+            arg "slug" photo.Slug
+            arg "place" photo.PlaceSlug
+            arg "filePath" photo.FilePath
+            arg "alt" photo.Alt
+            arg "credit" photo.Credit
+            arg "licence" photo.Licence
+            arg "sourceUrl" photo.SourceUrl
+            arg "sort" photo.Sort
+        ]
+    |> ignore
+
 let private upsertCard transaction (card: Card) =
     exec
         transaction
@@ -67,5 +88,6 @@ let private replaceBranches transaction (card: Card) =
 
 let apply transaction (catalog: Catalog) =
     catalog.Illustrations |> List.iter (upsertIllustration transaction)
+    catalog.Photos |> List.iter (upsertPhoto transaction)
     catalog.Cards |> List.iter (upsertCard transaction)
     catalog.Cards |> List.iter (replaceBranches transaction)

@@ -8,6 +8,17 @@ type Illustration = {
     Status: string
 }
 
+type Photo = {
+    Slug: string
+    PlaceSlug: string
+    FilePath: string
+    Alt: string
+    Credit: string
+    Licence: string
+    SourceUrl: string
+    Sort: int
+}
+
 type CardBranch = {
     OnAnswer: bool
     ToCard: string

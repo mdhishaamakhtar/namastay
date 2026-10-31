@@ -374,3 +374,63 @@ let ``unknown cluster and family both fail`` () =
 
     Assert.True(hasError "c1" broken)
     Assert.True(hasError "f1" broken)
+
+let photo = {
+    Slug = "kasol-river"
+    PlaceSlug = "kasol"
+    FilePath = "photos/kasol-river.webp"
+    Alt = "The Parvati river at Kasol."
+    Credit = "A photographer"
+    Licence = "CC BY-SA 4.0"
+    SourceUrl = "https://commons.wikimedia.org/wiki/File:Kasol.jpg"
+    Sort = 1
+}
+
+[<Fact>]
+let ``complete photo passes`` () =
+    Assert.Empty(check { catalog with Photos = [ photo ] })
+
+[<Fact>]
+let ``photo needs a credit`` () =
+    Assert.True(
+        hasError "credit" {
+            catalog with
+                Photos = [ { photo with Credit = "" } ]
+        }
+    )
+
+[<Fact>]
+let ``photo needs a licence`` () =
+    Assert.True(
+        hasError "licence" {
+            catalog with
+                Photos = [ { photo with Licence = " " } ]
+        }
+    )
+
+[<Fact>]
+let ``photo needs a source`` () =
+    Assert.True(
+        hasError "source" {
+            catalog with
+                Photos = [ { photo with SourceUrl = "" } ]
+        }
+    )
+
+[<Fact>]
+let ``photo needs alt text`` () =
+    Assert.True(
+        hasError "alt text" {
+            catalog with
+                Photos = [ { photo with Alt = "" } ]
+        }
+    )
+
+[<Fact>]
+let ``photo must belong to a known place`` () =
+    Assert.True(
+        hasError "atlantis" {
+            catalog with
+                Photos = [ { photo with PlaceSlug = "atlantis" } ]
+        }
+    )

@@ -25,6 +25,7 @@ let private countsOf (catalog: Catalog) : ImportCounts =
         "exclusions", catalog.Exclusions.Length
         "sources", catalog.Sources.Length
         "illustrations", catalog.Illustrations.Length
+        "photos", catalog.Photos.Length
         "cards", catalog.Cards.Length
     ]
 

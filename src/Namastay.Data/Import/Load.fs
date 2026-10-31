@@ -36,6 +36,7 @@ let private fileNames = {|
     Exclusions = "core/exclusions.json"
     Sources = "core/sources.json"
     Illustrations = "journey/illustrations.json"
+    Photos = "core/photos.json"
     Cards = "journey/cards.json"
 |}
 
@@ -58,6 +59,7 @@ let save (folder: string) (catalog: Catalog) =
     write fileNames.Exclusions catalog.Exclusions
     write fileNames.Sources catalog.Sources
     write fileNames.Illustrations catalog.Illustrations
+    write fileNames.Photos catalog.Photos
     write fileNames.Cards catalog.Cards
 
 let private withOverrides (core: Place list) (full: Place list) =
@@ -125,6 +127,7 @@ let fromFolder (folder: string) : Result<Catalog, string list> =
             Exclusions = read fileNames.Exclusions
             Sources = read fileNames.Sources
             Illustrations = read fileNames.Illustrations
+            Photos = read fileNames.Photos
             Cards = read fileNames.Cards
         }
 

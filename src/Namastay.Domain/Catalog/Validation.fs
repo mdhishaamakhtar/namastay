@@ -120,6 +120,21 @@ let private checkCard cards places illustrations (card: Card) = [
         |> List.collect (checkReference "cards" card.Slug illustrations)
 ]
 
+let private checkPhoto places (photo: Photo) =
+    let required = [
+        photo.Credit, "photo needs a credit"
+        photo.Licence, "photo needs a licence"
+        photo.SourceUrl, "photo needs a source"
+        photo.Alt, "photo needs alt text"
+    ]
+
+    [
+        yield! checkReference "photos" photo.Slug places photo.PlaceSlug
+        for value, message in required do
+            if String.IsNullOrWhiteSpace value then
+                error "photos" photo.Slug message
+    ]
+
 /// Returns every problem in the catalog, not just the first.
 let check (catalog: Catalog) : ValidationError list =
     let places = catalog.Places |> List.map _.Slug |> Set.ofList
@@ -140,6 +155,7 @@ let check (catalog: Catalog) : ValidationError list =
         yield! catalog.Links |> List.collect (checkLink places sources)
         yield! catalog.Notices |> List.collect (checkNotice places links festivals sources)
         yield! catalog.Cards |> List.collect (checkCard cards places illustrations)
+        yield! catalog.Photos |> List.collect (checkPhoto places)
         for festival in catalog.Festivals do
             yield!
                 festival.PlaceSlug

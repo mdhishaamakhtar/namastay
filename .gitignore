@@ -12,3 +12,12 @@ fable_modules/
 test-results/
 playwright-report/
 src/Namastay.Client/build/
+
+# Research and travel data stay private and reach visitors only through the API.
+/reports/
+/research_notes/
+/data/
+/media/
+/docs/design/place-themes.md
+/docs/design/mockups/
+/.idea/

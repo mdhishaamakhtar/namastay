@@ -32,7 +32,7 @@ Used mostly on a phone, anywhere in the world, during trip dreaming. No sign-up 
 - Output: day-by-day plan with travel legs, arrival and departure cities, suggested stay areas, a rough cost level and a route map, shareable by link.
 - 60 researched places in 23 clusters, some marked with warnings or permit steps.
 - No booking, payments or live AI in stages 1 and 2. Not deployed yet.
-- Every place gets a custom illustration, not a licensed photo. Only rough versions exist so far.
+- Every place gets a custom illustration for the journey and real licensed photos for its guide. Only rough illustrations exist so far.
 
 ## Brand Commitments
 

@@ -219,6 +219,24 @@ type ImporterTests(postgres: PostgresFixture) =
             Assert.Equal(box true, retired)
         }
 
+    [<PrivateDataFact>]
+    member _.``core data imports with the expected counts``() =
+        task {
+            let! db = database ()
+            let catalog = Load.fromFolder PrivateDataFactAttribute.Folder |> expectOk
+            Run.run db Run.Apply "data" catalog |> expectOk |> ignore
+            let! families = count db "colour_families"
+            let! clusters = count db "clusters"
+            let! places = count db "places"
+            let! exclusions = count db "exclusions"
+            let! published = count db "places where published"
+            Assert.Equal(16, families)
+            Assert.Equal(23, clusters)
+            Assert.Equal(60, places)
+            Assert.Equal(26, exclusions)
+            Assert.Equal(1, published)
+        }
+
     [<Fact>]
     member _.``batch is recorded``() =
         task {
