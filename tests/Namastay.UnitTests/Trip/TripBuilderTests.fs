@@ -369,7 +369,11 @@ let ``permit stop carries permit notice`` () =
 
     let trip = build world (request (liked [ "permit-card" ]) 5 None)
     Assert.Contains("permit-peak", slugs trip)
-    Assert.Contains(trip.Notices, (fun notice -> notice.PlaceSlug = Some "permit-peak" && notice.Severity = "permit"))
+
+    Assert.Contains(
+        trip.Notices,
+        (fun notice -> notice.PlaceSlug = Some "permit-peak" && notice.Severity = NoticeSeverity.Permit)
+    )
 
 [<Fact>]
 let ``place notices reach the trip`` () =
@@ -465,7 +469,7 @@ let ``no flights comfort uses no flights`` () =
         }
 
     let modes = trip.Stops |> List.choose _.Arrival |> List.map _.Mode
-    Assert.DoesNotContain("flight", modes)
+    Assert.DoesNotContain(TravelMode.Flight, modes)
 
 [<Fact>]
 let ``base family has most days`` () =
@@ -678,12 +682,12 @@ let ``unknown month ranks below ordinary season`` () =
 [<InlineData("cable car")>]
 [<InlineData("flight")>]
 let ``leg names its transport mode`` name =
-    let mode =
+    let mode, expected =
         match name with
-        | "train" -> Mode.Train
-        | "ferry" -> Mode.Ferry
-        | "cable car" -> Mode.CableCar
-        | _ -> Mode.Flight
+        | "train" -> Mode.Train, TravelMode.Train
+        | "ferry" -> Mode.Ferry, TravelMode.Ferry
+        | "cable car" -> Mode.CableCar, TravelMode.CableCar
+        | _ -> Mode.Flight, TravelMode.Flight
 
     let links = [
         {
@@ -706,7 +710,7 @@ let ``leg names its transport mode`` name =
 
     let trip = build world (request (liked [ "likes-hills" ]) 7 None)
     let legs = trip.Stops |> List.choose _.Arrival
-    Assert.Equal(name, legs.Head.Mode)
+    Assert.Equal(expected, legs.Head.Mode)
 
 [<Fact>]
 let ``fastest link is chosen`` () =
@@ -760,7 +764,7 @@ let ``warn gate is carried to the stop`` () =
     let trip =
         build { catalog with Places = [ warned ] } (request (liked [ "likes-hills" ]) 5 None)
 
-    Assert.Equal("warn", trip.Stops.Head.Gate)
+    Assert.Equal(PlaceAccess.Warning, trip.Stops.Head.Access)
 
 [<Fact>]
 let ``long stay past the maximum keeps days exact`` () =

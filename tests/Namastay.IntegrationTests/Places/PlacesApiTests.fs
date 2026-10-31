@@ -59,19 +59,10 @@ type PlacesApiTests(postgres: PostgresFixture) =
             Server.configureServices builder.Services
             let app = scope.Own(builder.Build())
             Server.useErrorHandling app
-            let source = scope.Own(NpgsqlDataSource.Create db)
-            PlacesApi.map app source
+            let data = scope.Own(DataCache.create (scope.Own(NpgsqlDataSource.Create db)))
+            PlacesApi.map app data
             do! app.StartAsync()
             return app.GetTestClient(), db
-        }
-
-    let exec (db: string) (sql: string) =
-        task {
-            use connection = new NpgsqlConnection(db)
-            do! connection.OpenAsync()
-            use command = new NpgsqlCommand(sql, connection)
-            let! _ = command.ExecuteNonQueryAsync()
-            return ()
         }
 
     let search (http: HttpClient) (query: string) =
@@ -163,7 +154,7 @@ type PlacesApiTests(postgres: PostgresFixture) =
     member _.``retired place is not found by search``() =
         task {
             let! http, db = start catalog
-            do! exec db "update places set retired_at = now() where slug = 'kasol'"
+            do! sql db "update places set retired_at = now() where slug = 'kasol'"
             let! results = search http "kasol"
             Assert.Empty results
         }
@@ -210,7 +201,7 @@ type PlacesApiTests(postgres: PostgresFixture) =
     member _.``retired guide returns 404``() =
         task {
             let! http, db = start catalog
-            do! exec db "update places set retired_at = now() where slug = 'kasol'"
+            do! sql db "update places set retired_at = now() where slug = 'kasol'"
             let! response = http.GetAsync(Route.url [ "slug", "kasol" ] [] Routes.placeGuide)
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode)
         }
@@ -219,9 +210,9 @@ type PlacesApiTests(postgres: PostgresFixture) =
     member _.``unverified facts are excluded from guide``() =
         task {
             let! http, db = start catalog
-            do! exec db "update experiences set status = 'unverified' where slug = 'kheerganga'"
-            do! exec db "update stay_areas set status = 'unverified' where place_slug = 'kasol'"
-            do! exec db "update day_plans set status = 'unverified' where place_slug = 'kasol'"
+            do! sql db "update experiences set status = 'unverified' where slug = 'kheerganga'"
+            do! sql db "update stay_areas set status = 'unverified' where place_slug = 'kasol'"
+            do! sql db "update day_plans set status = 'unverified' where place_slug = 'kasol'"
             let! place = guide http "kasol"
             Assert.Empty place.Experiences
             Assert.Empty place.StayAreas
@@ -232,7 +223,7 @@ type PlacesApiTests(postgres: PostgresFixture) =
     member _.``unverified month shows as unknown``() =
         task {
             let! http, db = start catalog
-            do! exec db "update place_months set status = 'unverified' where place_slug = 'kasol'"
+            do! sql db "update place_months set status = 'unverified' where place_slug = 'kasol'"
             let! place = guide http "kasol"
             Assert.Equal(MonthRating.Unknown, place.Months.Head.Rating)
         }
@@ -241,7 +232,7 @@ type PlacesApiTests(postgres: PostgresFixture) =
     member _.``conflict facts are flagged for hedged copy``() =
         task {
             let! http, db = start catalog
-            do! exec db "update experiences set status = 'conflict' where slug = 'kheerganga'"
+            do! sql db "update experiences set status = 'conflict' where slug = 'kheerganga'"
             let! place = guide http "kasol"
             Assert.True place.Experiences.Head.Hedged
         }
@@ -250,7 +241,7 @@ type PlacesApiTests(postgres: PostgresFixture) =
     member _.``one source facts are flagged for hedged copy``() =
         task {
             let! http, db = start catalog
-            do! exec db "update experiences set status = 'one_source' where slug = 'kheerganga'"
+            do! sql db "update experiences set status = 'one_source' where slug = 'kheerganga'"
             let! place = guide http "kasol"
             Assert.True place.Experiences.Head.Hedged
         }
@@ -267,7 +258,7 @@ type PlacesApiTests(postgres: PostgresFixture) =
     member _.``retired experience is excluded``() =
         task {
             let! http, db = start catalog
-            do! exec db "update experiences set retired_at = now() where slug = 'kheerganga'"
+            do! sql db "update experiences set retired_at = now() where slug = 'kheerganga'"
             let! place = guide http "kasol"
             Assert.Empty place.Experiences
         }

@@ -15,6 +15,7 @@ open Namastay.IntegrationTests
 open Namastay.IntegrationTests.Support
 open Namastay.Web
 open Namastay.Web.Guides
+open Namastay.Web.Http
 
 [<Collection("postgres")>]
 type GuidePageTests(postgres: PostgresFixture) =
@@ -69,19 +70,11 @@ type GuidePageTests(postgres: PostgresFixture) =
             builder.WebHost.UseTestServer() |> ignore
             Server.configureServices builder.Services
             let app = scope.Own(builder.Build())
+            Server.useCompression app
             Server.useErrorHandling app
-            GuideRoutes.map app (scope.Own(NpgsqlDataSource.Create db))
+            GuideRoutes.map app (scope.Own(DataCache.create (scope.Own(NpgsqlDataSource.Create db))))
             do! app.StartAsync()
             return app.GetTestClient(), db
-        }
-
-    let exec (db: string) (sql: string) =
-        task {
-            use connection = new NpgsqlConnection(db)
-            do! connection.OpenAsync()
-            use command = new NpgsqlCommand(sql, connection)
-            let! _ = command.ExecuteNonQueryAsync()
-            return ()
         }
 
     let page (http: HttpClient) (path: string) = http.GetStringAsync path
@@ -128,7 +121,7 @@ type GuidePageTests(postgres: PostgresFixture) =
     member _.``conflict fact uses hedged wording``() =
         task {
             let! http, db = start ()
-            do! exec db "update experiences set status = 'conflict' where slug = 'kheerganga'"
+            do! sql db "update experiences set status = 'conflict' where slug = 'kheerganga'"
             let! html = page http "/places/kasol"
             Assert.Contains("Sources differ on this", html)
         }
@@ -182,7 +175,7 @@ type GuidePageTests(postgres: PostgresFixture) =
     member _.``html in data is escaped``() =
         task {
             let! http, db = start ()
-            do! exec db "update places set summary = '<img src=x onerror=alert(1)>' where slug = 'kasol'"
+            do! sql db "update places set summary = '<img src=x onerror=alert(1)>' where slug = 'kasol'"
             let! html = page http "/places/kasol"
             Assert.DoesNotContain("<img src=x", html)
         }
@@ -204,6 +197,77 @@ type GuidePageTests(postgres: PostgresFixture) =
             let! xml = page http "/sitemap.xml"
             Assert.Contains("/places/kasol</loc>", xml)
             Assert.DoesNotContain("/places/manali", xml)
+        }
+
+    [<Fact>]
+    member _.``repeat guide reads come from the cache``() =
+        task {
+            let! http, db = start ()
+            let! _ = page http "/places/kasol"
+            do! sql db "update places set summary = 'Changed behind the cache.' where slug = 'kasol'"
+            let! html = page http "/places/kasol"
+            Assert.DoesNotContain("Changed behind the cache.", html)
+        }
+
+    [<Fact>]
+    member _.``a new import refreshes the cache``() =
+        task {
+            let! http, db = start ()
+            let! _ = page http "/places/kasol"
+            do! sql db "update places set summary = 'Fresh from an import.' where slug = 'kasol'"
+
+            do!
+                sql
+                    db
+                    "insert into import_batches (started_at, finished_at, file_hash, status)
+                     values (now(), now(), 'new', 'committed')"
+
+            let! html = page http "/places/kasol"
+            Assert.Contains("Fresh from an import.", html)
+        }
+
+    [<Fact>]
+    member _.``unknown slugs are not cached``() =
+        task {
+            let! http, db = start ()
+            let! first = http.GetAsync "/places/manali"
+            Assert.Equal(HttpStatusCode.NotFound, first.StatusCode)
+            do! sql db "update places set published = true where slug = 'manali'"
+
+            do!
+                sql
+                    db
+                    "insert into import_batches (started_at, finished_at, file_hash, status)
+                     values (now(), now(), 'new', 'committed')"
+
+            let! second = http.GetAsync "/places/manali"
+            Assert.Equal(HttpStatusCode.OK, second.StatusCode)
+        }
+
+    [<Fact>]
+    member _.``guide sends etag and a matching request gets 304``() =
+        task {
+            let! http, _ = start ()
+            let! first = http.GetAsync "/places/kasol"
+            let etag = first.Headers.ETag
+            Assert.NotNull etag
+            Assert.True first.Headers.CacheControl.Public
+            use request = new HttpRequestMessage(HttpMethod.Get, "/places/kasol")
+            request.Headers.IfNoneMatch.Add etag
+            let! second = http.SendAsync request
+            let! body = second.Content.ReadAsStringAsync()
+            Assert.Equal(HttpStatusCode.NotModified, second.StatusCode)
+            Assert.Empty body
+        }
+
+    [<Fact>]
+    member _.``guide is compressed when the browser accepts it``() =
+        task {
+            let! http, _ = start ()
+            use request = new HttpRequestMessage(HttpMethod.Get, "/places/kasol")
+            request.Headers.AcceptEncoding.ParseAdd "br"
+            let! response = http.SendAsync request
+            Assert.Contains("br", response.Content.Headers.ContentEncoding)
         }
 
     interface IDisposable with

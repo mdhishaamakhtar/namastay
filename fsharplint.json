@@ -55,7 +55,7 @@
     "enabled": false
   },
   "redundantNewKeyword": {
-    "enabled": true
+    "enabled": false
   },
   "nestedStatements": {
     "enabled": false,

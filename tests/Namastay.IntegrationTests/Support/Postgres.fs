@@ -74,6 +74,16 @@ module Database =
         | Ok() -> ()
         | Error message -> raise (Xunit.Sdk.XunitException $"migration failed: {message}")
 
+    /// Runs SQL directly, to set up a state the importer wouldn't allow.
+    let sql (connectionString: string) (statement: string) =
+        task {
+            use connection = new NpgsqlConnection(connectionString)
+            do! connection.OpenAsync()
+            use command = new NpgsqlCommand(statement, connection)
+            let! _ = command.ExecuteNonQueryAsync()
+            return ()
+        }
+
 /// One RustFS container, the same S3 store that local development uses.
 type MediaFixture() =
     let container =

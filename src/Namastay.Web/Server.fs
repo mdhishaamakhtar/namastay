@@ -6,6 +6,7 @@ open System.Threading.RateLimiting
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
+open Microsoft.AspNetCore.ResponseCompression
 open Microsoft.AspNetCore.RateLimiting
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Logging
@@ -37,12 +38,20 @@ let private rejected (context: OnRejectedContext) (_: CancellationToken) =
 let configureServices (services: IServiceCollection) =
     services.AddLogging() |> ignore
 
+    services.AddResponseCompression(fun options ->
+        options.EnableForHttps <- true
+        options.Providers.Add<BrotliCompressionProvider>()
+        options.Providers.Add<GzipCompressionProvider>())
+    |> ignore
+
     services.AddRateLimiter(fun options ->
         options.AddPolicy(Limits.tripsPolicy, Func<HttpContext, RateLimitPartition<string>>(partition))
         |> ignore
 
         options.OnRejected <- Func<OnRejectedContext, CancellationToken, ValueTask>(rejected))
     |> ignore
+
+let useCompression (app: WebApplication) = app.UseResponseCompression() |> ignore
 
 let useRateLimits (app: WebApplication) = app.UseRateLimiter() |> ignore
 

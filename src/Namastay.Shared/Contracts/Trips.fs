@@ -1,17 +1,12 @@
 namespace Namastay.Shared.Contracts
 
 [<RequireQualifiedAccess>]
-type TravellerType =
-    | Solo
-    | Couple
-    | Friends
-    | Family
-
-[<RequireQualifiedAccess>]
-type BudgetLevel =
-    | Budget
-    | Mid
-    | Luxury
+type TravelMode =
+    | Flight
+    | Train
+    | Road
+    | Ferry
+    | CableCar
 
 [<RequireQualifiedAccess>]
 type TransportComfort =
@@ -30,7 +25,7 @@ type TripRequest = {
 }
 
 type TravelLeg = {
-    Mode: string
+    Mode: TravelMode
     MinutesMin: int
     MinutesMax: int
     ComfortNote: string option
@@ -44,7 +39,7 @@ type TripStop = {
     Days: int
     FamilySlug: string
     Colours: PlaceColours
-    Gate: string
+    Access: PlaceAccess
     StayArea: string option
     Plans: TripDay list
     Arrival: TravelLeg option
@@ -60,7 +55,7 @@ type TripSwap = {
 type TripNotice = {
     PlaceSlug: string option
     Kind: string
-    Severity: string
+    Severity: NoticeSeverity
     Body: string
 }
 

@@ -1,5 +1,31 @@
 namespace Namastay.Shared.Contracts
 
+[<RequireQualifiedAccess>]
+type PlaceAccess =
+    | Open
+    | Warning
+    | Permit
+
+[<RequireQualifiedAccess>]
+type NoticeSeverity =
+    | Info
+    | Warning
+    | Permit
+    | Danger
+
+[<RequireQualifiedAccess>]
+type TravellerType =
+    | Solo
+    | Couple
+    | Friends
+    | Family
+
+[<RequireQualifiedAccess>]
+type BudgetLevel =
+    | Budget
+    | Mid
+    | Luxury
+
 type PlaceColours = {
     Deep: string
     Mid: string
@@ -45,14 +71,14 @@ type GuideDay = {
 
 type GuideStay = {
     Name: string
-    CostLevel: string
+    CostLevel: BudgetLevel
     Note: string option
     Hedged: bool
 }
 
 type GuideNotice = {
     Kind: string
-    Severity: string
+    Severity: NoticeSeverity
     Body: string
     Hedged: bool
 }
@@ -76,9 +102,9 @@ type PlaceGuide = {
     DaysMax: int
     CostLow: int option
     CostHigh: int option
-    Gate: string
+    Access: PlaceAccess
     Colours: PlaceColours
-    Suits: string list
+    Suits: TravellerType list
     Months: GuideMonth list
     Experiences: GuideExperience list
     DayPlans: GuideDay list

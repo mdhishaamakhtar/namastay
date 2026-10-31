@@ -82,3 +82,40 @@ let mapPost
         }
 
     app.MapPost(route.Template, RequestDelegate run)
+
+let private publicLifetime = "public, max-age=300"
+
+/// True when the browser's copy is current. Otherwise marks the response cacheable.
+let isFresh (context: HttpContext) (version: int64) =
+    let tag = $"\"v{version}\""
+
+    if context.Request.Headers.IfNoneMatch.ToString() = tag then
+        context.Response.StatusCode <- StatusCodes.Status304NotModified
+        true
+    else
+        context.Response.Headers.ETag <- tag
+        context.Response.Headers.CacheControl <- publicLifetime
+        false
+
+/// A GET whose result depends only on the imported data.
+let mapData
+    (app: IEndpointRouteBuilder)
+    (data: DataCache)
+    (route: Route<NoBody, 'Response>)
+    (handler: HttpContext -> Task<Result<'Response, ApiError>>)
+    =
+    let run (context: HttpContext) : Task =
+        task {
+            let! version = DataCache.version data
+
+            if not (isFresh context version) then
+                let! result = handler context
+
+                match result with
+                | Ok _ -> ()
+                | Error _ -> context.Response.Headers.Remove "Cache-Control" |> ignore
+
+                do! respond context result
+        }
+
+    app.MapGet(route.Template, RequestDelegate run) |> ignore

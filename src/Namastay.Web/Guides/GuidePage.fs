@@ -56,6 +56,13 @@ let private cost (place: PlaceGuide) =
     | Some low, Some high -> $"{name low} to {(name high).ToLowerInvariant()}"
     | _ -> "Not confirmed"
 
+let private travellerName =
+    function
+    | TravellerType.Solo -> "Solo"
+    | TravellerType.Couple -> "Couples"
+    | TravellerType.Friends -> "Friends"
+    | TravellerType.Family -> "Families"
+
 let private facts (place: PlaceGuide) =
     div [ _class "facts" ] [
         div [] [
@@ -63,7 +70,10 @@ let private facts (place: PlaceGuide) =
             str "How long to stay"
         ]
         div [] [ strong [] [ str (cost place) ]; str "Rough cost" ]
-        div [] [ strong [] [ str (String.Join(", ", place.Suits)) ]; str "Who it suits" ]
+        div [] [
+            strong [] [ str (String.Join(", ", place.Suits |> List.map travellerName)) ]
+            str "Who it suits"
+        ]
         div [] [ strong [] [ str place.State ]; str place.Region ]
     ]
 

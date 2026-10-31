@@ -96,19 +96,26 @@ let private stayArea (request: TripRequest) (place: Place) =
     |> Option.orElse (verified |> List.tryHead)
     |> Option.map _.Name
 
-let private modeName =
+let private travelMode =
     function
-    | Mode.Flight -> "flight"
-    | Mode.Train -> "train"
-    | Mode.Road -> "road"
-    | Mode.Ferry -> "ferry"
-    | Mode.CableCar -> "cable car"
+    | Mode.Flight -> TravelMode.Flight
+    | Mode.Train -> TravelMode.Train
+    | Mode.Road -> TravelMode.Road
+    | Mode.Ferry -> TravelMode.Ferry
+    | Mode.CableCar -> TravelMode.CableCar
 
-let private gateName =
+let private placeAccess =
     function
-    | Gate.Open -> "open"
-    | Gate.Warn -> "warn"
-    | Gate.Permit -> "permit"
+    | Gate.Open -> PlaceAccess.Open
+    | Gate.Warn -> PlaceAccess.Warning
+    | Gate.Permit -> PlaceAccess.Permit
+
+let private noticeSeverity =
+    function
+    | "info" -> NoticeSeverity.Info
+    | "permit" -> NoticeSeverity.Permit
+    | "danger" -> NoticeSeverity.Danger
+    | _ -> NoticeSeverity.Warning
 
 let private toStop (catalog: Catalog) request (stop: RoutedStop) : TripStop =
     let family =
@@ -125,13 +132,13 @@ let private toStop (catalog: Catalog) request (stop: RoutedStop) : TripStop =
             Pale = family.Pale
             TextOnDeep = family.TextOnDeep
         }
-        Gate = gateName stop.Place.Gate
+        Access = placeAccess stop.Place.Gate
         StayArea = stayArea request stop.Place
         Plans = plansFor stop.Place stop.Days
         Arrival =
             stop.Arrival
             |> Option.map (fun link -> {
-                Mode = modeName link.Mode
+                Mode = travelMode link.Mode
                 MinutesMin = link.MinutesMin
                 MinutesMax = link.MinutesMax
                 ComfortNote = link.ComfortNote
@@ -182,7 +189,7 @@ let private notices (catalog: Catalog) (stops: RoutedStop list) =
         |> List.map (fun notice -> {
             TripNotice.PlaceSlug = Some place.Slug
             Kind = notice.Kind
-            Severity = notice.Severity
+            Severity = noticeSeverity notice.Severity
             Body = notice.Body
         })
 
@@ -192,7 +199,7 @@ let private notices (catalog: Catalog) (stops: RoutedStop list) =
                 {
                     TripNotice.PlaceSlug = Some place.Slug
                     Kind = "permit"
-                    Severity = "permit"
+                    Severity = NoticeSeverity.Permit
                     Body = $"{place.Name} needs a permit. Sort this out before you travel."
                 }
             ]

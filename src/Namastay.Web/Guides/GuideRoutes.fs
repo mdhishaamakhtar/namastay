@@ -5,7 +5,6 @@ open System.Threading.Tasks
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Routing
-open Npgsql
 open Namastay.Data.Places
 open Namastay.Web.Http
 
@@ -14,24 +13,31 @@ let private html (context: HttpContext) (status: int) (body: string) : Task =
     context.Response.ContentType <- "text/html; charset=utf-8"
     context.Response.WriteAsync body
 
-let private guide source (context: HttpContext) : Task =
+let private guide (data: DataCache) (context: HttpContext) : Task =
     task {
         let slug = string context.Request.RouteValues["slug"]
+        let! version = DataCache.version data
 
         let! found =
             if Input.isSlug slug then
-                Guide.tryLoad source slug
+                DataCache.getOrLoadOption data $"page:{slug}" (fun () ->
+                    task {
+                        let! place = Guide.tryLoad data.Source slug
+                        return place |> Option.map GuidePage.render
+                    })
             else
                 Task.FromResult None
 
         match found with
-        | Some place -> do! html context StatusCodes.Status200OK (GuidePage.render place)
+        | Some page ->
+            if not (Endpoint.isFresh context version) then
+                do! html context StatusCodes.Status200OK page
         | None -> do! html context StatusCodes.Status404NotFound (GuidePage.notFound ())
     }
 
-let private sitemap source (context: HttpContext) : Task =
+let private sitemap (data: DataCache) (context: HttpContext) : Task =
     task {
-        let! slugs = Guide.publishedSlugs source
+        let! slugs = Guide.publishedSlugs data.Source
         let origin = $"{context.Request.Scheme}://{context.Request.Host}"
 
         let entries =
@@ -47,6 +53,6 @@ let private sitemap source (context: HttpContext) : Task =
                 $"""<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{entries}</urlset>"""
     }
 
-let map (app: IEndpointRouteBuilder) (source: NpgsqlDataSource) =
-    app.MapGet("/places/{slug}", RequestDelegate(guide source)) |> ignore
-    app.MapGet("/sitemap.xml", RequestDelegate(sitemap source)) |> ignore
+let map (app: IEndpointRouteBuilder) (data: DataCache) =
+    app.MapGet("/places/{slug}", RequestDelegate(guide data)) |> ignore
+    app.MapGet("/sitemap.xml", RequestDelegate(sitemap data)) |> ignore

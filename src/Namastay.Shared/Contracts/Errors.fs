@@ -38,3 +38,5 @@ module ApiError =
         create ErrorCode.ValidationFailed "Please check the details and try again." with
             Fields = fields
     }
+
+type HealthStatus = { Status: string }

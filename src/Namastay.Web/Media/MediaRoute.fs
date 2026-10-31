@@ -23,6 +23,11 @@ let map (app: IEndpointRouteBuilder) (store: MediaStore) =
                 context.Response.ContentType <- file.ContentType
                 context.Response.ContentLength <- Nullable file.Length
                 context.Response.Headers.CacheControl <- "public, max-age=31536000, immutable"
+                context.Response.Headers.XContentTypeOptions <- "nosniff"
+
+                context.Response.Headers.ContentSecurityPolicy <-
+                    "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+
                 do! content.CopyToAsync context.Response.Body
         }
 

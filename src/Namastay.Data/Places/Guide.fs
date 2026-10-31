@@ -60,6 +60,32 @@ let private rating =
     | "closed" -> MonthRating.Closed
     | _ -> MonthRating.Unknown
 
+let private access =
+    function
+    | "permit" -> PlaceAccess.Permit
+    | "warn" -> PlaceAccess.Warning
+    | _ -> PlaceAccess.Open
+
+let private severity =
+    function
+    | "info" -> NoticeSeverity.Info
+    | "permit" -> NoticeSeverity.Permit
+    | "danger" -> NoticeSeverity.Danger
+    | _ -> NoticeSeverity.Warning
+
+let private budget =
+    function
+    | "luxury" -> BudgetLevel.Luxury
+    | "mid" -> BudgetLevel.Mid
+    | _ -> BudgetLevel.Budget
+
+let private traveller =
+    function
+    | "solo" -> TravellerType.Solo
+    | "couple" -> TravellerType.Couple
+    | "friends" -> TravellerType.Friends
+    | _ -> TravellerType.Family
+
 let private toGuide (head: HeadRow) : PlaceGuide = {
     Slug = head.Slug
     Name = head.Name
@@ -71,7 +97,7 @@ let private toGuide (head: HeadRow) : PlaceGuide = {
     DaysMax = head.DaysMax
     CostLow = head.CostLow
     CostHigh = head.CostHigh
-    Gate = head.Gate
+    Access = access head.Gate
     Colours = {
         Deep = head.Deep
         Mid = head.Mid
@@ -111,7 +137,7 @@ let tryLoad (source: NpgsqlDataSource) (slug: string) : Task<PlaceGuide option> 
             return
                 Some {
                     toGuide head with
-                        Suits = suits
+                        Suits = suits |> List.map traveller
                         Months =
                             months
                             |> List.map (fun row -> {
@@ -137,7 +163,7 @@ let tryLoad (source: NpgsqlDataSource) (slug: string) : Task<PlaceGuide option> 
                             stayAreas
                             |> List.map (fun row -> {
                                 GuideStay.Name = row.Name
-                                CostLevel = row.CostLevel
+                                CostLevel = budget row.CostLevel
                                 Note = row.Note
                                 Hedged = row.Hedged
                             })
@@ -145,7 +171,7 @@ let tryLoad (source: NpgsqlDataSource) (slug: string) : Task<PlaceGuide option> 
                             notices
                             |> List.map (fun row -> {
                                 Kind = row.Kind
-                                Severity = row.Severity
+                                Severity = severity row.Severity
                                 Body = row.Body
                                 Hedged = row.Hedged
                             })

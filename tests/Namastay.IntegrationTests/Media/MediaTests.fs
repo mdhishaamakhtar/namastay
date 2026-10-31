@@ -54,6 +54,8 @@ type MediaTests(media: MediaFixture) =
             Assert.Equal("<svg/>", body)
             Assert.Equal("image/svg+xml", response.Content.Headers.ContentType.MediaType)
             Assert.True(response.Headers.CacheControl.Public)
+            Assert.Contains("nosniff", response.Headers.GetValues "X-Content-Type-Options")
+            Assert.Contains("sandbox", String.Join(" ", response.Headers.GetValues "Content-Security-Policy"))
             Assert.Equal(Nullable(TimeSpan.FromDays 365.0), response.Headers.CacheControl.MaxAge)
         }
 

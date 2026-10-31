@@ -93,20 +93,11 @@ type JourneyApiTests(postgres: PostgresFixture) =
             let app = scope.Own(builder.Build())
             Server.useErrorHandling app
             Server.useRateLimits app
-            let source = scope.Own(NpgsqlDataSource.Create db)
-            JourneyApi.map app source
-            TripsApi.map app source
+            let data = scope.Own(DataCache.create (scope.Own(NpgsqlDataSource.Create db)))
+            JourneyApi.map app data
+            TripsApi.map app data
             do! app.StartAsync()
             return app.GetTestClient(), db
-        }
-
-    let exec (db: string) (sql: string) =
-        task {
-            use connection = new NpgsqlConnection(db)
-            do! connection.OpenAsync()
-            use command = new NpgsqlCommand(sql, connection)
-            let! _ = command.ExecuteNonQueryAsync()
-            return ()
         }
 
     let post (http: HttpClient) (request: TripRequest) =
@@ -157,7 +148,7 @@ type JourneyApiTests(postgres: PostgresFixture) =
             let! http, db = start ()
 
             do!
-                exec
+                sql
                     db
                     "insert into photos (slug, place_slug, file_path, alt, credit, licence, source_url)
                      values ('river', 'kasol', 'photos/river.webp', 'A river.', 'A photographer', 'CC BY 4.0', 'https://example.org/river');
@@ -228,7 +219,7 @@ type JourneyApiTests(postgres: PostgresFixture) =
     member _.``no publishable places returns a typed error``() =
         task {
             let! http, db = start ()
-            do! exec db "update places set published = false"
+            do! sql db "update places set published = false"
             let! response = post http tripRequest
             let! error = response.Content.ReadFromJsonAsync<ApiError>(Json.options)
             Assert.Equal(HttpStatusCode.Conflict, response.StatusCode)
@@ -240,7 +231,7 @@ type JourneyApiTests(postgres: PostgresFixture) =
         task {
             let! http, db = start ()
             let! saved = create http
-            do! exec db "update places set name = 'Renamed'"
+            do! sql db "update places set name = 'Renamed'"
             let! loaded = fetch http saved.ShareToken
             Assert.DoesNotContain("Renamed", loaded.Trip.Stops |> List.map _.Name)
         }
@@ -251,7 +242,7 @@ type JourneyApiTests(postgres: PostgresFixture) =
             let! http, db = start ()
             let! saved = create http
             let retired = saved.Trip.Stops.Head.PlaceSlug
-            do! exec db $"update places set retired_at = now() where slug = '{retired}'"
+            do! sql db $"update places set retired_at = now() where slug = '{retired}'"
             let! loaded = fetch http saved.ShareToken
             Assert.True loaded.Trip.Stops.Head.Retired
         }
@@ -390,6 +381,28 @@ type JourneyApiTests(postgres: PostgresFixture) =
             let! error = response.Content.ReadFromJsonAsync<ApiError>(Json.options)
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode)
             Assert.Equal(ErrorCode.NotFound, error.Code)
+        }
+
+    [<Fact>]
+    member _.``card graph supports conditional requests``() =
+        task {
+            let! http, _ = start ()
+            let! first = http.GetAsync Routes.journeyStart.Template
+            Assert.NotNull first.Headers.ETag
+            use request = new HttpRequestMessage(HttpMethod.Get, Routes.journeyStart.Template)
+            request.Headers.IfNoneMatch.Add first.Headers.ETag
+            let! second = http.SendAsync request
+            Assert.Equal(HttpStatusCode.NotModified, second.StatusCode)
+        }
+
+    [<Fact>]
+    member _.``trips reuse the cached catalog until an import``() =
+        task {
+            let! http, db = start ()
+            let! first = create http
+            do! sql db "update places set name = 'Renamed'"
+            let! second = create http
+            Assert.Equal<string list>(first.Trip.Stops |> List.map _.Name, second.Trip.Stops |> List.map _.Name)
         }
 
     interface IDisposable with

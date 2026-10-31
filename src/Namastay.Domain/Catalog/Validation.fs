@@ -139,6 +139,35 @@ let private checkPhoto places (photo: Photo) =
                 error "photos" photo.Slug message
     ]
 
+let private checkUnique table (slugs: string list) =
+    slugs
+    |> List.countBy id
+    |> List.filter (fun (_, count) -> count > 1)
+    |> List.map (fun (slug, _) -> error table slug "slug is used more than once")
+
+let private bannedWords = [ "charas"; "ganja" ]
+
+/// The product never recommends these, whatever a batch contains.
+let private checkCopy (place: Place) =
+    let copy = [
+        place.Summary
+        yield! Option.toList place.IsThisForYou
+        yield! place.Experiences |> List.collect (fun item -> [ item.Name; item.Description ])
+        yield! place.DayPlans |> List.map _.Plan
+        yield!
+            place.StayAreas
+            |> List.collect (fun area -> area.Name :: Option.toList area.Note)
+    ]
+
+    [
+        for word in bannedWords do
+            if
+                copy
+                |> List.exists (fun text -> text.Contains(word, StringComparison.OrdinalIgnoreCase))
+            then
+                error "places" place.Slug $"visitor copy mentions banned word: {word}"
+    ]
+
 /// Returns every problem in the catalog, not just the first.
 let check (catalog: Catalog) : ValidationError list =
     let places = catalog.Places |> List.map _.Slug |> Set.ofList
@@ -161,6 +190,12 @@ let check (catalog: Catalog) : ValidationError list =
         yield! catalog.Notices |> List.collect (checkNotice places links festivals sources)
         yield! catalog.Cards |> List.collect (checkCard cards places illustrations photos)
         yield! catalog.Photos |> List.collect (checkPhoto places)
+        yield! catalog.Places |> List.collect checkCopy
+        yield! checkUnique "places" (catalog.Places |> List.map _.Slug)
+        yield! checkUnique "transport_links" (catalog.Links |> List.map _.Slug)
+        yield! checkUnique "cards" (catalog.Cards |> List.map _.Slug)
+        yield! checkUnique "photos" (catalog.Photos |> List.map _.Slug)
+        yield! checkUnique "notices" (catalog.Notices |> List.map _.Slug)
         for festival in catalog.Festivals do
             yield!
                 festival.PlaceSlug

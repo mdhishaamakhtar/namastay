@@ -451,3 +451,33 @@ let ``card photo must exist`` () =
     }
 
     Assert.True(hasError "missing-photo" { catalog with Cards = [ card ] })
+
+[<Fact>]
+let ``duplicate place slug fails`` () =
+    Assert.True(
+        hasError "more than once" {
+            catalog with
+                Places = [ place; place ]
+        }
+    )
+
+[<Theory>]
+[<InlineData("Try the local charas.")>]
+[<InlineData("GANJA is easy to find.")>]
+let ``banned words in visitor copy fail`` copy =
+    Assert.True(
+        hasError "banned word" {
+            catalog with
+                Places = [ { place with Summary = copy } ]
+        }
+    )
+
+[<Fact>]
+let ``banned word in an unpublished draft still fails`` () =
+    let draft = {
+        place with
+            Published = false
+            Summary = "Ganja tours."
+    }
+
+    Assert.True(hasError "banned word" { catalog with Places = [ draft ] })
