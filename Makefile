@@ -1,4 +1,4 @@
-.PHONY: setup up down dev import import-check media-sync sample test test-unit test-integration coverage format lint lint-all check
+.PHONY: setup up down dev client test-e2e import import-check media-sync sample test test-unit test-integration coverage format lint lint-all check
 
 LINT = dotnet dotnet-fsharplint lint --lint-config fsharplint.json
 
@@ -14,6 +14,9 @@ down:
 
 dev:
 	dotnet run --project src/Namastay.Web
+
+client:
+	cd src/Namastay.Client && npm install && dotnet fable . -o build --watch --run npx vite
 
 import-check:
 	dotnet run --project src/Namastay.Importer -- --dry-run data
@@ -35,6 +38,10 @@ test-unit:
 
 test-integration:
 	dotnet test tests/Namastay.IntegrationTests
+
+# Needs `make up`, `make sample`, `make dev` and `make client` running.
+test-e2e:
+	dotnet test tests/Namastay.E2ETests
 
 coverage:
 	dotnet test tests/Namastay.UnitTests /p:CollectCoverage=true /p:Include="[Namastay.Domain]*" \

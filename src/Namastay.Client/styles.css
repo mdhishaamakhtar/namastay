@@ -1,0 +1,81 @@
+@import "@fontsource/yatra-one/400.css";
+@import "@fontsource/mukta/400.css";
+@import "@fontsource/mukta/500.css";
+@import "@fontsource/mukta/600.css";
+
+:root {
+  --brand: #f2b52b;
+  --ink: #2b2108;
+  --paper: #fff8e6;
+  --warning: #1c1b1a;
+  --deep: var(--brand);
+  --mid: var(--brand);
+  --pale: var(--paper);
+  --on-deep: var(--ink);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 17px/1.4 Mukta, system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+h1,
+h2 {
+  font-family: "Yatra One", Mukta, serif;
+  font-weight: 400;
+  line-height: 1.15;
+  margin: 0;
+}
+
+main {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: 2px;
+  background: var(--deep);
+  color: var(--on-deep);
+  font: 600 17px/1 Mukta, system-ui, sans-serif;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 140ms var(--ease-out);
+}
+
+.button:active {
+  transform: scale(0.97);
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.state {
+  display: grid;
+  gap: 16px;
+  padding: 48px 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+}

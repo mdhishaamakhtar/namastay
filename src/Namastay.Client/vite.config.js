@@ -1,12 +1,15 @@
 import { defineConfig } from "vite";
 
+const backend = "http://localhost:5080";
+
 export default defineConfig({
   server: {
     host: "0.0.0.0",
     proxy: {
-      "/api": "http://localhost:5000",
-      "/places": "http://localhost:5000",
-      "/sitemap.xml": "http://localhost:5000",
+      "/api": backend,
+      "/places": backend,
+      "/media": backend,
+      "/sitemap.xml": backend,
     },
   },
 });

@@ -1,7 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <Compile Include="Api/Client.fs" />
     <Compile Include="Routing/Browser.fs" />
+    <Compile Include="Routing/Page.fs" />
+    <Compile Include="Theme/Theme.fs" />
+    <Compile Include="Components/Remote.fs" />
+    <Compile Include="Components/States.fs" />
+    <Compile Include="Pages/Home/View.fs" />
+    <Compile Include="Pages/Journey/View.fs" />
+    <Compile Include="Pages/Trip/State.fs" />
+    <Compile Include="Pages/Trip/View.fs" />
     <Compile Include="App.fs" />
   </ItemGroup>
 
@@ -14,6 +23,8 @@
     <PackageReference Include="Fable.Core" />
     <PackageReference Include="Fable.Elmish" />
     <PackageReference Include="Fable.Elmish.React" />
+    <PackageReference Include="Fable.Fetch" />
+    <PackageReference Include="Fable.Promise" />
     <PackageReference Include="Feliz" />
     <PackageReference Include="Thoth.Json" />
   </ItemGroup>

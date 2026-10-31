@@ -36,3 +36,6 @@ src/Namastay.Client/build/
 
 # Generated reports
 coverage.cobertura.xml
+
+# Local tooling
+/.claude/
