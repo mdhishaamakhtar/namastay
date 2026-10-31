@@ -1,0 +1,13 @@
+bin/
+obj/
+node_modules/
+dist/
+.env
+.impeccable/
+.superpowers/
+.DS_Store
+*.fs.js
+*.fs.js.map
+fable_modules/
+test-results/
+playwright-report/
