@@ -31,7 +31,7 @@ let place slug cluster family interest : Place = {
     Name = slug.ToUpperInvariant()
     State = "State"
     FamilySlug = family
-    Shade = "deep"
+    Shade = Shade.Deep
     Gate = Gate.Open
     Popularity = Popularity.Mainstream
     DaysMin = 2
@@ -381,7 +381,7 @@ let ``place notices reach the trip`` () =
         Slug = "n"
         Scope = NoticeScope.PlaceScope
         ScopeRef = Some "peak"
-        Kind = "safety"
+        Kind = NoticeKind.Safety
         Severity = Severity.Warn
         Body = "Mind the road."
         ValidFrom = None
@@ -400,7 +400,7 @@ let ``unverified notice is not shown`` () =
         Slug = "n"
         Scope = NoticeScope.PlaceScope
         ScopeRef = Some "peak"
-        Kind = "safety"
+        Kind = NoticeKind.Safety
         Severity = Severity.Warn
         Body = "Rumour."
         ValidFrom = None
@@ -805,3 +805,17 @@ let ``place longer than the trip is trimmed to fit`` () =
 let ``title names the regions`` () =
     let trip = build catalog (request (liked [ "likes-hills" ]) 5 None)
     Assert.Equal("5 days in Hills", trip.Title)
+
+[<Fact>]
+let ``valid request has no problems`` () =
+    Assert.Empty(RequestRules.check (request [] 7 (Some 3)))
+
+[<Fact>]
+let ``request rules report every problem`` () =
+    let fields = RequestRules.check (request [] 3 (Some 13)) |> List.map _.Field
+    Assert.Equal<string list>([ "days"; "month" ], fields)
+
+[<Fact>]
+let ``too many answers are reported`` () =
+    let answers = [ for number in 1..1001 -> { Card = string number; Liked = true } ]
+    Assert.Equal("answers", (RequestRules.check (request answers 7 None)).Head.Field)

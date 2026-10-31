@@ -15,7 +15,7 @@ let place: Place = {
     Name = "Kasol"
     State = "Himachal Pradesh"
     FamilySlug = "pine"
-    Shade = "deep"
+    Shade = Shade.Deep
     Gate = Gate.Open
     Popularity = Popularity.Between
     DaysMin = 2
@@ -118,7 +118,7 @@ let catalog = {
                 Url = "https://example.org"
                 Title = "Source"
                 Publisher = "Publisher"
-                Kind = "official"
+                Kind = SourceKind.Official
                 AccessedOn = DateOnly(2026, 10, 1)
             }
         ]

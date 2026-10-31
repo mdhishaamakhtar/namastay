@@ -76,7 +76,7 @@ let private upsertSource transaction (source: Source) =
             url = source.Url
             title = source.Title
             publisher = source.Publisher
-            kind = source.Kind
+            kind = Encode.sourceKind source.Kind
             accessedOn = source.AccessedOn
         |}
     |> ignore

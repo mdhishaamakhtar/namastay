@@ -161,7 +161,7 @@ let private notices (catalog: Catalog) (stops: RoutedStop list) =
             && notice.ScopeRef = Some place.Slug)
         |> List.map (fun notice -> {
             TripNotice.PlaceSlug = Some place.Slug
-            Kind = notice.Kind
+            Kind = ContractMapping.noticeKind notice.Kind
             Severity = ContractMapping.severity notice.Severity
             Body = notice.Body
         })
@@ -171,7 +171,7 @@ let private notices (catalog: Catalog) (stops: RoutedStop list) =
             [
                 {
                     TripNotice.PlaceSlug = Some place.Slug
-                    Kind = "permit"
+                    Kind = GuideNoticeKind.Permit
                     Severity = NoticeSeverity.Permit
                     Body = $"{place.Name} needs a permit. Sort this out before you travel."
                 }

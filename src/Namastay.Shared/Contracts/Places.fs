@@ -7,6 +7,13 @@ type PlaceAccess =
     | Permit
 
 [<RequireQualifiedAccess>]
+type GuideNoticeKind =
+    | Closure
+    | Safety
+    | Legal
+    | Permit
+
+[<RequireQualifiedAccess>]
 type NoticeSeverity =
     | Info
     | Warning
@@ -77,7 +84,7 @@ type GuideStay = {
 }
 
 type GuideNotice = {
-    Kind: string
+    Kind: GuideNoticeKind
     Severity: NoticeSeverity
     Body: string
     Hedged: bool

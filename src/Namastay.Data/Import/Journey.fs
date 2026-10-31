@@ -15,7 +15,7 @@ let private upsertIllustration transaction (illustration: Illustration) =
             filePath = illustration.FilePath
             alt = illustration.Alt
             brief = illustration.Brief
-            status = illustration.Status
+            status = Encode.illustrationStatus illustration.Status
         |}
     |> ignore
 

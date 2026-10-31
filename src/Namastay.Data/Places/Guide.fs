@@ -139,7 +139,7 @@ let tryLoad (source: NpgsqlDataSource) (slug: string) : Task<PlaceGuide option> 
                         Notices =
                             notices
                             |> List.map (fun row -> {
-                                Kind = row.Kind
+                                Kind = row.Kind |> Decode.noticeKind |> ContractMapping.noticeKind
                                 Severity = row.Severity |> Decode.severity |> ContractMapping.severity
                                 Body = row.Body
                                 Hedged = row.Hedged

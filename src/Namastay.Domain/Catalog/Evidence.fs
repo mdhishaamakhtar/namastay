@@ -17,11 +17,18 @@ type Evidence = {
     SourceIds: int list
 }
 
+[<RequireQualifiedAccess>]
+type SourceKind =
+    | Official
+    | Primary
+    | Secondary
+    | Guide
+
 type Source = {
     Id: int
     Url: string
     Title: string
     Publisher: string
-    Kind: string
+    Kind: SourceKind
     AccessedOn: DateOnly
 }

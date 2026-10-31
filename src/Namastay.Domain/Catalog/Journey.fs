@@ -1,11 +1,17 @@
 namespace Namastay.Domain.Catalog
 
+[<RequireQualifiedAccess>]
+type IllustrationStatus =
+    | Brief
+    | Draft
+    | Final
+
 type Illustration = {
     Slug: string
     FilePath: string
     Alt: string
     Brief: string
-    Status: string
+    Status: IllustrationStatus
 }
 
 type Photo = {

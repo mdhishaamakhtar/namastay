@@ -8,6 +8,12 @@ type Cluster = {
     Name: string
 }
 
+[<RequireQualifiedAccess>]
+type Shade =
+    | Deep
+    | Mid
+    | Pale
+
 type ColourFamily = {
     Slug: string
     Name: string

@@ -9,6 +9,13 @@ let access =
     | Gate.Warn -> PlaceAccess.Warning
     | Gate.Permit -> PlaceAccess.Permit
 
+let noticeKind =
+    function
+    | NoticeKind.Closure -> GuideNoticeKind.Closure
+    | NoticeKind.Safety -> GuideNoticeKind.Safety
+    | NoticeKind.Legal -> GuideNoticeKind.Legal
+    | NoticeKind.Permit -> GuideNoticeKind.Permit
+
 let severity =
     function
     | Severity.Info -> NoticeSeverity.Info

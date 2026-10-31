@@ -68,7 +68,7 @@ type JourneyApiTests(postgres: PostgresFixture) =
                     FilePath = "illustrations/valley.svg"
                     Alt = "A green valley."
                     Brief = "Valley."
-                    Status = "draft"
+                    Status = IllustrationStatus.Draft
                 }
             ]
     }

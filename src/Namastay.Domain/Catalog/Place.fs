@@ -72,7 +72,7 @@ type Place = {
     Name: string
     State: string
     FamilySlug: string
-    Shade: string
+    Shade: Shade
     Gate: Gate
     Popularity: Popularity
     DaysMin: int

@@ -17,7 +17,7 @@ let place: Place = {
     Name = "Kasol"
     State = "Himachal Pradesh"
     FamilySlug = "pine"
-    Shade = "deep"
+    Shade = Shade.Deep
     Gate = Gate.Open
     Popularity = Popularity.Between
     DaysMin = 2
@@ -100,7 +100,7 @@ let catalog = {
                 Url = "https://example.org"
                 Title = "T"
                 Publisher = "P"
-                Kind = "official"
+                Kind = SourceKind.Official
                 AccessedOn = DateOnly(2026, 10, 1)
             }
         ]
@@ -307,7 +307,7 @@ let ``notice for a place needs a known place`` () =
         Slug = "n"
         Scope = NoticeScope.PlaceScope
         ScopeRef = Some "atlantis"
-        Kind = "permit"
+        Kind = NoticeKind.Permit
         Severity = Severity.Permit
         Body = "Needs a permit."
         ValidFrom = None

@@ -52,6 +52,32 @@ let mode =
     | Mode.Ferry -> "ferry"
     | Mode.CableCar -> "cable_car"
 
+let noticeKind =
+    function
+    | NoticeKind.Closure -> "closure"
+    | NoticeKind.Safety -> "safety"
+    | NoticeKind.Legal -> "legal"
+    | NoticeKind.Permit -> "permit"
+
+let sourceKind =
+    function
+    | SourceKind.Official -> "official"
+    | SourceKind.Primary -> "primary"
+    | SourceKind.Secondary -> "secondary"
+    | SourceKind.Guide -> "guide"
+
+let shade =
+    function
+    | Shade.Deep -> "deep"
+    | Shade.Mid -> "mid"
+    | Shade.Pale -> "pale"
+
+let illustrationStatus =
+    function
+    | IllustrationStatus.Brief -> "brief"
+    | IllustrationStatus.Draft -> "draft"
+    | IllustrationStatus.Final -> "final"
+
 let severity =
     function
     | Severity.Info -> "info"

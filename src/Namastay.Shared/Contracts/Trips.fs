@@ -54,7 +54,7 @@ type TripSwap = {
 
 type TripNotice = {
     PlaceSlug: string option
-    Kind: string
+    Kind: GuideNoticeKind
     Severity: NoticeSeverity
     Body: string
 }

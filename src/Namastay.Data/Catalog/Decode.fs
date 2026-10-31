@@ -35,6 +35,11 @@ let costLevel =
 let severity =
     decoder Encode.severity [ Severity.Info; Severity.Warn; Severity.Permit; Severity.Danger ]
 
+let noticeKind =
+    decoder Encode.noticeKind [ NoticeKind.Closure; NoticeKind.Safety; NoticeKind.Legal; NoticeKind.Permit ]
+
+let shade = decoder Encode.shade [ Shade.Deep; Shade.Mid; Shade.Pale ]
+
 let mode =
     decoder Encode.mode [ Mode.Flight; Mode.Train; Mode.Road; Mode.Ferry; Mode.CableCar ]
 
