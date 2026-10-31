@@ -22,6 +22,8 @@ open Namastay.Web.Places
 
 [<Collection("postgres")>]
 type PlacesApiTests(postgres: PostgresFixture) =
+    let scope = DatabaseScope.For postgres
+
     let catalog = {
         Sample.catalog with
             Places = [
@@ -49,15 +51,15 @@ type PlacesApiTests(postgres: PostgresFixture) =
 
     let start (catalog: Catalog) =
         task {
-            let! db = postgres.NewDatabase()
-            Assert.True((Migrate.run db = Ok()))
+            let! db = scope.NewDatabase()
+            migrated db
             Assert.True((Run.run db Run.Apply "test" catalog).IsOk)
             let builder = WebApplication.CreateBuilder()
             builder.WebHost.UseTestServer() |> ignore
             Server.configureServices builder.Services
-            let app = builder.Build()
+            let app = scope.Own(builder.Build())
             Server.useErrorHandling app
-            let source = NpgsqlDataSource.Create db
+            let source = scope.Own(NpgsqlDataSource.Create db)
             PlacesApi.map app source
             Server.mapApiFallback app
             do! app.StartAsync()
@@ -357,3 +359,6 @@ type PlacesApiTests(postgres: PostgresFixture) =
             Assert.Equal("/media/photos/kasol.webp", place.Photos.Head.Url)
             Assert.Equal("Someone", place.Photos.Head.Credit)
         }
+
+    interface IDisposable with
+        member _.Dispose() = (scope :> IDisposable).Dispose()

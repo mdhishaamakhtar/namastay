@@ -1,5 +1,6 @@
 namespace Namastay.IntegrationTests.Journey
 
+open System
 open System.Net
 open System.Net.Http
 open System.Net.Http.Json
@@ -23,6 +24,8 @@ open Namastay.Web.Trips
 
 [<Collection("postgres")>]
 type JourneyApiTests(postgres: PostgresFixture) =
+    let scope = DatabaseScope.For postgres
+
     let start' = {
         Slug = "start"
         PlaceSlug = Some "kasol"
@@ -81,16 +84,16 @@ type JourneyApiTests(postgres: PostgresFixture) =
 
     let start () =
         task {
-            let! db = postgres.NewDatabase()
-            Assert.True((Migrate.run db = Ok()))
+            let! db = scope.NewDatabase()
+            migrated db
             Assert.True((Run.run db Run.Apply "test" catalog).IsOk)
             let builder = WebApplication.CreateBuilder()
             builder.WebHost.UseTestServer() |> ignore
             Server.configureServices builder.Services
-            let app = builder.Build()
+            let app = scope.Own(builder.Build())
             Server.useErrorHandling app
             Server.useRateLimits app
-            let source = NpgsqlDataSource.Create db
+            let source = scope.Own(NpgsqlDataSource.Create db)
             JourneyApi.map app source
             TripsApi.map app source
             Server.mapApiFallback app
@@ -290,3 +293,6 @@ type JourneyApiTests(postgres: PostgresFixture) =
             Assert.Equal(HttpStatusCode.TooManyRequests, blocked.StatusCode)
             Assert.Equal(ErrorCode.RateLimited, error.Code)
         }
+
+    interface IDisposable with
+        member _.Dispose() = (scope :> IDisposable).Dispose()

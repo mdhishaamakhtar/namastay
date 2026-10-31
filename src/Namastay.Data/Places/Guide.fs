@@ -160,3 +160,6 @@ let tryLoad (source: NpgsqlDataSource) (slug: string) : Task<PlaceGuide option> 
                             })
                 }
     }
+
+let publishedSlugs (source: NpgsqlDataSource) : Task<string list> =
+    query<string> source "select slug from places where published and retired_at is null order by slug" null

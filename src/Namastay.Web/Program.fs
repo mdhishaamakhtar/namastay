@@ -5,6 +5,7 @@ open Npgsql
 open Namastay.Data.Media
 open Namastay.Web
 open Namastay.Web.Media
+open Namastay.Web.Guides
 open Namastay.Web.Journey
 open Namastay.Web.Places
 open Namastay.Web.Trips
@@ -33,6 +34,7 @@ let main args =
     PlacesApi.map app database
     JourneyApi.map app database
     TripsApi.map app database
+    GuideRoutes.map app database
     Server.mapApiFallback app
     app.Run()
     0

@@ -12,10 +12,12 @@ open Namastay.IntegrationTests.Support
 
 [<Collection("postgres")>]
 type ImporterTests(postgres: PostgresFixture) =
+    let scope = DatabaseScope.For postgres
+
     let database () =
         task {
-            let! connectionString = postgres.NewDatabase()
-            Assert.True((Migrate.run connectionString = Ok()))
+            let! connectionString = scope.NewDatabase()
+            migrated connectionString
             return connectionString
         }
 
@@ -344,3 +346,6 @@ type ImporterTests(postgres: PostgresFixture) =
     member _.``missing folder is an error``() =
         let errors = Load.fromFolder "/no/such/folder" |> expectErrors
         Assert.Contains(errors, (fun error -> error.Contains "/no/such/folder"))
+
+    interface IDisposable with
+        member _.Dispose() = (scope :> IDisposable).Dispose()

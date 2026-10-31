@@ -1,11 +1,14 @@
 namespace Namastay.IntegrationTests
 
+open System
 open Npgsql
 open Xunit
 open Namastay.Data
 
 [<Collection("postgres")>]
 type MigrationTests(postgres: PostgresFixture) =
+    let scope = DatabaseScope.For postgres
+
     let expected = [
         "regions"
         "clusters"
@@ -38,8 +41,8 @@ type MigrationTests(postgres: PostgresFixture) =
     [<Fact>]
     member _.``migrations create all tables``() =
         task {
-            let! connectionString = postgres.NewDatabase()
-            Assert.True((Migrate.run connectionString = Ok()))
+            let! connectionString = scope.NewDatabase()
+            migrated connectionString
             use connection = new NpgsqlConnection(connectionString)
             do! connection.OpenAsync()
 
@@ -62,8 +65,8 @@ type MigrationTests(postgres: PostgresFixture) =
     [<Fact>]
     member _.``pg trgm is enabled``() =
         task {
-            let! connectionString = postgres.NewDatabase()
-            Assert.True((Migrate.run connectionString = Ok()))
+            let! connectionString = scope.NewDatabase()
+            migrated connectionString
             use connection = new NpgsqlConnection(connectionString)
             do! connection.OpenAsync()
 
@@ -77,7 +80,10 @@ type MigrationTests(postgres: PostgresFixture) =
     [<Fact>]
     member _.``migrations are repeatable``() =
         task {
-            let! connectionString = postgres.NewDatabase()
-            Assert.True((Migrate.run connectionString = Ok()))
-            Assert.True((Migrate.run connectionString = Ok()))
+            let! connectionString = scope.NewDatabase()
+            migrated connectionString
+            migrated connectionString
         }
+
+    interface IDisposable with
+        member _.Dispose() = (scope :> IDisposable).Dispose()

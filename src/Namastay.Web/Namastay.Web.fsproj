@@ -11,6 +11,9 @@
     <Compile Include="Places/PlacesApi.fs" />
     <Compile Include="Journey/JourneyApi.fs" />
     <Compile Include="Trips/TripsApi.fs" />
+    <Compile Include="Guides/GuideStyles.fs" />
+    <Compile Include="Guides/GuidePage.fs" />
+    <Compile Include="Guides/GuideRoutes.fs" />
     <Compile Include="Server.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
@@ -23,6 +26,7 @@
 
   <ItemGroup>
     <PackageReference Include="FSharp.SystemTextJson" />
+    <PackageReference Include="Giraffe.ViewEngine" />
   </ItemGroup>
 
 </Project>
