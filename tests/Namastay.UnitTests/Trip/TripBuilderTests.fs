@@ -93,6 +93,7 @@ let card slug signal placeSlug = {
     PlaceSlug = placeSlug
     Title = slug
     Line = slug
+    PhotoSlug = None
     IllustrationSlug = None
     IsStart = false
     Branches = []

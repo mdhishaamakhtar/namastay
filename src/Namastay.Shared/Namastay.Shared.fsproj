@@ -5,6 +5,7 @@
     <Compile Include="Contracts/Errors.fs" />
     <Compile Include="Contracts/Places.fs" />
     <Compile Include="Contracts/Trips.fs" />
+    <Compile Include="Contracts/Journey.fs" />
     <Compile Include="Routes.fs" />
   </ItemGroup>
 

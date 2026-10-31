@@ -4,7 +4,7 @@ Locked on 31 October 2026 from the Claude Design canvas: https://claude.ai/artif
 
 ## Look
 
-A calmer take on Indian matchbox labels. Each card is one framed label with a large custom illustration, a hand-lettered place name and flat confident colour. There are no slogans, no stacks of clashing colours and no decorative noise.
+A calmer take on Indian matchbox labels. Each card is one framed label with a real photo, a small illustrated mark, a hand-lettered place name and flat confident colour. There are no slogans, no stacks of clashing colours and no decorative noise.
 
 ## Type
 
@@ -25,6 +25,13 @@ A calmer take on Indian matchbox labels. Each card is one framed label with a la
 - **Stops:** a coloured header that expands on tap to show details and a link to the full guide.
 - **Tiles:** two-column quick facts with a 1px gap.
 
+## Photos and illustrations
+
+- **Real places:** a licensed photo inside the label, with a small illustrated mark set into the frame like a matchbox emblem. Guides and expanded stops use photos.
+- **Themes:** a photo where one fits, otherwise a full illustration.
+- **Full illustrations:** ideas, brand moments, the route map, and loading, empty and error states.
+- **Photos stay consistent:** a shared crop and light colour treatment, about 100-200 KB each, with credits shown where licences need them.
+
 ## Motion
 
 - **Easing:** `cubic-bezier(.23,1,.32,1)` for UI movement.
@@ -41,4 +48,4 @@ Swipes always have button alternatives. Touch targets are at least 44px, text co
 
 ## Still to design
 
-Questions for dates, trip length, budget and who's travelling; desktop layouts; all final illustrations.
+The framed photo card; questions for dates, trip length, budget and who's travelling; desktop layouts; all final illustrations.

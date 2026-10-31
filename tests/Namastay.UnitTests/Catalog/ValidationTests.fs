@@ -344,6 +344,7 @@ let ``card branch must lead to a known card`` () =
         PlaceSlug = Some "kasol"
         Title = "Valleys?"
         Line = "Green and quiet."
+        PhotoSlug = None
         IllustrationSlug = None
         IsStart = true
         Branches = [
@@ -434,3 +435,19 @@ let ``photo must belong to a known place`` () =
                 Photos = [ { photo with PlaceSlug = "atlantis" } ]
         }
     )
+
+[<Fact>]
+let ``card photo must exist`` () =
+    let card = {
+        Slug = "start"
+        PlaceSlug = None
+        Title = "A place"
+        Line = "A line."
+        PhotoSlug = Some "missing-photo"
+        IllustrationSlug = None
+        IsStart = true
+        Branches = []
+        Signals = []
+    }
+
+    Assert.True(hasError "missing-photo" { catalog with Cards = [ card ] })

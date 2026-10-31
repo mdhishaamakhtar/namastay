@@ -5,7 +5,9 @@ open Npgsql
 open Namastay.Data.Media
 open Namastay.Web
 open Namastay.Web.Media
+open Namastay.Web.Journey
 open Namastay.Web.Places
+open Namastay.Web.Trips
 
 [<EntryPoint>]
 let main args =
@@ -21,12 +23,16 @@ let main args =
     Server.configureServices builder.Services
     let app = builder.Build()
     Server.useErrorHandling app
+    Server.useRateLimits app
 
     app.MapGet("/health", Func<IResult>(fun () -> Results.Json {| status = "ok" |}))
     |> ignore
 
     MediaRoute.map app (MediaStore.create settings.Media)
-    PlacesApi.map app (NpgsqlDataSource.Create settings.Database)
+    let database = NpgsqlDataSource.Create settings.Database
+    PlacesApi.map app database
+    JourneyApi.map app database
+    TripsApi.map app database
     Server.mapApiFallback app
     app.Run()
     0

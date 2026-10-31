@@ -43,16 +43,17 @@ let private upsertPhoto transaction (photo: Photo) =
 let private upsertCard transaction (card: Card) =
     exec
         transaction
-        "insert into cards (slug, place_slug, title, line, illustration_slug, is_start)
-         values (@slug, @place, @title, @line, @illustration, @isStart)
+        "insert into cards (slug, place_slug, title, line, photo_slug, illustration_slug, is_start)
+         values (@slug, @place, @title, @line, @photo, @illustration, @isStart)
          on conflict (slug) do update set
             place_slug = excluded.place_slug, title = excluded.title, line = excluded.line,
-            illustration_slug = excluded.illustration_slug, is_start = excluded.is_start"
+            photo_slug = excluded.photo_slug, illustration_slug = excluded.illustration_slug, is_start = excluded.is_start"
         [
             arg "slug" card.Slug
             opt "place" card.PlaceSlug
             arg "title" card.Title
             arg "line" card.Line
+            opt "photo" card.PhotoSlug
             opt "illustration" card.IllustrationSlug
             arg "isStart" card.IsStart
         ]

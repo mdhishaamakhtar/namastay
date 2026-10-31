@@ -32,6 +32,7 @@ type Card = {
     PlaceSlug: string option
     Title: string
     Line: string
+    PhotoSlug: string option
     IllustrationSlug: string option
     IsStart: bool
     Branches: CardBranch list

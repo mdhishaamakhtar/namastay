@@ -107,7 +107,7 @@ let private checkNotice places links festivals sources (notice: Notice) =
         yield! checkEvidence "notices" notice.Slug sources notice.Evidence
     ]
 
-let private checkCard cards places illustrations (card: Card) = [
+let private checkCard cards places illustrations photos (card: Card) = [
     for branch in card.Branches do
         yield! checkReference "card_branches" card.Slug cards branch.ToCard
     yield!
@@ -118,6 +118,10 @@ let private checkCard cards places illustrations (card: Card) = [
         card.IllustrationSlug
         |> Option.toList
         |> List.collect (checkReference "cards" card.Slug illustrations)
+    yield!
+        card.PhotoSlug
+        |> Option.toList
+        |> List.collect (checkReference "cards" card.Slug photos)
 ]
 
 let private checkPhoto places (photo: Photo) =
@@ -142,6 +146,7 @@ let check (catalog: Catalog) : ValidationError list =
     let festivals = catalog.Festivals |> List.map _.Slug |> Set.ofList
     let cards = catalog.Cards |> List.map _.Slug |> Set.ofList
     let illustrations = catalog.Illustrations |> List.map _.Slug |> Set.ofList
+    let photos = catalog.Photos |> List.map _.Slug |> Set.ofList
     let regions = catalog.Regions |> List.map _.Slug |> Set.ofList
     let clusters = catalog.Clusters |> List.map _.Slug |> Set.ofList
     let families = catalog.Families |> List.map _.Slug |> Set.ofList
@@ -154,7 +159,7 @@ let check (catalog: Catalog) : ValidationError list =
         yield! catalog.Places |> List.collect (checkPlace clusters families interests sources)
         yield! catalog.Links |> List.collect (checkLink places sources)
         yield! catalog.Notices |> List.collect (checkNotice places links festivals sources)
-        yield! catalog.Cards |> List.collect (checkCard cards places illustrations)
+        yield! catalog.Cards |> List.collect (checkCard cards places illustrations photos)
         yield! catalog.Photos |> List.collect (checkPhoto places)
         for festival in catalog.Festivals do
             yield!

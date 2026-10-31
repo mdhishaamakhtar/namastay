@@ -5,9 +5,12 @@
     <Compile Include="Settings.fs" />
     <Compile Include="Http/Json.fs" />
     <Compile Include="Http/Errors.fs" />
+    <Compile Include="Http/Limits.fs" />
     <Compile Include="Http/Endpoint.fs" />
     <Compile Include="Media/MediaRoute.fs" />
     <Compile Include="Places/PlacesApi.fs" />
+    <Compile Include="Journey/JourneyApi.fs" />
+    <Compile Include="Trips/TripsApi.fs" />
     <Compile Include="Server.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
