@@ -25,6 +25,7 @@ let main args =
     let app = builder.Build()
     Server.useCompression app
     Server.useErrorHandling app
+    app.UseStaticFiles() |> ignore
     Server.useRateLimits app
 
     MediaRoute.map app (MediaStore.create settings.Media)

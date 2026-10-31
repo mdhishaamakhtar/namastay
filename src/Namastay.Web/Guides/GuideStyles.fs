@@ -8,6 +8,9 @@ let colours (place: PlaceColours) =
 
 let page =
     """
+@font-face{font-family:"Yatra One";font-weight:400;font-display:swap;src:url(/fonts/yatra-one-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:Mukta;font-weight:400;font-display:swap;src:url(/fonts/mukta-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:Mukta;font-weight:600;font-display:swap;src:url(/fonts/mukta-latin-600-normal.woff2) format("woff2")}
 *{box-sizing:border-box}
 body{margin:0;background:#FFF8E6;color:#2B2108;font:400 17px/1.45 Mukta,system-ui,sans-serif}
 main{max-width:640px;margin:0 auto;padding:0 16px 48px}
@@ -17,8 +20,8 @@ header{background:var(--deep);color:var(--on-deep);padding:24px 16px 32px}
 h1,h2{font-family:"Yatra One",Mukta,serif;font-weight:400;line-height:1.15}
 h1{font-size:44px;margin:0 0 8px}
 h2{font-size:26px;margin:32px 0 8px;color:var(--deep)}
-.facts{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--mid);margin:24px 0;border-radius:4px;overflow:hidden}
-.facts div{background:var(--pale);padding:12px}
+.facts{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:24px 0}
+.facts div{background:var(--pale);padding:12px;border-radius:2px}
 .facts strong{display:block;font-size:20px}
 figure{margin:24px 0}
 figure img{display:block;width:100%;height:auto;border-radius:4px}

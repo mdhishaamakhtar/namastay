@@ -9,6 +9,7 @@ export default defineConfig({
       "/api": backend,
       "/places": backend,
       "/media": backend,
+      "/fonts": backend,
       "/sitemap.xml": backend,
     },
   },

@@ -128,6 +128,18 @@ type WiringTests(postgres: PostgresFixture) =
         }
 
     [<Fact>]
+    member _.``guide fonts are served``() =
+        task {
+            let! http = start ()
+            let! html = http.GetStringAsync "/places/kasol"
+            let! yatra = http.GetAsync "/fonts/yatra-one-latin-400-normal.woff2"
+            let! mukta = http.GetAsync "/fonts/mukta-latin-400-normal.woff2"
+            Assert.Contains("yatra-one-latin-400-normal.woff2", html)
+            Assert.Equal(HttpStatusCode.OK, yatra.StatusCode)
+            Assert.Equal(HttpStatusCode.OK, mukta.StatusCode)
+        }
+
+    [<Fact>]
     member _.``media is wired``() =
         task {
             let! http = start ()

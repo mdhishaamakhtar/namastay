@@ -23,7 +23,7 @@ A calmer take on Indian matchbox labels. Each card is one framed label with a re
 - **Label:** white or tinted paper, 10px padding, a 2px inner frame in the accent colour, 4px outer radius, shadow `0 14px 30px rgba(0,0,0,.22)`.
 - **Buttons:** 52-56px tall, 2px radius, Mukta 600. Primary is filled, secondary has a 1px outline. Press scales to 0.97-0.98.
 - **Stops:** a coloured header that expands on tap to show details and a link to the full guide.
-- **Tiles:** two-column quick facts with a 1px gap.
+- **Tiles:** two-column quick facts as separate tiles with a 4px paper gap.
 
 ## Photos and illustrations
 
