@@ -1,4 +1,6 @@
-.PHONY: setup up down dev import import-check media-sync sample test test-unit test-integration coverage format lint check
+.PHONY: setup up down dev import import-check media-sync sample test test-unit test-integration coverage format lint lint-all check
+
+LINT = dotnet dotnet-fsharplint lint --lint-config fsharplint.json
 
 setup:
 	dotnet tool restore
@@ -41,11 +43,17 @@ coverage:
 format:
 	dotnet fantomas src tests
 
+# Changed files only, for everyday work.
 lint:
-	dotnet dotnet-fsharplint lint Namastay.sln | tee /dev/stderr | grep -q "Summary: 0 warnings"
+	@{ git diff --name-only --diff-filter=ACM HEAD -- '*.fs'; git ls-files --others --exclude-standard '*.fs'; } \
+		| xargs -n 1 -P 8 $(LINT)
+
+# Every project in parallel.
+lint-all:
+	@git ls-files '*.fsproj' | xargs -n 1 -P 8 $(LINT)
 
 check:
 	dotnet fantomas --check src tests
-	$(MAKE) lint
+	$(MAKE) lint-all
 	$(MAKE) test-integration
 	$(MAKE) coverage

@@ -1,10 +1,8 @@
 #!/bin/sh
-# Formats and lints staged F# files. `make check` lints the whole solution.
+# Formats and lints staged F# files. `make check` lints every project.
 set -e
 files=$(git diff --cached --name-only --diff-filter=ACM -- '*.fs')
 [ -n "$files" ] || exit 0
 dotnet fantomas $files
 git add $files
-for file in $files; do
-    dotnet dotnet-fsharplint lint "$file"
-done
+echo "$files" | xargs -n 1 -P 8 dotnet dotnet-fsharplint lint --lint-config fsharplint.json
