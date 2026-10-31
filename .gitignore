@@ -33,3 +33,6 @@ src/Namastay.Client/build/
 *.tiff
 *.raw
 !/samples/**
+
+# Generated reports
+coverage.cobertura.xml

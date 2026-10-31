@@ -10,6 +10,14 @@
     <Compile Include="Catalog/Journey.fs" />
     <Compile Include="Catalog/Catalog.fs" />
     <Compile Include="Catalog/Validation.fs" />
+    <Compile Include="Trip/Profile.fs" />
+    <Compile Include="Trip/Scoring.fs" />
+    <Compile Include="Trip/Routing.fs" />
+    <Compile Include="Trip/Builder.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Namastay.Shared\Namastay.Shared.fsproj" />
   </ItemGroup>
 
 </Project>
