@@ -11,3 +11,4 @@ dist/
 fable_modules/
 test-results/
 playwright-report/
+src/Namastay.Client/build/

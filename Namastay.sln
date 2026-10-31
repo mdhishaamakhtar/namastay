@@ -19,6 +19,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Namastay.UnitTests", "tests
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Namastay.IntegrationTests", "tests\Namastay.IntegrationTests\Namastay.IntegrationTests.fsproj", "{3CFA4C14-6628-48B9-A589-B9449ADAF448}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Namastay.Client", "src\Namastay.Client\Namastay.Client.fsproj", "{1B0AF206-8E2E-445C-AC99-3BDA6A2F3095}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -101,6 +103,18 @@ Global
 		{3CFA4C14-6628-48B9-A589-B9449ADAF448}.Release|x64.Build.0 = Release|Any CPU
 		{3CFA4C14-6628-48B9-A589-B9449ADAF448}.Release|x86.ActiveCfg = Release|Any CPU
 		{3CFA4C14-6628-48B9-A589-B9449ADAF448}.Release|x86.Build.0 = Release|Any CPU
+		{1B0AF206-8E2E-445C-AC99-3BDA6A2F3095}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1B0AF206-8E2E-445C-AC99-3BDA6A2F3095}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1B0AF206-8E2E-445C-AC99-3BDA6A2F3095}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1B0AF206-8E2E-445C-AC99-3BDA6A2F3095}.Debug|x64.Build.0 = Debug|Any CPU
+		{1B0AF206-8E2E-445C-AC99-3BDA6A2F3095}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1B0AF206-8E2E-445C-AC99-3BDA6A2F3095}.Debug|x86.Build.0 = Debug|Any CPU
+		{1B0AF206-8E2E-445C-AC99-3BDA6A2F3095}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1B0AF206-8E2E-445C-AC99-3BDA6A2F3095}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1B0AF206-8E2E-445C-AC99-3BDA6A2F3095}.Release|x64.ActiveCfg = Release|Any CPU
+		{1B0AF206-8E2E-445C-AC99-3BDA6A2F3095}.Release|x64.Build.0 = Release|Any CPU
+		{1B0AF206-8E2E-445C-AC99-3BDA6A2F3095}.Release|x86.ActiveCfg = Release|Any CPU
+		{1B0AF206-8E2E-445C-AC99-3BDA6A2F3095}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -112,5 +126,6 @@ Global
 		{2A117435-AD0B-4DC7-8BDF-4D9E97ED3947} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{916927AF-42E3-4A67-A223-78B21DF1A492} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{3CFA4C14-6628-48B9-A589-B9449ADAF448} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{1B0AF206-8E2E-445C-AC99-3BDA6A2F3095} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal
