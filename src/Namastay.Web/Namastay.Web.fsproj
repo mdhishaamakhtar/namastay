@@ -2,12 +2,21 @@
 
   <ItemGroup>
     <Compile Include="Marker.fs" />
+    <Compile Include="Http/Json.fs" />
+    <Compile Include="Http/Errors.fs" />
+    <Compile Include="Http/Endpoint.fs" />
+    <Compile Include="Server.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Namastay.Shared\Namastay.Shared.fsproj" />
     <ProjectReference Include="..\Namastay.Data\Namastay.Data.fsproj" />
+    <ProjectReference Include="..\Namastay.Domain\Namastay.Domain.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FSharp.SystemTextJson" />
   </ItemGroup>
 
 </Project>

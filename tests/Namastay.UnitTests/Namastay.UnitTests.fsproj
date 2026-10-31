@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <Compile Include="RoutingTests.fs" />
     <Compile Include="Catalog/ValidationTests.fs" />
   </ItemGroup>
 
@@ -17,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../src/Namastay.Domain/Namastay.Domain.fsproj" />
+    <ProjectReference Include="../../src/Namastay.Shared/Namastay.Shared.fsproj" />
   </ItemGroup>
 
 </Project>

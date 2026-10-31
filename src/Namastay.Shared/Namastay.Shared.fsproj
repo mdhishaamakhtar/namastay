@@ -1,7 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <Compile Include="Places.fs" />
+    <Compile Include="Routing.fs" />
+    <Compile Include="Contracts/Errors.fs" />
+    <Compile Include="Contracts/Places.fs" />
   </ItemGroup>
 
 </Project>

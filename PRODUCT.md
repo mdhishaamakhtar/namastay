@@ -8,7 +8,7 @@ web
 
 ## Stack
 
-F# throughout, one monorepo: Fable for the frontend, and ASP.NET Core with Postgres for the backend from stage 1. All travel data lives in the database and is served by the backend, so new research never needs a frontend build. Swipe physics may use a small amount of hand-written JavaScript.
+F# throughout, one monorepo: Fable, Elmish and Feliz for the frontend, plain ASP.NET Core with Postgres for the backend from stage 1, and typed contracts shared between them. All travel data lives in the database and is served by the backend, so new research never needs a frontend build. Swipe physics may use a small amount of hand-written JavaScript.
 
 ## Users
 

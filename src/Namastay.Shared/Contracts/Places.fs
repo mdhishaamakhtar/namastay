@@ -1,4 +1,4 @@
-namespace Namastay.Shared
+namespace Namastay.Shared.Contracts
 
 /// Search result sent to the client. Only Fable-compatible types belong in this project.
 type PlaceSummary = {
