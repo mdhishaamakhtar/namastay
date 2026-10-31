@@ -2,9 +2,11 @@
 
   <ItemGroup>
     <Compile Include="Support/Postgres.fs" />
+    <Compile Include="Support/Sample.fs" />
     <Compile Include="HealthTests.fs" />
     <Compile Include="Http/ErrorHandlingTests.fs" />
     <Compile Include="Data/MigrationTests.fs" />
+    <Compile Include="Data/ImporterTests.fs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -21,6 +23,7 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <ProjectReference Include="../../src/Namastay.Web/Namastay.Web.fsproj" />
     <ProjectReference Include="../../src/Namastay.Data/Namastay.Data.fsproj" />
+    <ProjectReference Include="../../src/Namastay.Domain/Namastay.Domain.fsproj" />
     <ProjectReference Include="../../src/Namastay.Shared/Namastay.Shared.fsproj" />
   </ItemGroup>
 

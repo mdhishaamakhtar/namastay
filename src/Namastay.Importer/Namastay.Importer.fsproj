@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Namastay.Data/Namastay.Data.fsproj" />
+    <ProjectReference Include="../Namastay.Domain/Namastay.Domain.fsproj" />
+  </ItemGroup>
+
+</Project>

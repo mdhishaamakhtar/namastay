@@ -1,4 +1,4 @@
-.PHONY: setup up down dev test test-unit test-integration coverage format lint check
+.PHONY: setup up down dev import import-check test test-unit test-integration coverage format lint check
 
 setup:
 	dotnet tool restore
@@ -12,6 +12,12 @@ down:
 
 dev:
 	dotnet run --project src/Namastay.Web
+
+import-check:
+	dotnet run --project src/Namastay.Importer -- --dry-run data
+
+import:
+	dotnet run --project src/Namastay.Importer -- data
 
 test: test-unit test-integration
 

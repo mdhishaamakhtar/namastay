@@ -1,12 +1,22 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <Compile Include="Sql.fs" />
     <Compile Include="Migrate.fs" />
+    <Compile Include="Import/Encode.fs" />
+    <Compile Include="Import/Geography.fs" />
+    <Compile Include="Import/Places.fs" />
+    <Compile Include="Import/Transport.fs" />
+    <Compile Include="Import/Events.fs" />
+    <Compile Include="Import/Journey.fs" />
+    <Compile Include="Import/Load.fs" />
+    <Compile Include="Import/Run.fs" />
     <EmbeddedResource Include="Migrations/*.sql" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="dbup-postgresql" />
+    <PackageReference Include="FSharp.SystemTextJson" />
     <PackageReference Include="Npgsql" />
   </ItemGroup>
 
