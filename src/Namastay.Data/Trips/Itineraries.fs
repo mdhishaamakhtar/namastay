@@ -31,4 +31,4 @@ let retiredAmong (source: NpgsqlDataSource) (slugs: string list) : Task<string l
     query<string>
         source
         "select slug from places where slug = any(@slugs) and (retired_at is not null or not published)"
-        {| slugs = slugs |}
+        {| slugs = List.toArray slugs |}
