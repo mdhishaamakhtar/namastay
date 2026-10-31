@@ -40,6 +40,7 @@ let place slug cluster family interest : Place = {
     CostHigh = Some 3
     Summary = "Summary."
     IsThisForYou = None
+    GettingThere = None
     Published = true
     Interests = [ { InterestSlug = interest; Weight = 5 } ]
     Months = months [ 10; 11 ] []

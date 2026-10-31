@@ -19,6 +19,8 @@ type HeadRow = {
     Region: string
     Summary: string
     IsThisForYou: string option
+    GettingThere: string option
+    MarkPath: string option
     DaysMin: int
     DaysMax: int
     CostLow: int option

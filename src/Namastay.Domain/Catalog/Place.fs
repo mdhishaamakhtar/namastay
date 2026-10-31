@@ -81,6 +81,7 @@ type Place = {
     CostHigh: int option
     Summary: string
     IsThisForYou: string option
+    GettingThere: string option
     Published: bool
     Interests: PlaceInterest list
     Months: PlaceMonth list

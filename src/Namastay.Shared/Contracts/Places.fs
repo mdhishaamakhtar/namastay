@@ -105,6 +105,8 @@ type PlaceGuide = {
     Region: string
     Summary: string
     IsThisForYou: string option
+    GettingThere: string option
+    MarkUrl: string option
     DaysMin: int
     DaysMax: int
     CostLow: int option

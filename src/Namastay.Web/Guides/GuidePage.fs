@@ -10,24 +10,47 @@ let private hedgeNote =
     "Sources differ on this, or we have only one, so check locally."
 
 let private monthNames = [
-    "Jan"
-    "Feb"
-    "Mar"
-    "Apr"
+    "January"
+    "February"
+    "March"
+    "April"
     "May"
-    "Jun"
-    "Jul"
-    "Aug"
-    "Sep"
-    "Oct"
-    "Nov"
-    "Dec"
+    "June"
+    "July"
+    "August"
+    "September"
+    "October"
+    "November"
+    "December"
 ]
 
 let private lastChecked (text: string) =
     DateOnly.Parse(text, CultureInfo.InvariantCulture).ToString("d MMMM yyyy", CultureInfo.InvariantCulture)
 
-let private shell (pageTitle: string) (description: string) (colours: string) (body': XmlNode list) =
+let private icon (size: string) (path: XmlNode list) =
+    tag
+        "svg"
+        [
+            attr "width" size
+            attr "height" size
+            attr "viewBox" "0 0 20 20"
+            attr "fill" "none"
+            attr "stroke" "currentColor"
+            attr "stroke-width" "2"
+            attr "aria-hidden" "true"
+        ]
+        path
+
+let private backIcon = icon "20" [ voidTag "path" [ attr "d" "M12.5 4l-6 6l6 6" ] ]
+let private openIcon = icon "20" [ voidTag "path" [ attr "d" "M4 7l6 6l6 -6" ] ]
+
+let private warningIcon =
+    icon "22" [
+        voidTag "path" [ attr "d" "M10 3L18 17H2Z" ]
+        voidTag "path" [ attr "d" "M10 8v4M10 14v1.5" ]
+    ]
+
+let private shell (pageTitle: string) (description: string) (colours: string) (content: XmlNode list) =
     html [ _lang "en" ] [
         head [] [
             meta [ _charset "utf-8" ]
@@ -36,7 +59,7 @@ let private shell (pageTitle: string) (description: string) (colours: string) (b
             meta [ _name "description"; _content description ]
             style [] [ rawText colours; rawText GuideStyles.page ]
         ]
-        body [] body'
+        body [] content
     ]
 
 let private hedge hedged =
@@ -45,16 +68,16 @@ let private hedge hedged =
     else
         []
 
-let private cost (place: PlaceGuide) =
-    let name level =
-        match level with
-        | 1 -> "Budget"
-        | 2 -> "Mid-range"
-        | _ -> "Luxury"
+let private costName =
+    function
+    | 1 -> "Budget"
+    | 2 -> "Mid-range"
+    | _ -> "Luxury"
 
+let private cost (place: PlaceGuide) =
     match place.CostLow, place.CostHigh with
-    | Some low, Some high when low = high -> name low
-    | Some low, Some high -> $"{name low} to {(name high).ToLowerInvariant()}"
+    | Some low, Some high when low = high -> costName low
+    | Some low, Some high -> $"{costName low} to {(costName high).ToLowerInvariant()}"
     | _ -> "Not confirmed"
 
 let private travellerName =
@@ -64,21 +87,18 @@ let private travellerName =
     | TravellerType.Friends -> "Friends"
     | TravellerType.Family -> "Families"
 
+let private fact (value: string) (label: string) =
+    div [] [ strong [] [ str value ]; span [] [ str label ] ]
+
 let private facts (place: PlaceGuide) =
     div [ _class "facts" ] [
-        div [] [
-            strong [] [ str $"{place.DaysMin} to {place.DaysMax} days" ]
-            str "How long to stay"
-        ]
-        div [] [ strong [] [ str (cost place) ]; str "Rough cost" ]
-        div [] [
-            strong [] [ str (String.Join(", ", place.Suits |> List.map travellerName)) ]
-            str "Who it suits"
-        ]
-        div [] [ strong [] [ str place.State ]; str place.Region ]
+        fact $"{place.DaysMin} to {place.DaysMax} days" "How long to stay"
+        fact (cost place) "Rough cost"
+        fact (String.Join(", ", place.Suits |> List.map travellerName)) "Who it suits"
+        fact place.State place.Region
     ]
 
-let private ratingClass =
+let private ratingName =
     function
     | MonthRating.Best -> "best"
     | MonthRating.Ok -> "ok"
@@ -86,80 +106,142 @@ let private ratingClass =
     | MonthRating.Closed -> "closed"
     | MonthRating.Unknown -> "unknown"
 
-let private months (place: PlaceGuide) = [
-    h2 [] [ str "When to go" ]
-    ul [ _class "months" ] [
-        for month in place.Months do
-            li [ _class (ratingClass month.Rating) ] [ str monthNames[month.Month - 1] ]
+let private monthCell (month: GuideMonth) =
+    let name = monthNames[month.Month - 1]
+    let rating = ratingName month.Rating
+
+    li [ _class rating; attr "aria-label" $"{name}: {rating}" ] [ str (name.Substring(0, 1)) ]
+
+let private months (place: PlaceGuide) =
+    section [] [
+        h2 [] [ str "When to go" ]
+        ul [ _class "months" ] (place.Months |> List.map monthCell)
+        p [ _class "note" ] [ str "Coloured months are best, and black months are ones to avoid." ]
     ]
+
+let private intro (place: PlaceGuide) =
+    div [ _class "pair" ] [
+        yield!
+            place.IsThisForYou
+            |> Option.toList
+            |> List.map (fun text -> section [] [ h2 [] [ str "Is this for you?" ]; p [] [ str text ] ])
+        months place
+    ]
+
+let private spot index (experience: GuideExperience) =
+    details [
+        if index = 0 then
+            attr "open" ""
+    ] [
+        summary [] [ str experience.Name; openIcon ]
+        p [] [ str experience.Description ]
+        yield! hedge experience.Hedged
+    ]
+
+let private experiences (place: PlaceGuide) =
+    match place.Experiences with
+    | [] -> []
+    | items -> [
+        section [] [ h2 [] [ str "What to do" ]; div [ _class "spots" ] (items |> List.mapi spot) ]
+      ]
+
+let private galleryPhoto (photo: GuidePhoto) =
+    figure [] [
+        img [ _src photo.Url; _alt photo.Alt; attr "loading" "lazy" ]
+        figcaption [] [ str $"{photo.Credit}, "; a [ _href photo.SourceUrl ] [ str photo.Licence ] ]
+    ]
+
+let private gallery (place: PlaceGuide) =
+    match place.Photos with
+    | []
+    | [ _ ] -> []
+    | _ :: rest -> [ div [ _class "gallery" ] (rest |> List.map galleryPhoto) ]
+
+let private stayArea (area: GuideStay) = [
     p [] [
-        str "Dark months are the best time to visit. Black months are ones to avoid."
+        strong [] [ str area.Name ]
+        str (area.Note |> Option.map (fun note -> " " + note) |> Option.defaultValue "")
     ]
+    yield! hedge area.Hedged
 ]
 
-let private experiences (place: PlaceGuide) = [
-    h2 [] [ str "What to do" ]
-    for experience in place.Experiences do
-        details [] [
-            summary [] [ str experience.Name ]
-            p [] [ str experience.Description ]
-            yield! hedge experience.Hedged
+let private logistics (place: PlaceGuide) =
+    div [ _class "pair" ] [
+        yield!
+            place.GettingThere
+            |> Option.toList
+            |> List.map (fun text -> section [] [ h2 [] [ str "Getting there" ]; p [] [ str text ] ])
+        section [ _class "stays" ] [
+            h2 [] [ str "Where to stay" ]
+            yield! place.StayAreas |> List.collect stayArea
         ]
-]
-
-let private stays (place: PlaceGuide) = [
-    h2 [] [ str "Where to stay" ]
-    for area in place.StayAreas do
-        p [] [
-            strong [] [ str area.Name ]
-            str (area.Note |> Option.map (fun note -> " " + note) |> Option.defaultValue "")
-        ]
-
-        yield! hedge area.Hedged
-]
+    ]
 
 let private notices (place: PlaceGuide) =
     match place.Notices with
     | [] -> []
     | items -> [
-        h2 [] [ str "Worth knowing" ]
-        for item in items do
-            div [ _class "warning"; attr "role" "note" ] [ str item.Body; yield! hedge item.Hedged ]
+        div [ _class "warning"; attr "role" "note" ] [
+            h2 [] [ warningIcon; str "Worth knowing" ]
+            for item in items do
+                p [] [ str item.Body ]
+                yield! hedge item.Hedged
+        ]
       ]
 
-let private photos (place: PlaceGuide) = [
-    for photo in place.Photos do
-        figure [] [
-            img [ _src photo.Url; _alt photo.Alt; attr "loading" "lazy" ]
-            figcaption [] [ str $"{photo.Credit}, "; a [ _href photo.SourceUrl ] [ str photo.Licence ] ]
-        ]
-]
+let private planLink (label: string) =
+    a [ _class "plan"; _href Routes.journey.Template ] [ str label ]
 
-let private navigation =
-    nav [] [
-        a [ _href Routes.home.Template ] [ str "Namastay" ]
-        a [ _href Routes.journey.Template ] [ str "Plan a trip" ]
+let private topBar (trip: string option) =
+    div [ _class "top" ] [
+        match trip with
+        | Some token ->
+            a [ _class "back"; _href (Route.url [ "shareToken", token ] [] Routes.trip) ] [ backIcon; str "Your trip" ]
+        | None -> a [ _class "back"; _href Routes.journey.Template ] [ str "Plan a trip" ]
+        a [ _class "brand"; _href Routes.home.Template ] [ str "Namastay" ]
     ]
 
-let render (place: PlaceGuide) =
-    shell $"{place.Name} travel guide | Namastay" place.Summary (GuideStyles.colours place.Colours) [
-        navigation
-        header [] [ h1 [] [ str place.Name ]; p [] [ str place.Summary ] ]
-        main [] [
-            yield! photos place |> List.truncate 1
-            facts place
+let private heroLabel (place: PlaceGuide) =
+    match place.Photos with
+    | [] -> []
+    | photo :: _ -> [
+        div [ _class "label" ] [
+            div [ _class "frame" ] [
+                div [ _class "hero" ] [ img [ _src photo.Url; _alt photo.Alt ] ]
+                p [ _class "credit" ] [ str $"{photo.Credit}, "; a [ _href photo.SourceUrl ] [ str photo.Licence ] ]
+            ]
             yield!
-                place.IsThisForYou
+                place.MarkUrl
                 |> Option.toList
-                |> List.collect (fun text -> [ h2 [] [ str "Is this for you?" ]; p [] [ str text ] ])
-            yield! months place
-            yield! experiences place
-            yield! stays place
-            yield! notices place
-            yield! photos place |> List.skip (min 1 place.Photos.Length)
-            a [ _class "plan"; _href Routes.journey.Template ] [ str "Plan a trip around this" ]
-            footer [] [ p [] [ str $"Last checked {lastChecked place.LastChecked}" ] ]
+                |> List.map (fun url -> div [ _class "mark" ] [ img [ _src url; _alt "" ] ])
         ]
+      ]
+
+let private panel trip (place: PlaceGuide) =
+    tag "aside" [ _class "panel" ] [
+        topBar trip
+        yield! heroLabel place
+        h1 [] [ str place.Name ]
+        p [ _class "summary" ] [ str place.Summary ]
+        planLink "Plan a trip around this"
+    ]
+
+let private content (place: PlaceGuide) =
+    main [ _class "content" ] [
+        facts place
+        intro place
+        yield! experiences place
+        yield! gallery place
+        logistics place
+        yield! notices place
+        planLink "Plan a trip around this"
+        footer [] [ str $"Last checked {lastChecked place.LastChecked}" ]
+    ]
+
+/// `trip` adds a way back to the itinerary that led here.
+let render (trip: string option) (place: PlaceGuide) =
+    shell $"{place.Name} travel guide | Namastay" place.Summary (GuideStyles.colours place.Colours) [
+        div [ _class "guide" ] [ panel trip place; content place ]
     ]
     |> RenderView.AsString.htmlDocument
 
@@ -169,8 +251,7 @@ let notFound () =
         "We don't have a guide for that place yet."
         ":root{--deep:#F2B52B;--mid:#F2B52B;--pale:#FFF8E6;--on-deep:#2B2108}"
         [
-            navigation
-            main [] [
+            main [ _class "content" ] [
                 h1 [] [ str "We don't have that guide yet" ]
                 p [] [ str "It may not be written yet, or the address may have changed." ]
                 a [ _class "plan"; _href Routes.home.Template ] [ str "Back to Namastay" ]

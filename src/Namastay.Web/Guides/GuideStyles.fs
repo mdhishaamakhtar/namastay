@@ -6,38 +6,75 @@ open Namastay.Shared.Contracts
 let colours (place: PlaceColours) =
     $":root{{--deep:{place.Deep};--mid:{place.Mid};--pale:{place.Pale};--on-deep:{place.TextOnDeep}}}"
 
+/// Phone first. On a wide screen the place's colour becomes a full-height side panel.
 let page =
     """
 @font-face{font-family:"Yatra One";font-weight:400;font-display:swap;src:url(/fonts/yatra-one-latin-400-normal.woff2) format("woff2")}
 @font-face{font-family:Mukta;font-weight:400;font-display:swap;src:url(/fonts/mukta-latin-400-normal.woff2) format("woff2")}
 @font-face{font-family:Mukta;font-weight:600;font-display:swap;src:url(/fonts/mukta-latin-600-normal.woff2) format("woff2")}
 *{box-sizing:border-box}
-body{margin:0;background:#FFF8E6;color:#2B2108;font:400 17px/1.45 Mukta,system-ui,sans-serif}
-main{max-width:640px;margin:0 auto;padding:0 16px 48px}
-nav{display:flex;justify-content:space-between;padding:12px 16px;background:var(--deep);color:var(--on-deep)}
-nav a{color:inherit;min-height:44px;display:flex;align-items:center;text-decoration:none;font-weight:600}
-header{background:var(--deep);color:var(--on-deep);padding:24px 16px 32px}
-h1,h2{font-family:"Yatra One",Mukta,serif;font-weight:400;line-height:1.15}
-h1{font-size:44px;margin:0 0 8px}
-h2{font-size:26px;margin:32px 0 8px;color:var(--deep)}
-.facts{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:24px 0}
-.facts div{background:var(--pale);padding:12px;border-radius:2px}
-.facts strong{display:block;font-size:20px}
-figure{margin:24px 0}
-figure img{display:block;width:100%;height:auto;border-radius:4px}
-figcaption{font-size:14px;margin-top:4px}
-figcaption a,footer a{color:inherit}
-details{border-top:1px solid var(--mid);padding:12px 0}
-summary{font-weight:600;min-height:44px;display:flex;align-items:center;cursor:pointer}
-.months{list-style:none;display:grid;grid-template-columns:repeat(6,1fr);gap:4px;padding:0}
-.months li{padding:8px 0;text-align:center;border-radius:2px;background:#fff;font-size:14px}
+body{margin:0;background:#FBFAF2;color:#2B2108;font:400 17px/1.5 Mukta,system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
+h1,h2{font-family:"Yatra One",Mukta,serif;font-weight:400;margin:0}
+h1{font-size:46px;line-height:1.05}
+h2{font-size:27px;line-height:1.15;color:var(--deep)}
+p{margin:0}
+a{color:inherit}
+.panel{display:flex;flex-direction:column;gap:16px;padding:16px 24px 24px;background:var(--deep);color:var(--on-deep)}
+.top{display:flex;justify-content:space-between;align-items:center;min-height:44px}
+.top a{display:flex;align-items:center;min-height:44px;text-decoration:none}
+.brand{font-family:"Yatra One",Mukta,serif;font-size:24px}
+.back{font-weight:600}
+.back svg{margin-left:-6px}
+.label{position:relative;padding:8px;background:#FBFAF2;border-radius:4px;box-shadow:0 14px 30px rgba(0,0,0,.22);color:#2B2108}
+.frame{padding:8px;border:2px solid var(--deep)}
+.hero img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover}
+.credit{margin-top:8px;font-size:13px;line-height:1.3}
+.mark{position:absolute;right:16px;bottom:40px;display:flex;align-items:center;justify-content:center;width:64px;height:64px;padding:12px;background:#FBFAF2;border:2px solid var(--deep);border-radius:50%}
+.mark img{display:block;width:100%;height:100%}
+.summary{font-size:18px;line-height:1.4}
+.plan{display:flex;align-items:center;justify-content:center;min-height:56px;border-radius:2px;font-weight:600;text-decoration:none;transition:transform 140ms cubic-bezier(.23,1,.32,1)}
+.plan:active{transform:scale(.97)}
+.panel .plan{display:none;background:#FBFAF2;color:#2B2108;margin-top:auto}
+.content{display:flex;flex-direction:column;gap:32px;padding:24px 24px 40px}
+.content .plan{background:var(--deep);color:var(--on-deep)}
+section{display:flex;flex-direction:column;gap:8px;min-width:0}
+.pair{display:flex;flex-direction:column;gap:32px}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
+.facts div{padding:12px;background:var(--pale);border-radius:2px;color:#2B2108}
+.facts strong{display:block;font-family:"Yatra One",Mukta,serif;font-size:21px;font-weight:400;line-height:1.2;color:var(--deep)}
+.facts span{font-size:15px}
+.months{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:2px;margin:0;padding:0;list-style:none}
+.months li{display:flex;align-items:center;justify-content:center;height:44px;background:var(--pale);color:#2B2108;font-size:14px;font-weight:600}
 .months .best{background:var(--deep);color:var(--on-deep)}
-.months .avoid,.months .closed{background:#1C1B1A;color:#fff}
-.warning{background:#1C1B1A;color:#fff;padding:12px 16px;border-radius:4px;margin:12px 0}
+.months .avoid,.months .closed{background:#1C1B1A;color:#FFFFFF}
+.note{font-size:15px;line-height:1.4}
+.spots{display:grid;gap:8px;align-items:start}
+details{background:#FFFFFF;border:1px solid var(--deep)}
+summary{display:flex;justify-content:space-between;align-items:center;min-height:54px;padding:8px 12px;font-family:"Yatra One",Mukta,serif;font-size:22px;line-height:1.2;cursor:pointer;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary svg{flex:none;transition:transform 220ms cubic-bezier(.23,1,.32,1)}
+details[open] summary svg{transform:rotate(180deg)}
+details p{padding:0 12px 12px}
+.gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
+.gallery figure{margin:0;min-width:0}
+.gallery img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover}
+.gallery figcaption{font-size:12px;line-height:1.3;padding-top:2px}
+.stays p+p{margin-top:8px}
+.warning{display:flex;flex-direction:column;gap:8px;padding:16px;background:#1C1B1A;color:#FFFFFF}
+.warning h2{display:flex;align-items:center;gap:8px;font-size:24px;color:inherit}
 .hedge{font-style:italic}
-.plan{display:flex;align-items:center;justify-content:center;min-height:56px;background:var(--deep);color:var(--on-deep);border-radius:2px;font-weight:600;text-decoration:none;margin-top:32px;transition:transform 140ms cubic-bezier(.23,1,.32,1)}
-.plan:active{transform:scale(.98)}
+footer{font-size:14px}
 a:focus-visible,summary:focus-visible{outline:2px solid currentColor;outline-offset:2px}
-footer{font-size:14px;margin-top:32px}
-@media (prefers-reduced-motion:reduce){.plan{transition:none}}
+@media (min-width:640px){.facts{grid-template-columns:repeat(4,minmax(0,1fr))}.gallery{grid-template-columns:repeat(4,minmax(0,1fr))}.spots{grid-template-columns:repeat(2,minmax(0,1fr))}.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:32px}}
+@media (min-width:1024px){
+h1{font-size:60px}
+h2{font-size:30px}
+.guide{display:grid;grid-template-columns:minmax(380px,520px) minmax(0,1fr);min-height:100vh}
+.panel{position:sticky;top:0;align-self:start;height:100vh;gap:24px;padding:32px 48px 40px;overflow-y:auto}
+.panel .plan{display:flex}
+.content{gap:32px;padding:40px 56px 48px}
+.content>*{width:100%;max-width:900px}
+.content>.plan{display:none}
+}
+@media (prefers-reduced-motion:reduce){.plan,summary svg{transition:none}}
 """

@@ -14,6 +14,10 @@ let private html (context: HttpContext) (status: int) (body: string) : Task =
     context.Response.ContentType <- "text/html; charset=utf-8"
     context.Response.WriteAsync body
 
+let private tripFrom (context: HttpContext) =
+    let token = string context.Request.Query["trip"]
+    if Input.isShareToken token then Some token else None
+
 let private guide (data: DataCache) (context: HttpContext) : Task =
     task {
         let slug = string context.Request.RouteValues["slug"]
@@ -21,18 +25,14 @@ let private guide (data: DataCache) (context: HttpContext) : Task =
 
         let! found =
             if Input.isSlug slug then
-                DataCache.getOrLoadOption data $"page:{slug}" (fun () ->
-                    task {
-                        let! place = Guide.tryLoad data.Source slug
-                        return place |> Option.map GuidePage.render
-                    })
+                DataCache.getOrLoadOption data $"guide:{slug}" (fun () -> Guide.tryLoad data.Source slug)
             else
                 Task.FromResult None
 
         match found with
-        | Some page ->
+        | Some place ->
             if not (Endpoint.isFresh context version) then
-                do! html context StatusCodes.Status200OK page
+                do! html context StatusCodes.Status200OK (GuidePage.render (tripFrom context) place)
         | None -> do! html context StatusCodes.Status404NotFound (GuidePage.notFound ())
     }
 

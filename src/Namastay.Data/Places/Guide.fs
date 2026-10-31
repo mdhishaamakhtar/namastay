@@ -12,13 +12,14 @@ open Namastay.Shared.Contracts
 let private hedged = "status in ('one_source', 'conflict') as hedged"
 
 let private headSql =
-    "select p.slug, p.name, p.state, r.name as region, p.summary, p.is_this_for_you, p.days_min, p.days_max,
+    "select p.slug, p.name, p.state, r.name as region, p.summary, p.is_this_for_you, p.getting_there, mark.file_path as mark_path, p.days_min, p.days_max,
             p.cost_low, p.cost_high, p.gate, f.deep, f.mid, f.pale, f.text_on_deep,
             p.last_checked::text as last_checked
      from places p
      join clusters c on c.slug = p.cluster_slug
      join regions r on r.slug = c.region_slug
      join colour_families f on f.slug = p.family_slug
+     left join illustrations mark on mark.slug = p.slug || '-mark'
      where p.slug = @slug and p.published and p.retired_at is null"
 
 let private monthsSql =
@@ -62,6 +63,8 @@ let private toGuide (head: HeadRow) : PlaceGuide = {
     Region = head.Region
     Summary = head.Summary
     IsThisForYou = head.IsThisForYou
+    GettingThere = head.GettingThere
+    MarkUrl = head.MarkPath |> Option.map Routes.mediaUrl
     DaysMin = head.DaysMin
     DaysMax = head.DaysMax
     CostLow = head.CostLow

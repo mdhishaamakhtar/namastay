@@ -7,17 +7,18 @@ let private upsertPlace transaction (place: Place) =
     exec
         transaction
         "insert into places (slug, cluster_slug, name, state, family_slug, shade, gate, popularity,
-            days_min, days_max, cost_low, cost_high, summary, is_this_for_you, published, retired_at,
+            days_min, days_max, cost_low, cost_high, summary, is_this_for_you, getting_there, published, retired_at,
             status, last_checked)
          values (@slug, @cluster, @name, @state, @family, @shade, @gate, @popularity,
-            @daysMin, @daysMax, @costLow, @costHigh, @summary, @isThisForYou, @published, null,
+            @daysMin, @daysMax, @costLow, @costHigh, @summary, @isThisForYou, @gettingThere, @published, null,
             @status, @lastChecked)
          on conflict (slug) do update set
             cluster_slug = excluded.cluster_slug, name = excluded.name, state = excluded.state,
             family_slug = excluded.family_slug, shade = excluded.shade, gate = excluded.gate,
             popularity = excluded.popularity, days_min = excluded.days_min, days_max = excluded.days_max,
             cost_low = excluded.cost_low, cost_high = excluded.cost_high, summary = excluded.summary,
-            is_this_for_you = excluded.is_this_for_you, published = excluded.published,
+            is_this_for_you = excluded.is_this_for_you, getting_there = excluded.getting_there,
+            published = excluded.published,
             retired_at = null, status = excluded.status, last_checked = excluded.last_checked"
         {|
             slug = place.Slug
@@ -34,6 +35,7 @@ let private upsertPlace transaction (place: Place) =
             costHigh = place.CostHigh
             summary = place.Summary
             isThisForYou = place.IsThisForYou
+            gettingThere = place.GettingThere
             published = place.Published
             status = Encode.status place.Evidence.Status
             lastChecked = place.Evidence.LastChecked

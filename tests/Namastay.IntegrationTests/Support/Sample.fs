@@ -24,6 +24,7 @@ let place: Place = {
     CostHigh = Some 6000
     Summary = "A valley town on the Parvati river."
     IsThisForYou = None
+    GettingThere = None
     Published = true
     Interests = [
         {

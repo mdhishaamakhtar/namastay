@@ -47,6 +47,7 @@ let private loadPlaces source =
                 CostHigh = place.CostHigh
                 Summary = place.Summary
                 IsThisForYou = None
+                GettingThere = None
                 Published = place.Published
                 Interests =
                     matching place.Slug interests _.PlaceSlug

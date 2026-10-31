@@ -258,5 +258,95 @@ type GuidePageTests(postgres: PostgresFixture) =
             Assert.Contains("br", response.Content.Headers.ContentEncoding)
         }
 
+    [<Fact>]
+    member _.``hero is the first photo in a framed label``() =
+        task {
+            let! http, _ = start ()
+            let! html = page http "/places/kasol"
+            Assert.Contains("class=\"label\"", html)
+            Assert.Contains("class=\"hero\"", html)
+        }
+
+    [<Fact>]
+    member _.``later photos form the gallery``() =
+        task {
+            let! http, db = start ()
+
+            do!
+                sql
+                    db
+                    "insert into photos (slug, place_slug, file_path, alt, credit, licence, source_url, sort)
+                     values ('second', 'kasol', 'photos/second.webp', 'A bridge.', 'Someone', 'CC0', 'https://example.org/2', 2)"
+
+            let! html = page http "/places/kasol"
+            Assert.Contains("class=\"gallery\"", html)
+            Assert.Contains("/media/photos/second.webp", html)
+        }
+
+    [<Fact>]
+    member _.``guide with no photos still renders``() =
+        task {
+            let! http, db = start ()
+            do! sql db "delete from photos"
+            let! html = page http "/places/kasol"
+            Assert.Contains("<h1", html)
+            Assert.DoesNotContain("class=\"hero\"", html)
+            Assert.DoesNotContain("class=\"gallery\"", html)
+        }
+
+    [<Fact>]
+    member _.``illustrated mark appears when one exists``() =
+        task {
+            let! http, db = start ()
+
+            do!
+                sql
+                    db
+                    "insert into illustrations (slug, file_path, alt, brief, status)
+                     values ('kasol-mark', 'marks/kasol.svg', 'A pine.', 'Pine.', 'final')"
+
+            let! html = page http "/places/kasol"
+            Assert.Contains("class=\"mark\"", html)
+            Assert.Contains("/media/marks/kasol.svg", html)
+        }
+
+    [<Fact>]
+    member _.``getting there appears when written``() =
+        task {
+            let! http, db = start ()
+            do! sql db "update places set getting_there = 'Fly to Bhuntar.' where slug = 'kasol'"
+            let! html = page http "/places/kasol"
+            Assert.Contains("Getting there", html)
+            Assert.Contains("Fly to Bhuntar.", html)
+        }
+
+    [<Fact>]
+    member _.``back link appears only with a valid trip``() =
+        task {
+            let! http, _ = start ()
+            let! plain = page http "/places/kasol"
+            let! fromTrip = page http "/places/kasol?trip=ABCDEFGHIJKL"
+            let! forged = page http "/places/kasol?trip=%22%3E%3Cscript%3E"
+            Assert.DoesNotContain("Your trip", plain)
+            Assert.Contains("href=\"/trip/ABCDEFGHIJKL\"", fromTrip)
+            Assert.DoesNotContain("Your trip", forged)
+        }
+
+    [<Fact>]
+    member _.``months use one letter each with a full name for readers``() =
+        task {
+            let! http, _ = start ()
+            let! html = page http "/places/kasol"
+            Assert.Contains("aria-label=\"May: best\"", html)
+        }
+
+    [<Fact>]
+    member _.``desktop layout is in the page``() =
+        task {
+            let! http, _ = start ()
+            let! html = page http "/places/kasol"
+            Assert.Contains("@media (min-width:1024px)", html)
+        }
+
     interface IDisposable with
         member _.Dispose() = (scope :> IDisposable).Dispose()
