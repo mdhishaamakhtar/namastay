@@ -1,6 +1,7 @@
 module Namastay.Data.Sql
 
 open System
+open System.Data
 open System.Threading.Tasks
 open Dapper
 open Npgsql
@@ -12,23 +13,7 @@ let opt (name: string) (value: 'T option) =
     name,
     (match value with
      | Some inner -> box inner
-     | None -> box DBNull.Value)
-
-let private command (transaction: NpgsqlTransaction) (sql: string) (args: (string * obj) list) =
-    let command = new NpgsqlCommand(sql, transaction.Connection, transaction)
-
-    for name, value in args do
-        command.Parameters.AddWithValue(name, value) |> ignore
-
-    command
-
-let exec transaction sql args =
-    use prepared = command transaction sql args
-    prepared.ExecuteNonQuery()
-
-let scalar transaction sql args =
-    use prepared = command transaction sql args
-    prepared.ExecuteScalar()
+     | None -> null)
 
 type private OptionHandler<'Value>() =
     inherit SqlMapper.TypeHandler<'Value option>()
@@ -48,8 +33,20 @@ type private OptionHandler<'Value>() =
 let private setup =
     lazy
         (DefaultTypeMap.MatchNamesWithUnderscores <- true
+         SqlMapper.AddTypeMap(typeof<DateOnly>, DbType.Date)
+         SqlMapper.AddTypeMap(typeof<TimeOnly>, DbType.Time)
          SqlMapper.AddTypeHandler(OptionHandler<string>())
          SqlMapper.AddTypeHandler(OptionHandler<int>()))
+
+/// Runs a write inside an import transaction.
+let exec (transaction: NpgsqlTransaction) (sql: string) (args: (string * obj) list) =
+    setup.Force()
+    let parameters = DynamicParameters()
+
+    for name, value in args do
+        parameters.Add(name, value)
+
+    transaction.Connection.Execute(sql, parameters, transaction)
 
 /// Runs a read, filling `'Row` by column name.
 let query<'Row> (source: NpgsqlDataSource) (sql: string) (parameters: obj) : Task<'Row list> =

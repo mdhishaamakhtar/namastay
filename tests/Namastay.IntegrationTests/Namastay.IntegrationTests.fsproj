@@ -8,6 +8,7 @@
     <Compile Include="Data/MigrationTests.fs" />
     <Compile Include="Media/MediaTests.fs" />
     <Compile Include="Places/PlacesApiTests.fs" />
+    <Compile Include="Web/SettingsTests.fs" />
     <Compile Include="Data/ImporterTests.fs" />
   </ItemGroup>
 

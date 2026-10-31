@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <Compile Include="Marker.fs" />
+    <Compile Include="Settings.fs" />
     <Compile Include="Http/Json.fs" />
     <Compile Include="Http/Errors.fs" />
     <Compile Include="Http/Endpoint.fs" />
