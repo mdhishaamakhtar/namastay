@@ -38,7 +38,7 @@ type NavigationTests(browser: BrowserFixture) =
             let! _ = page.GoBackAsync()
             do! page.WaitForURLAsync(browser.BaseUrl + "/")
             let! title = heading page
-            Assert.Equal("Namastay", title)
+            Assert.Equal("India is a lot. Find yours.", title)
         }
 
     [<Fact>]

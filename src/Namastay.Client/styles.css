@@ -79,3 +79,241 @@ button:focus-visible {
     transition: none;
   }
 }
+
+.press {
+  transition: transform 140ms var(--ease-out);
+}
+
+.press:active {
+  transform: scale(0.98);
+}
+
+.home-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  background: var(--brand);
+  color: var(--ink);
+}
+
+.home-brand {
+  font-family: "Yatra One", Mukta, serif;
+  font-size: 26px;
+}
+
+.home-pitch {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 8px;
+}
+
+.home-pitch h1 {
+  font-size: 54px;
+  line-height: 1.02;
+}
+
+.home-pitch p {
+  margin: 0;
+  font-size: 18px;
+}
+
+.home-plan {
+  width: 100%;
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.home-free {
+  display: none;
+  margin: 0;
+  font-size: 15px;
+}
+
+.home-find {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  max-width: none;
+  margin: 0;
+  padding: 24px 24px 40px;
+}
+
+.home-search,
+.home-moods {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.home-search label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.home-heading {
+  font-family: "Yatra One", Mukta, serif;
+  font-size: 27px;
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.search-input {
+  height: 52px;
+  width: 100%;
+  padding: 0 16px;
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  background: #ffffff;
+  color: var(--ink);
+  font: 400 17px Mukta, system-ui, sans-serif;
+}
+
+.search-input::placeholder {
+  color: #6a5a2a;
+}
+
+.search-input:focus-visible,
+.mood:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.result {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 8px 12px;
+  background: #ffffff;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.result-colour {
+  flex: none;
+  width: 16px;
+  height: 40px;
+}
+
+.result-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.result-text span {
+  font-size: 14px;
+}
+
+.no-results {
+  margin: 0;
+  font-size: 16px;
+}
+
+.moods {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.mood {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 88px;
+  padding: 12px;
+  border: 0;
+  border-radius: 2px;
+  color: #ffffff;
+  text-align: left;
+  cursor: pointer;
+  font: 400 14px/1.3 Mukta, system-ui, sans-serif;
+}
+
+.mood strong {
+  font-family: "Yatra One", Mukta, serif;
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+@media (min-width: 1024px) {
+  .home {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-height: 100dvh;
+  }
+
+  .home-hero {
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+    justify-content: space-between;
+    padding: 48px 64px;
+  }
+
+  .home-brand {
+    font-size: 30px;
+  }
+
+  .home-pitch {
+    gap: 24px;
+    max-width: 520px;
+  }
+
+  .home-pitch h1 {
+    font-size: 84px;
+    line-height: 1;
+  }
+
+  .home-pitch p {
+    font-size: 21px;
+  }
+
+  .home-plan {
+    width: auto;
+    align-self: flex-start;
+    padding: 0 40px;
+  }
+
+  .home-free {
+    display: block;
+  }
+
+  .home-find {
+    justify-content: center;
+    gap: 40px;
+    padding: 48px 64px;
+  }
+
+  .home-heading {
+    font-size: 32px;
+  }
+
+  .moods {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .mood {
+    min-height: 124px;
+  }
+
+  .mood span {
+    min-height: 2.6em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .press {
+    transition: none;
+  }
+}

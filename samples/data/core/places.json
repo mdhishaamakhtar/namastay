@@ -404,5 +404,195 @@
       "lastChecked": "2026-01-01",
       "sourceIds": []
     }
+  },
+  {
+    "slug": "example-island",
+    "clusterSlug": "sample-cluster",
+    "name": "Example Island",
+    "state": "Sample State",
+    "familySlug": "pine",
+    "shade": "deep",
+    "gate": "open",
+    "popularity": "offbeat",
+    "daysMin": 2,
+    "daysMax": 3,
+    "costLow": 1,
+    "costHigh": 2,
+    "summary": "Example Valley is an invented place that shows the data format.",
+    "published": false,
+    "interests": [
+      {
+        "interestSlug": "mountains",
+        "weight": 5
+      }
+    ],
+    "months": [
+      {
+        "month": 1,
+        "rating": "best",
+        "evidence": {
+          "status": "editorial",
+          "lastChecked": "2026-01-01",
+          "sourceIds": []
+        }
+      },
+      {
+        "month": 2,
+        "rating": "best",
+        "evidence": {
+          "status": "editorial",
+          "lastChecked": "2026-01-01",
+          "sourceIds": []
+        }
+      },
+      {
+        "month": 3,
+        "rating": "best",
+        "evidence": {
+          "status": "editorial",
+          "lastChecked": "2026-01-01",
+          "sourceIds": []
+        }
+      },
+      {
+        "month": 4,
+        "rating": "ok",
+        "evidence": {
+          "status": "editorial",
+          "lastChecked": "2026-01-01",
+          "sourceIds": []
+        }
+      },
+      {
+        "month": 5,
+        "rating": "ok",
+        "evidence": {
+          "status": "editorial",
+          "lastChecked": "2026-01-01",
+          "sourceIds": []
+        }
+      },
+      {
+        "month": 6,
+        "rating": "ok",
+        "evidence": {
+          "status": "editorial",
+          "lastChecked": "2026-01-01",
+          "sourceIds": []
+        }
+      },
+      {
+        "month": 7,
+        "rating": "ok",
+        "evidence": {
+          "status": "editorial",
+          "lastChecked": "2026-01-01",
+          "sourceIds": []
+        }
+      },
+      {
+        "month": 8,
+        "rating": "ok",
+        "evidence": {
+          "status": "editorial",
+          "lastChecked": "2026-01-01",
+          "sourceIds": []
+        }
+      },
+      {
+        "month": 9,
+        "rating": "ok",
+        "evidence": {
+          "status": "editorial",
+          "lastChecked": "2026-01-01",
+          "sourceIds": []
+        }
+      },
+      {
+        "month": 10,
+        "rating": "ok",
+        "evidence": {
+          "status": "editorial",
+          "lastChecked": "2026-01-01",
+          "sourceIds": []
+        }
+      },
+      {
+        "month": 11,
+        "rating": "ok",
+        "evidence": {
+          "status": "editorial",
+          "lastChecked": "2026-01-01",
+          "sourceIds": []
+        }
+      },
+      {
+        "month": 12,
+        "rating": "ok",
+        "evidence": {
+          "status": "editorial",
+          "lastChecked": "2026-01-01",
+          "sourceIds": []
+        }
+      }
+    ],
+    "travellerFit": [
+      {
+        "traveller": "solo",
+        "fit": 2
+      },
+      {
+        "traveller": "couple",
+        "fit": 2
+      },
+      {
+        "traveller": "friends",
+        "fit": 2
+      },
+      {
+        "traveller": "family",
+        "fit": 2
+      }
+    ],
+    "experiences": [],
+    "dayPlans": [
+      {
+        "variant": "short",
+        "day": 1,
+        "plan": "Sample plan for day 1.",
+        "evidence": {
+          "status": "editorial",
+          "lastChecked": "2026-01-01",
+          "sourceIds": []
+        }
+      },
+      {
+        "variant": "short",
+        "day": 2,
+        "plan": "Sample plan for day 2.",
+        "evidence": {
+          "status": "editorial",
+          "lastChecked": "2026-01-01",
+          "sourceIds": []
+        }
+      }
+    ],
+    "stayAreas": [
+      {
+        "name": "Sample town",
+        "costLevel": "budget",
+        "note": "Suggest an area, not a hotel.",
+        "evidence": {
+          "status": "editorial",
+          "lastChecked": "2026-01-01",
+          "sourceIds": []
+        }
+      }
+    ],
+    "evidence": {
+      "status": "editorial",
+      "lastChecked": "2026-01-01",
+      "sourceIds": []
+    }
   }
 ]

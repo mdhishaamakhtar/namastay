@@ -3,6 +3,7 @@
   <ItemGroup>
     <Compile Include="Browser.fs" />
     <Compile Include="NavigationTests.fs" />
+    <Compile Include="HomeTests.fs" />
   </ItemGroup>
 
   <ItemGroup>
