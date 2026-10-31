@@ -32,6 +32,9 @@ let traveller =
 let costLevel =
     decoder Encode.costLevel [ CostLevel.Budget; CostLevel.Mid; CostLevel.Luxury ]
 
+let severity =
+    decoder Encode.severity [ Severity.Info; Severity.Warn; Severity.Permit; Severity.Danger ]
+
 let mode =
     decoder Encode.mode [ Mode.Flight; Mode.Train; Mode.Road; Mode.Ferry; Mode.CableCar ]
 

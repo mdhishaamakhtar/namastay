@@ -9,6 +9,7 @@
     <Compile Include="Catalog/Notice.fs" />
     <Compile Include="Catalog/Journey.fs" />
     <Compile Include="Catalog/Catalog.fs" />
+    <Compile Include="Catalog/ContractMapping.fs" />
     <Compile Include="Catalog/Validation.fs" />
     <Compile Include="Trip/Profile.fs" />
     <Compile Include="Trip/Scoring.fs" />

@@ -3,11 +3,6 @@ module Namastay.Data.Import.Places
 open Namastay.Data.Sql
 open Namastay.Domain.Catalog
 
-let private facts (evidence: Evidence) = [
-    arg "status" (Encode.status evidence.Status)
-    arg "lastChecked" evidence.LastChecked
-]
-
 let private upsertPlace transaction (place: Place) =
     exec
         transaction
@@ -24,24 +19,25 @@ let private upsertPlace transaction (place: Place) =
             cost_low = excluded.cost_low, cost_high = excluded.cost_high, summary = excluded.summary,
             is_this_for_you = excluded.is_this_for_you, published = excluded.published,
             retired_at = null, status = excluded.status, last_checked = excluded.last_checked"
-        ([
-            arg "slug" place.Slug
-            arg "cluster" place.ClusterSlug
-            arg "name" place.Name
-            arg "state" place.State
-            arg "family" place.FamilySlug
-            arg "shade" place.Shade
-            arg "gate" (Encode.gate place.Gate)
-            arg "popularity" (Encode.popularity place.Popularity)
-            arg "daysMin" place.DaysMin
-            arg "daysMax" place.DaysMax
-            opt "costLow" place.CostLow
-            opt "costHigh" place.CostHigh
-            arg "summary" place.Summary
-            opt "isThisForYou" place.IsThisForYou
-            arg "published" place.Published
-         ]
-         @ facts place.Evidence)
+        {|
+            slug = place.Slug
+            cluster = place.ClusterSlug
+            name = place.Name
+            state = place.State
+            family = place.FamilySlug
+            shade = place.Shade
+            gate = (Encode.gate place.Gate)
+            popularity = (Encode.popularity place.Popularity)
+            daysMin = place.DaysMin
+            daysMax = place.DaysMax
+            costLow = place.CostLow
+            costHigh = place.CostHigh
+            summary = place.Summary
+            isThisForYou = place.IsThisForYou
+            published = place.Published
+            status = Encode.status place.Evidence.Status
+            lastChecked = place.Evidence.LastChecked
+        |}
     |> ignore
 
     linkSources transaction "places" place.Slug place.Evidence
@@ -55,7 +51,7 @@ let private clearChildren transaction (slug: string) =
             "day_plans"
             "stay_areas"
         ] do
-        exec transaction $"delete from {table} where place_slug = @slug" [ arg "slug" slug ]
+        exec transaction $"delete from {table} where place_slug = @slug" {| slug = slug |}
         |> ignore
 
 let private insertInterests transaction (place: Place) =
@@ -63,11 +59,11 @@ let private insertInterests transaction (place: Place) =
         exec
             transaction
             "insert into place_interests (place_slug, interest_slug, weight) values (@place, @interest, @weight)"
-            [
-                arg "place" place.Slug
-                arg "interest" interest.InterestSlug
-                arg "weight" interest.Weight
-            ]
+            {|
+                place = place.Slug
+                interest = interest.InterestSlug
+                weight = interest.Weight
+            |}
         |> ignore
 
 let private insertMonths transaction (place: Place) =
@@ -76,24 +72,25 @@ let private insertMonths transaction (place: Place) =
             transaction
             "insert into place_months (place_slug, month, rating, note, status, last_checked)
              values (@place, @month, @rating, @note, @status, @lastChecked)"
-            ([
-                arg "place" place.Slug
-                arg "month" month.Month
-                arg "rating" (Encode.rating month.Rating)
-                opt "note" month.Note
-             ]
-             @ facts month.Evidence)
+            {|
+                place = place.Slug
+                month = month.Month
+                rating = (Encode.rating month.Rating)
+                note = month.Note
+                status = Encode.status month.Evidence.Status
+                lastChecked = month.Evidence.LastChecked
+            |}
         |> ignore
 
         linkSources transaction "place_months" $"{place.Slug}:{month.Month}" month.Evidence
 
 let private insertFit transaction (place: Place) =
     for fit in place.TravellerFit do
-        exec transaction "insert into traveller_fit (place_slug, traveller, fit) values (@place, @traveller, @fit)" [
-            arg "place" place.Slug
-            arg "traveller" (Encode.traveller fit.Traveller)
-            arg "fit" fit.Fit
-        ]
+        exec transaction "insert into traveller_fit (place_slug, traveller, fit) values (@place, @traveller, @fit)" {|
+            place = place.Slug
+            traveller = (Encode.traveller fit.Traveller)
+            fit = fit.Fit
+        |}
         |> ignore
 
 let private insertDayPlans transaction (place: Place) =
@@ -102,13 +99,14 @@ let private insertDayPlans transaction (place: Place) =
             transaction
             "insert into day_plans (place_slug, variant, day, plan, status, last_checked)
              values (@place, @variant, @day, @plan, @status, @lastChecked)"
-            ([
-                arg "place" place.Slug
-                arg "variant" plan.Variant
-                arg "day" plan.Day
-                arg "plan" plan.Plan
-             ]
-             @ facts plan.Evidence)
+            {|
+                place = place.Slug
+                variant = plan.Variant
+                day = plan.Day
+                plan = plan.Plan
+                status = Encode.status plan.Evidence.Status
+                lastChecked = plan.Evidence.LastChecked
+            |}
         |> ignore
 
         linkSources transaction "day_plans" $"{place.Slug}:{plan.Variant}:{plan.Day}" plan.Evidence
@@ -119,13 +117,14 @@ let private insertStayAreas transaction (place: Place) =
             transaction
             "insert into stay_areas (place_slug, name, cost_level, note, status, last_checked)
              values (@place, @name, @costLevel, @note, @status, @lastChecked)"
-            ([
-                arg "place" place.Slug
-                arg "name" area.Name
-                arg "costLevel" (Encode.costLevel area.CostLevel)
-                opt "note" area.Note
-             ]
-             @ facts area.Evidence)
+            {|
+                place = place.Slug
+                name = area.Name
+                costLevel = (Encode.costLevel area.CostLevel)
+                note = area.Note
+                status = Encode.status area.Evidence.Status
+                lastChecked = area.Evidence.LastChecked
+            |}
         |> ignore
 
         linkSources transaction "stay_areas" $"{place.Slug}:{area.Name}" area.Evidence
@@ -135,10 +134,10 @@ let private upsertExperiences transaction (place: Place) =
         transaction
         "update experiences set retired_at = now()
          where place_slug = @place and retired_at is null and not (slug = any(@slugs))"
-        [
-            arg "place" place.Slug
-            arg "slugs" (place.Experiences |> List.map _.Slug |> List.toArray)
-        ]
+        {|
+            place = place.Slug
+            slugs = (place.Experiences |> List.map _.Slug |> List.toArray)
+        |}
     |> ignore
 
     for experience in place.Experiences do
@@ -150,22 +149,23 @@ let private upsertExperiences transaction (place: Place) =
                 place_slug = excluded.place_slug, name = excluded.name, description = excluded.description,
                 sort = excluded.sort, status = excluded.status, last_checked = excluded.last_checked,
                 retired_at = null"
-            ([
-                arg "slug" experience.Slug
-                arg "place" place.Slug
-                arg "name" experience.Name
-                arg "description" experience.Description
-                arg "sort" experience.Sort
-             ]
-             @ facts experience.Evidence)
+            {|
+                slug = experience.Slug
+                place = place.Slug
+                name = experience.Name
+                description = experience.Description
+                sort = experience.Sort
+                status = Encode.status experience.Evidence.Status
+                lastChecked = experience.Evidence.LastChecked
+            |}
         |> ignore
 
         linkSources transaction "experiences" experience.Slug experience.Evidence
 
 let private retireMissing transaction (catalog: Catalog) =
-    exec transaction "update places set retired_at = now() where retired_at is null and not (slug = any(@slugs))" [
-        arg "slugs" (catalog.Places |> List.map _.Slug |> List.toArray)
-    ]
+    exec transaction "update places set retired_at = now() where retired_at is null and not (slug = any(@slugs))" {|
+        slugs = (catalog.Places |> List.map _.Slug |> List.toArray)
+    |}
     |> ignore
 
 let apply transaction (catalog: Catalog) =

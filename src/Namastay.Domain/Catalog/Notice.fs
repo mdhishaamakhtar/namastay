@@ -10,12 +10,19 @@ type NoticeScope =
     | LinkScope
     | FestivalScope
 
+[<RequireQualifiedAccess>]
+type Severity =
+    | Info
+    | Warn
+    | Permit
+    | Danger
+
 type Notice = {
     Slug: string
     Scope: NoticeScope
     ScopeRef: string option
     Kind: string
-    Severity: string
+    Severity: Severity
     Body: string
     ValidFrom: DateOnly option
     ValidTo: DateOnly option

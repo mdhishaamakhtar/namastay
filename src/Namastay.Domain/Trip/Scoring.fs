@@ -17,13 +17,6 @@ let interestLimit days =
     elif days <= 14 then 3
     else 4
 
-let private traveller =
-    function
-    | TravellerType.Solo -> Traveller.Solo
-    | TravellerType.Couple -> Traveller.Couple
-    | TravellerType.Friends -> Traveller.Friends
-    | TravellerType.Family -> Traveller.Family
-
 let private budgetLevel =
     function
     | BudgetLevel.Budget -> 1
@@ -40,7 +33,7 @@ let private interestScore (interests: (string * int) list) (place: Place) =
 
 let private fitScore (request: TripRequest) (place: Place) =
     place.TravellerFit
-    |> List.tryFind (fun fit -> fit.Traveller = traveller request.Travellers)
+    |> List.tryFind (fun fit -> fit.Traveller = ContractMapping.traveller request.Travellers)
     |> Option.map (fun fit -> fit.Fit * fitWeight)
     |> Option.defaultValue 0
 

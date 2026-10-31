@@ -7,14 +7,6 @@ open Dapper
 open Npgsql
 open Namastay.Domain.Catalog
 
-let arg (name: string) (value: 'T) = name, box value
-
-let opt (name: string) (value: 'T option) =
-    name,
-    (match value with
-     | Some inner -> box inner
-     | None -> null)
-
 type private OptionHandler<'Value>() =
     inherit SqlMapper.TypeHandler<'Value option>()
 
@@ -36,16 +28,13 @@ let private setup =
          SqlMapper.AddTypeMap(typeof<DateOnly>, DbType.Date)
          SqlMapper.AddTypeMap(typeof<TimeOnly>, DbType.Time)
          SqlMapper.AddTypeHandler(OptionHandler<string>())
-         SqlMapper.AddTypeHandler(OptionHandler<int>()))
+         SqlMapper.AddTypeHandler(OptionHandler<int>())
+         SqlMapper.AddTypeHandler(OptionHandler<DateOnly>())
+         SqlMapper.AddTypeHandler(OptionHandler<TimeOnly>()))
 
 /// Runs a write inside an import transaction.
-let exec (transaction: NpgsqlTransaction) (sql: string) (args: (string * obj) list) =
+let exec (transaction: NpgsqlTransaction) (sql: string) (parameters: obj) =
     setup.Force()
-    let parameters = DynamicParameters()
-
-    for name, value in args do
-        parameters.Add(name, value)
-
     transaction.Connection.Execute(sql, parameters, transaction)
 
 /// Runs a read, filling `'Row` by column name.
@@ -59,15 +48,19 @@ let query<'Row> (source: NpgsqlDataSource) (sql: string) (parameters: obj) : Tas
 
 /// Replaces the sources recorded for one row of a table.
 let linkSources transaction (table: string) (slug: string) (evidence: Evidence) =
-    exec transaction "delete from fact_sources where table_name = @table and row_slug = @slug" [
-        arg "table" table
-        arg "slug" slug
-    ]
+    exec transaction "delete from fact_sources where table_name = @table and row_slug = @slug" {|
+        table = table
+        slug = slug
+    |}
     |> ignore
 
     for sourceId in evidence.SourceIds |> List.distinct do
         exec
             transaction
             "insert into fact_sources (table_name, row_slug, field, source_id) values (@table, @slug, '*', @source)"
-            [ arg "table" table; arg "slug" slug; arg "source" sourceId ]
+            {|
+                table = table
+                slug = slug
+                source = sourceId
+            |}
         |> ignore

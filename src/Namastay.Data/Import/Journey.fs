@@ -10,13 +10,13 @@ let private upsertIllustration transaction (illustration: Illustration) =
          values (@slug, @filePath, @alt, @brief, @status)
          on conflict (slug) do update set
             file_path = excluded.file_path, alt = excluded.alt, brief = excluded.brief, status = excluded.status"
-        [
-            arg "slug" illustration.Slug
-            arg "filePath" illustration.FilePath
-            arg "alt" illustration.Alt
-            arg "brief" illustration.Brief
-            arg "status" illustration.Status
-        ]
+        {|
+            slug = illustration.Slug
+            filePath = illustration.FilePath
+            alt = illustration.Alt
+            brief = illustration.Brief
+            status = illustration.Status
+        |}
     |> ignore
 
 let private upsertPhoto transaction (photo: Photo) =
@@ -28,16 +28,16 @@ let private upsertPhoto transaction (photo: Photo) =
             place_slug = excluded.place_slug, file_path = excluded.file_path, alt = excluded.alt,
             credit = excluded.credit, licence = excluded.licence, source_url = excluded.source_url,
             sort = excluded.sort"
-        [
-            arg "slug" photo.Slug
-            arg "place" photo.PlaceSlug
-            arg "filePath" photo.FilePath
-            arg "alt" photo.Alt
-            arg "credit" photo.Credit
-            arg "licence" photo.Licence
-            arg "sourceUrl" photo.SourceUrl
-            arg "sort" photo.Sort
-        ]
+        {|
+            slug = photo.Slug
+            place = photo.PlaceSlug
+            filePath = photo.FilePath
+            alt = photo.Alt
+            credit = photo.Credit
+            licence = photo.Licence
+            sourceUrl = photo.SourceUrl
+            sort = photo.Sort
+        |}
     |> ignore
 
 let private upsertCard transaction (card: Card) =
@@ -48,43 +48,43 @@ let private upsertCard transaction (card: Card) =
          on conflict (slug) do update set
             place_slug = excluded.place_slug, title = excluded.title, line = excluded.line,
             photo_slug = excluded.photo_slug, illustration_slug = excluded.illustration_slug, is_start = excluded.is_start"
-        [
-            arg "slug" card.Slug
-            opt "place" card.PlaceSlug
-            arg "title" card.Title
-            arg "line" card.Line
-            opt "photo" card.PhotoSlug
-            opt "illustration" card.IllustrationSlug
-            arg "isStart" card.IsStart
-        ]
+        {|
+            slug = card.Slug
+            place = card.PlaceSlug
+            title = card.Title
+            line = card.Line
+            photo = card.PhotoSlug
+            illustration = card.IllustrationSlug
+            isStart = card.IsStart
+        |}
     |> ignore
 
 let private replaceBranches transaction (card: Card) =
-    exec transaction "delete from card_branches where from_card = @card" [ arg "card" card.Slug ]
+    exec transaction "delete from card_branches where from_card = @card" {| card = card.Slug |}
     |> ignore
 
-    exec transaction "delete from card_signals where card_slug = @card" [ arg "card" card.Slug ]
+    exec transaction "delete from card_signals where card_slug = @card" {| card = card.Slug |}
     |> ignore
 
     for branch in card.Branches do
         exec
             transaction
             "insert into card_branches (from_card, on_answer, to_card, priority)
-             values (@card, @answer, @to, @priority)"
-            [
-                arg "card" card.Slug
-                arg "answer" branch.OnAnswer
-                arg "to" branch.ToCard
-                arg "priority" branch.Priority
-            ]
+             values (@card, @answer, @toSlug, @priority)"
+            {|
+                card = card.Slug
+                answer = branch.OnAnswer
+                toSlug = branch.ToCard
+                priority = branch.Priority
+            |}
         |> ignore
 
     for signal in card.Signals do
-        exec transaction "insert into card_signals (card_slug, signal, weight) values (@card, @signal, @weight)" [
-            arg "card" card.Slug
-            arg "signal" signal.Signal
-            arg "weight" signal.Weight
-        ]
+        exec transaction "insert into card_signals (card_slug, signal, weight) values (@card, @signal, @weight)" {|
+            card = card.Slug
+            signal = signal.Signal
+            weight = signal.Weight
+        |}
         |> ignore
 
 let apply transaction (catalog: Catalog) =

@@ -2,8 +2,10 @@ module Namastay.Data.Places.Guide
 
 open System.Threading.Tasks
 open Npgsql
+open Namastay.Data.Catalog
 open Namastay.Data.Places.Rows
 open Namastay.Data.Sql
+open Namastay.Domain.Catalog
 open Namastay.Shared.Contracts
 
 let private hedged = "status in ('one_source', 'conflict') as hedged"
@@ -52,40 +54,6 @@ let private photosSql =
 let private suitsSql =
     "select traveller from traveller_fit where place_slug = @slug and fit >= 2 order by fit desc, traveller"
 
-let private rating =
-    function
-    | "best" -> MonthRating.Best
-    | "ok" -> MonthRating.Ok
-    | "avoid" -> MonthRating.Avoid
-    | "closed" -> MonthRating.Closed
-    | _ -> MonthRating.Unknown
-
-let private access =
-    function
-    | "permit" -> PlaceAccess.Permit
-    | "warn" -> PlaceAccess.Warning
-    | _ -> PlaceAccess.Open
-
-let private severity =
-    function
-    | "info" -> NoticeSeverity.Info
-    | "permit" -> NoticeSeverity.Permit
-    | "danger" -> NoticeSeverity.Danger
-    | _ -> NoticeSeverity.Warning
-
-let private budget =
-    function
-    | "luxury" -> BudgetLevel.Luxury
-    | "mid" -> BudgetLevel.Mid
-    | _ -> BudgetLevel.Budget
-
-let private traveller =
-    function
-    | "solo" -> TravellerType.Solo
-    | "couple" -> TravellerType.Couple
-    | "friends" -> TravellerType.Friends
-    | _ -> TravellerType.Family
-
 let private toGuide (head: HeadRow) : PlaceGuide = {
     Slug = head.Slug
     Name = head.Name
@@ -97,7 +65,7 @@ let private toGuide (head: HeadRow) : PlaceGuide = {
     DaysMax = head.DaysMax
     CostLow = head.CostLow
     CostHigh = head.CostHigh
-    Access = access head.Gate
+    Access = head.Gate |> Decode.gate |> ContractMapping.access
     Colours = {
         Deep = head.Deep
         Mid = head.Mid
@@ -137,12 +105,12 @@ let tryLoad (source: NpgsqlDataSource) (slug: string) : Task<PlaceGuide option> 
             return
                 Some {
                     toGuide head with
-                        Suits = suits |> List.map traveller
+                        Suits = suits |> List.map (Decode.traveller >> ContractMapping.travellerType)
                         Months =
                             months
                             |> List.map (fun row -> {
                                 Month = row.Month
-                                Rating = rating row.Rating
+                                Rating = row.Rating |> Decode.rating |> ContractMapping.monthRating
                                 Note = row.Note
                             })
                         Experiences =
@@ -163,7 +131,7 @@ let tryLoad (source: NpgsqlDataSource) (slug: string) : Task<PlaceGuide option> 
                             stayAreas
                             |> List.map (fun row -> {
                                 GuideStay.Name = row.Name
-                                CostLevel = budget row.CostLevel
+                                CostLevel = row.CostLevel |> Decode.costLevel |> ContractMapping.budgetLevel
                                 Note = row.Note
                                 Hedged = row.Hedged
                             })
@@ -171,7 +139,7 @@ let tryLoad (source: NpgsqlDataSource) (slug: string) : Task<PlaceGuide option> 
                             notices
                             |> List.map (fun row -> {
                                 Kind = row.Kind
-                                Severity = severity row.Severity
+                                Severity = row.Severity |> Decode.severity |> ContractMapping.severity
                                 Body = row.Body
                                 Hedged = row.Hedged
                             })

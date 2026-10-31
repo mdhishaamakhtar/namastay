@@ -80,42 +80,15 @@ let private plansFor (place: Place) days =
             }
     ]
 
-let private costLevel =
-    function
-    | BudgetLevel.Budget -> CostLevel.Budget
-    | BudgetLevel.Mid -> CostLevel.Mid
-    | BudgetLevel.Luxury -> CostLevel.Luxury
-
 let private stayArea (request: TripRequest) (place: Place) =
     let verified =
         place.StayAreas
         |> List.filter (fun area -> area.Evidence.Status <> FactStatus.Unverified)
 
     verified
-    |> List.tryFind (fun area -> area.CostLevel = costLevel request.Budget)
+    |> List.tryFind (fun area -> area.CostLevel = ContractMapping.costLevel request.Budget)
     |> Option.orElse (verified |> List.tryHead)
     |> Option.map _.Name
-
-let private travelMode =
-    function
-    | Mode.Flight -> TravelMode.Flight
-    | Mode.Train -> TravelMode.Train
-    | Mode.Road -> TravelMode.Road
-    | Mode.Ferry -> TravelMode.Ferry
-    | Mode.CableCar -> TravelMode.CableCar
-
-let private placeAccess =
-    function
-    | Gate.Open -> PlaceAccess.Open
-    | Gate.Warn -> PlaceAccess.Warning
-    | Gate.Permit -> PlaceAccess.Permit
-
-let private noticeSeverity =
-    function
-    | "info" -> NoticeSeverity.Info
-    | "permit" -> NoticeSeverity.Permit
-    | "danger" -> NoticeSeverity.Danger
-    | _ -> NoticeSeverity.Warning
 
 let private toStop (catalog: Catalog) request (stop: RoutedStop) : TripStop =
     let family =
@@ -132,13 +105,13 @@ let private toStop (catalog: Catalog) request (stop: RoutedStop) : TripStop =
             Pale = family.Pale
             TextOnDeep = family.TextOnDeep
         }
-        Access = placeAccess stop.Place.Gate
+        Access = ContractMapping.access stop.Place.Gate
         StayArea = stayArea request stop.Place
         Plans = plansFor stop.Place stop.Days
         Arrival =
             stop.Arrival
             |> Option.map (fun link -> {
-                Mode = travelMode link.Mode
+                Mode = ContractMapping.travelMode link.Mode
                 MinutesMin = link.MinutesMin
                 MinutesMax = link.MinutesMax
                 ComfortNote = link.ComfortNote
@@ -189,7 +162,7 @@ let private notices (catalog: Catalog) (stops: RoutedStop list) =
         |> List.map (fun notice -> {
             TripNotice.PlaceSlug = Some place.Slug
             Kind = notice.Kind
-            Severity = noticeSeverity notice.Severity
+            Severity = ContractMapping.severity notice.Severity
             Body = notice.Body
         })
 

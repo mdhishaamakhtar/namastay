@@ -52,6 +52,13 @@ let mode =
     | Mode.Ferry -> "ferry"
     | Mode.CableCar -> "cable_car"
 
+let severity =
+    function
+    | Severity.Info -> "info"
+    | Severity.Warn -> "warn"
+    | Severity.Permit -> "permit"
+    | Severity.Danger -> "danger"
+
 let scope =
     function
     | NoticeScope.National -> "national"

@@ -8,7 +8,10 @@ let private upsertRegion transaction (region: Region) =
         transaction
         "insert into regions (slug, name) values (@slug, @name)
          on conflict (slug) do update set name = excluded.name"
-        [ arg "slug" region.Slug; arg "name" region.Name ]
+        {|
+            slug = region.Slug
+            name = region.Name
+        |}
     |> ignore
 
 let private upsertCluster transaction (cluster: Cluster) =
@@ -16,11 +19,11 @@ let private upsertCluster transaction (cluster: Cluster) =
         transaction
         "insert into clusters (slug, region_slug, name) values (@slug, @region, @name)
          on conflict (slug) do update set region_slug = excluded.region_slug, name = excluded.name"
-        [
-            arg "slug" cluster.Slug
-            arg "region" cluster.RegionSlug
-            arg "name" cluster.Name
-        ]
+        {|
+            slug = cluster.Slug
+            region = cluster.RegionSlug
+            name = cluster.Name
+        |}
     |> ignore
 
 let private upsertFamily transaction (family: ColourFamily) =
@@ -31,15 +34,15 @@ let private upsertFamily transaction (family: ColourFamily) =
          on conflict (slug) do update set
             name = excluded.name, used_for = excluded.used_for, deep = excluded.deep,
             mid = excluded.mid, pale = excluded.pale, text_on_deep = excluded.text_on_deep"
-        [
-            arg "slug" family.Slug
-            arg "name" family.Name
-            arg "usedFor" family.UsedFor
-            arg "deep" family.Deep
-            arg "mid" family.Mid
-            arg "pale" family.Pale
-            arg "textOnDeep" family.TextOnDeep
-        ]
+        {|
+            slug = family.Slug
+            name = family.Name
+            usedFor = family.UsedFor
+            deep = family.Deep
+            mid = family.Mid
+            pale = family.Pale
+            textOnDeep = family.TextOnDeep
+        |}
     |> ignore
 
 let private upsertInterest transaction (interest: Interest) =
@@ -47,14 +50,17 @@ let private upsertInterest transaction (interest: Interest) =
         transaction
         "insert into interests (slug, name) values (@slug, @name)
          on conflict (slug) do update set name = excluded.name"
-        [ arg "slug" interest.Slug; arg "name" interest.Name ]
+        {|
+            slug = interest.Slug
+            name = interest.Name
+        |}
     |> ignore
 
 let private linkParent transaction (interest: Interest) =
-    exec transaction "update interests set parent_slug = @parent where slug = @slug" [
-        arg "slug" interest.Slug
-        opt "parent" interest.ParentSlug
-    ]
+    exec transaction "update interests set parent_slug = @parent where slug = @slug" {|
+        slug = interest.Slug
+        parent = interest.ParentSlug
+    |}
     |> ignore
 
 let private upsertSource transaction (source: Source) =
@@ -65,14 +71,14 @@ let private upsertSource transaction (source: Source) =
          on conflict (id) do update set
             url = excluded.url, title = excluded.title, publisher = excluded.publisher,
             kind = excluded.kind, accessed_on = excluded.accessed_on"
-        [
-            arg "id" source.Id
-            arg "url" source.Url
-            arg "title" source.Title
-            arg "publisher" source.Publisher
-            arg "kind" source.Kind
-            arg "accessedOn" source.AccessedOn
-        ]
+        {|
+            id = source.Id
+            url = source.Url
+            title = source.Title
+            publisher = source.Publisher
+            kind = source.Kind
+            accessedOn = source.AccessedOn
+        |}
     |> ignore
 
 let apply transaction (catalog: Catalog) =

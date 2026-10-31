@@ -4,9 +4,6 @@
     <Compile Include="Sql.fs" />
     <Compile Include="Migrate.fs" />
     <Compile Include="Media/MediaStore.fs" />
-    <Compile Include="Places/Rows.fs" />
-    <Compile Include="Places/Search.fs" />
-    <Compile Include="Places/Guide.fs" />
     <Compile Include="Import/Encode.fs" />
     <Compile Include="Import/Geography.fs" />
     <Compile Include="Import/Places.fs" />
@@ -16,6 +13,9 @@
     <Compile Include="Import/Load.fs" />
     <Compile Include="Import/Run.fs" />
     <Compile Include="Catalog/Decode.fs" />
+    <Compile Include="Places/Rows.fs" />
+    <Compile Include="Places/Search.fs" />
+    <Compile Include="Places/Guide.fs" />
     <Compile Include="Catalog/Rows.fs" />
     <Compile Include="Catalog/Read.fs" />
     <Compile Include="Journey/Graph.fs" />

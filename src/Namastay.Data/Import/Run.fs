@@ -36,11 +36,11 @@ let private recordBatch (connection: NpgsqlConnection) (hash: string) (status: s
         transaction
         "insert into import_batches (started_at, finished_at, file_hash, status, counts)
          values (now(), now(), @hash, @status, @counts::jsonb)"
-        [
-            arg "hash" hash
-            arg "status" status
-            arg "counts" (JsonSerializer.Serialize counts)
-        ]
+        {|
+            hash = hash
+            status = status
+            counts = JsonSerializer.Serialize counts
+        |}
     |> ignore
 
     transaction.Commit()
