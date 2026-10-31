@@ -7,6 +7,7 @@ open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Routing
 open Npgsql
 open Namastay.Data.Places
+open Namastay.Web.Http
 
 let private html (context: HttpContext) (status: int) (body: string) : Task =
     context.Response.StatusCode <- status
@@ -15,7 +16,13 @@ let private html (context: HttpContext) (status: int) (body: string) : Task =
 
 let private guide source (context: HttpContext) : Task =
     task {
-        let! found = Guide.tryLoad source (string context.Request.RouteValues["slug"])
+        let slug = string context.Request.RouteValues["slug"]
+
+        let! found =
+            if Input.isSlug slug then
+                Guide.tryLoad source slug
+            else
+                Task.FromResult None
 
         match found with
         | Some place -> do! html context StatusCodes.Status200OK (GuidePage.render place)

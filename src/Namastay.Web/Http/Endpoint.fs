@@ -1,9 +1,11 @@
 module Namastay.Web.Http.Endpoint
 
+open System
 open System.Text.Json
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
+open Microsoft.AspNetCore.Http.Features
 open Microsoft.AspNetCore.Routing
 open Namastay.Shared
 open Namastay.Shared.Contracts
@@ -27,21 +29,41 @@ let mapGet
 
     app.MapGet(route.Template, RequestDelegate run) |> ignore
 
+let private unreadable =
+    ApiError.validation [
+        {
+            Field = "body"
+            Message = "We couldn't read that request."
+        }
+    ]
+
+let private limitBody (context: HttpContext) =
+    match context.Features.Get<IHttpMaxRequestBodySizeFeature>() with
+    | null -> ()
+    | feature when feature.IsReadOnly -> ()
+    | feature -> feature.MaxRequestBodySize <- Nullable Limits.maxBodyBytes
+
 let private tryRead<'Request> (context: HttpContext) =
     task {
-        try
-            let! request = context.Request.ReadFromJsonAsync<'Request>(Json.options)
-            return Ok request
-        with :? JsonException ->
-            return
-                Error(
-                    ApiError.validation [
-                        {
-                            Field = "body"
-                            Message = "We couldn't read that request."
-                        }
-                    ]
-                )
+        if not (context.Request.HasJsonContentType()) then
+            return Error(ApiError.create ErrorCode.UnsupportedMedia "Please send JSON.")
+        elif context.Request.ContentLength.GetValueOrDefault 0L > Limits.maxBodyBytes then
+            return Error(ApiError.create ErrorCode.TooLarge "That request is too large.")
+        else
+            limitBody context
+
+            try
+                let! request = context.Request.ReadFromJsonAsync<'Request>(Json.options)
+
+                return
+                    if isNull (box request) then
+                        Error unreadable
+                    else
+                        Ok request
+            with
+            | :? JsonException -> return Error unreadable
+            | :? BadHttpRequestException as error when error.StatusCode = StatusCodes.Status413PayloadTooLarge ->
+                return Error(ApiError.create ErrorCode.TooLarge "That request is too large.")
     }
 
 /// A body that can't be read becomes a validation error, never a crash.

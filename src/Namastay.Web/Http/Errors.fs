@@ -11,6 +11,9 @@ let statusCode code =
     | ErrorCode.Forbidden -> StatusCodes.Status403Forbidden
     | ErrorCode.NotFound -> StatusCodes.Status404NotFound
     | ErrorCode.Conflict -> StatusCodes.Status409Conflict
+    | ErrorCode.MethodNotAllowed -> StatusCodes.Status405MethodNotAllowed
+    | ErrorCode.UnsupportedMedia -> StatusCodes.Status415UnsupportedMediaType
+    | ErrorCode.TooLarge -> StatusCodes.Status413PayloadTooLarge
     | ErrorCode.RateLimited -> StatusCodes.Status429TooManyRequests
     | ErrorCode.Internal -> StatusCodes.Status500InternalServerError
 

@@ -96,7 +96,6 @@ type JourneyApiTests(postgres: PostgresFixture) =
             let source = scope.Own(NpgsqlDataSource.Create db)
             JourneyApi.map app source
             TripsApi.map app source
-            Server.mapApiFallback app
             do! app.StartAsync()
             return app.GetTestClient(), db
         }
@@ -292,6 +291,105 @@ type JourneyApiTests(postgres: PostgresFixture) =
             let! error = blocked.Content.ReadFromJsonAsync<ApiError>(Json.options)
             Assert.Equal(HttpStatusCode.TooManyRequests, blocked.StatusCode)
             Assert.Equal(ErrorCode.RateLimited, error.Code)
+        }
+
+    [<Theory>]
+    [<InlineData(0)>]
+    [<InlineData(13)>]
+    member _.``month outside 1 to 12 returns 400``(month: int) =
+        task {
+            let! http, _ = start ()
+            let! response = post http { tripRequest with Month = Some month }
+            let! error = response.Content.ReadFromJsonAsync<ApiError>(Json.options)
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode)
+            Assert.Equal("month", error.Fields.Head.Field)
+        }
+
+    [<Fact>]
+    member _.``every invalid field is reported together``() =
+        task {
+            let! http, _ = start ()
+
+            let! response =
+                post http {
+                    tripRequest with
+                        Days = 1
+                        Month = Some 13
+                }
+
+            let! error = response.Content.ReadFromJsonAsync<ApiError>(Json.options)
+            Assert.Equal<string list>([ "days"; "month" ], error.Fields |> List.map _.Field)
+        }
+
+    [<Fact>]
+    member _.``too many answers returns 400``() =
+        task {
+            let! http, _ = start ()
+
+            let answers = [
+                for number in 1..1001 ->
+                    {
+                        Card = $"card-{number}"
+                        Liked = true
+                    }
+            ]
+
+            let! response = post http { tripRequest with Answers = answers }
+            let! error = response.Content.ReadFromJsonAsync<ApiError>(Json.options)
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode)
+            Assert.Equal("answers", error.Fields.Head.Field)
+        }
+
+    [<Theory>]
+    [<InlineData("null")>]
+    [<InlineData("")>]
+    [<InlineData("[]")>]
+    [<InlineData("{\"days\":7}")>]
+    member _.``unusable json body returns 400``(body: string) =
+        task {
+            let! http, _ = start ()
+            use content = new StringContent(body, Encoding.UTF8, "application/json")
+            let! response = http.PostAsync(Routes.createItinerary.Template, content)
+            let! error = response.Content.ReadFromJsonAsync<ApiError>(Json.options)
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode)
+            Assert.Equal(ErrorCode.ValidationFailed, error.Code)
+        }
+
+    [<Fact>]
+    member _.``non json body returns 415 with the error shape``() =
+        task {
+            let! http, _ = start ()
+            use content = new StringContent("days=7", Encoding.UTF8, "text/plain")
+            let! response = http.PostAsync(Routes.createItinerary.Template, content)
+            let! error = response.Content.ReadFromJsonAsync<ApiError>(Json.options)
+            Assert.Equal(HttpStatusCode.UnsupportedMediaType, response.StatusCode)
+            Assert.Equal(ErrorCode.UnsupportedMedia, error.Code)
+        }
+
+    [<Fact>]
+    member _.``oversized body returns 413 with the error shape``() =
+        task {
+            let! http, _ = start ()
+
+            use content =
+                new StringContent(String('a', 200_000), Encoding.UTF8, "application/json")
+
+            let! response = http.PostAsync(Routes.createItinerary.Template, content)
+            let! error = response.Content.ReadFromJsonAsync<ApiError>(Json.options)
+            Assert.Equal(HttpStatusCode.RequestEntityTooLarge, response.StatusCode)
+            Assert.Equal(ErrorCode.TooLarge, error.Code)
+        }
+
+    [<Theory>]
+    [<InlineData("a%20b")>]
+    [<InlineData("toolongtokentoolongtokentoolongtoken")>]
+    member _.``malformed share token returns 404``(token: string) =
+        task {
+            let! http, _ = start ()
+            let! response = http.GetAsync("/api/itineraries/" + token)
+            let! error = response.Content.ReadFromJsonAsync<ApiError>(Json.options)
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode)
+            Assert.Equal(ErrorCode.NotFound, error.Code)
         }
 
     interface IDisposable with

@@ -25,6 +25,16 @@ let private search source (context: HttpContext) : Task<Result<PlaceSummary list
                         }
                     ]
                 )
+        elif Input.hasControlCharacters query then
+            return
+                Error(
+                    ApiError.validation [
+                        {
+                            Field = "query"
+                            Message = "Please use letters and numbers."
+                        }
+                    ]
+                )
         elif query = "" then
             return Ok []
         else
@@ -34,7 +44,13 @@ let private search source (context: HttpContext) : Task<Result<PlaceSummary list
 
 let private guide source (context: HttpContext) : Task<Result<PlaceGuide, ApiError>> =
     task {
-        let! found = Guide.tryLoad source (string context.Request.RouteValues["slug"])
+        let slug = string context.Request.RouteValues["slug"]
+
+        let! found =
+            if Input.isSlug slug then
+                Guide.tryLoad source slug
+            else
+                Task.FromResult None
 
         return
             match found with

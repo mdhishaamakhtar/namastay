@@ -4,12 +4,16 @@ open System
 open System.Net
 open System.Net.Http
 open System.Text.Json
+open System.IO
+open System.Threading
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
+open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Mvc.Testing
 open Microsoft.AspNetCore.Routing
 open Microsoft.AspNetCore.TestHost
+open Microsoft.Extensions.Logging.Abstractions
 open Xunit
 open Namastay.Shared
 open Namastay.Shared.Contracts
@@ -57,7 +61,6 @@ let private client () =
             ))
 
         Endpoint.mapGet app crashRoute (fun _ -> failwith "secret database detail")
-        Server.mapApiFallback app
         do! app.StartAsync()
         return app.GetTestClient()
     }
@@ -110,6 +113,40 @@ let ``crash returns a safe internal error`` () =
         Assert.Equal("Internal", json.GetProperty("code").GetString())
         Assert.DoesNotContain("secret", text)
         Assert.False(String.IsNullOrEmpty(json.GetProperty("traceId").GetString()))
+    }
+
+[<Fact>]
+let ``wrong method returns 405 with the error shape`` () =
+    task {
+        let! http = client ()
+        let! response = http.PostAsync(okRoute.Template, null)
+        let! _, json = readJson response
+        Assert.Equal(HttpStatusCode.MethodNotAllowed, response.StatusCode)
+        Assert.Equal("MethodNotAllowed", json.GetProperty("code").GetString())
+    }
+
+[<Fact>]
+let ``cancelled request is not reported as a server error`` () =
+    task {
+        use cancelled = new CancellationTokenSource()
+        cancelled.Cancel()
+        let context = DefaultHttpContext(RequestAborted = cancelled.Token)
+
+        let next =
+            RequestDelegate(fun _ -> raise (OperationCanceledException cancelled.Token))
+
+        do! Server.guard NullLogger.Instance context next
+        Assert.Equal(499, context.Response.StatusCode)
+    }
+
+[<Fact>]
+let ``cancellation from elsewhere is still a server error`` () =
+    task {
+        let context = DefaultHttpContext()
+        context.Response.Body <- new MemoryStream()
+        let next = RequestDelegate(fun _ -> raise (OperationCanceledException()))
+        do! Server.guard NullLogger.Instance context next
+        Assert.Equal(500, context.Response.StatusCode)
     }
 
 [<Fact>]

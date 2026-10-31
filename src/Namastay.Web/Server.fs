@@ -46,26 +46,39 @@ let configureServices (services: IServiceCollection) =
 
 let useRateLimits (app: WebApplication) = app.UseRateLimiter() |> ignore
 
+let private clientClosedRequest = 499
+
+let private isApi (context: HttpContext) =
+    context.Request.Path.StartsWithSegments(PathString "/api")
+
+/// Routing answers unknown addresses and wrong methods with an empty response,
+/// so API clients get our error shape here. Handlers that wrote their own error have started.
+let private shapeEmptyError (context: HttpContext) =
+    if not (isApi context) || context.Response.HasStarted then
+        Task.CompletedTask
+    else
+        match context.Response.StatusCode with
+        | StatusCodes.Status404NotFound -> Errors.write context (ApiError.notFound "That address doesn't exist.")
+        | StatusCodes.Status405MethodNotAllowed ->
+            Errors.write context (ApiError.create ErrorCode.MethodNotAllowed "That action isn't allowed here.")
+        | _ -> Task.CompletedTask
+
 /// Turns any unexpected exception into a safe error and logs the real one with its trace ID.
+/// A visitor closing the page is not an error.
+let guard (logger: ILogger) (context: HttpContext) (next: RequestDelegate) : Task =
+    task {
+        try
+            do! next.Invoke context
+            do! shapeEmptyError context
+        with
+        | :? OperationCanceledException when context.RequestAborted.IsCancellationRequested ->
+            context.Response.StatusCode <- clientClosedRequest
+        | error ->
+            logger.LogError(error, "Unhandled error for trace {TraceId}", context.TraceIdentifier)
+
+            if not context.Response.HasStarted then
+                do! Errors.write context (ApiError.create ErrorCode.Internal "Something went wrong on our side.")
+    }
+
 let useErrorHandling (app: WebApplication) =
-    let logger = app.Logger
-
-    let handle (context: HttpContext) (next: RequestDelegate) : Task =
-        task {
-            try
-                do! next.Invoke context
-            with error ->
-                logger.LogError(error, "Unhandled error for trace {TraceId}", context.TraceIdentifier)
-
-                if not context.Response.HasStarted then
-                    do! Errors.write context (ApiError.create ErrorCode.Internal "Something went wrong on our side.")
-        }
-
-    app.Use(Func<HttpContext, RequestDelegate, Task>(handle)) |> ignore
-
-/// Unknown API addresses return the same error shape as every other failure.
-let mapApiFallback (app: WebApplication) =
-    let notFound (context: HttpContext) : Task =
-        Errors.write context (ApiError.notFound "That address doesn't exist.")
-
-    app.MapFallback("/api/{**path}", RequestDelegate notFound) |> ignore
+    app.Use(Func<HttpContext, RequestDelegate, Task>(guard app.Logger)) |> ignore

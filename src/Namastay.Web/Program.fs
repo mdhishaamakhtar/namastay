@@ -35,6 +35,5 @@ let main args =
     JourneyApi.map app database
     TripsApi.map app database
     GuideRoutes.map app database
-    Server.mapApiFallback app
     app.Run()
     0

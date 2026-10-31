@@ -34,7 +34,7 @@ let private toApiError error =
     | Builder.TripError.NoPlaces ->
         ApiError.create ErrorCode.Conflict "We couldn't build a trip from those choices. Please try different dates."
 
-let private create source (_: HttpContext) (request: TripRequest) : Task<Result<SavedTrip, ApiError>> =
+let private buildAndSave source request =
     task {
         let! catalog = Read.load source
 
@@ -45,6 +45,11 @@ let private create source (_: HttpContext) (request: TripRequest) : Task<Result<
             do! Itineraries.save source token trip.Title (JsonSerializer.Serialize(trip, Json.options)) trip.DataVersion
             return Ok { ShareToken = token; Trip = trip }
     }
+
+let private create source (_: HttpContext) (request: TripRequest) : Task<Result<SavedTrip, ApiError>> =
+    match RequestRules.check request with
+    | [] -> buildAndSave source request
+    | fields -> Task.FromResult(Error(ApiError.validation fields))
 
 let private markRetired source (trip: Trip) =
     task {
@@ -64,7 +69,12 @@ let private markRetired source (trip: Trip) =
 let private fetch source (context: HttpContext) : Task<Result<SavedTrip, ApiError>> =
     task {
         let token = string context.Request.RouteValues["shareToken"]
-        let! stored = Itineraries.tryLoad source token
+
+        let! stored =
+            if Input.isShareToken token then
+                Itineraries.tryLoad source token
+            else
+                Task.FromResult None
 
         match stored with
         | None -> return Error(ApiError.notFound "We couldn't find that trip.")

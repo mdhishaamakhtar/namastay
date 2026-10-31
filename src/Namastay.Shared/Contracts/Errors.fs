@@ -7,6 +7,9 @@ type ErrorCode =
     | Forbidden
     | NotFound
     | Conflict
+    | MethodNotAllowed
+    | UnsupportedMedia
+    | TooLarge
     | RateLimited
     | Internal
 

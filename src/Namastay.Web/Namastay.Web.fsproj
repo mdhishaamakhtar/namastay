@@ -6,6 +6,7 @@
     <Compile Include="Http/Json.fs" />
     <Compile Include="Http/Errors.fs" />
     <Compile Include="Http/Limits.fs" />
+    <Compile Include="Http/Input.fs" />
     <Compile Include="Http/Endpoint.fs" />
     <Compile Include="Media/MediaRoute.fs" />
     <Compile Include="Places/PlacesApi.fs" />

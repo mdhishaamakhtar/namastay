@@ -61,7 +61,6 @@ type PlacesApiTests(postgres: PostgresFixture) =
             Server.useErrorHandling app
             let source = scope.Own(NpgsqlDataSource.Create db)
             PlacesApi.map app source
-            Server.mapApiFallback app
             do! app.StartAsync()
             return app.GetTestClient(), db
         }
@@ -358,6 +357,29 @@ type PlacesApiTests(postgres: PostgresFixture) =
             let! place = guide http "kasol"
             Assert.Equal("/media/photos/kasol.webp", place.Photos.Head.Url)
             Assert.Equal("Someone", place.Photos.Head.Credit)
+        }
+
+    [<Fact>]
+    member _.``control characters in a search are a validation error``() =
+        task {
+            let! http, _ = start catalog
+            let! response = http.GetAsync "/api/places?query=a%00b"
+            let! error = response.Content.ReadFromJsonAsync<ApiError>(Json.options)
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode)
+            Assert.Equal("query", error.Fields.Head.Field)
+        }
+
+    [<Theory>]
+    [<InlineData("a%20b")>]
+    [<InlineData("UPPER")>]
+    [<InlineData("..%2F..")>]
+    member _.``malformed guide slug returns 404``(slug: string) =
+        task {
+            let! http, _ = start catalog
+            let! response = http.GetAsync("/api/places/" + slug)
+            let! error = response.Content.ReadFromJsonAsync<ApiError>(Json.options)
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode)
+            Assert.Equal(ErrorCode.NotFound, error.Code)
         }
 
     interface IDisposable with

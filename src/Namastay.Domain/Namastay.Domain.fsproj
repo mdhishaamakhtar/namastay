@@ -13,6 +13,7 @@
     <Compile Include="Trip/Profile.fs" />
     <Compile Include="Trip/Scoring.fs" />
     <Compile Include="Trip/Routing.fs" />
+    <Compile Include="Trip/RequestRules.fs" />
     <Compile Include="Trip/Builder.fs" />
   </ItemGroup>
 

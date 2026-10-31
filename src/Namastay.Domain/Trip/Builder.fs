@@ -19,8 +19,6 @@ type FamilyDays = {
     Family: string
 }
 
-let private minDays = 5
-let private maxDays = 21
 let private spareDay = "A free day to rest or explore at your own pace."
 
 /// The family with the most days leads. Ties go to the first one collected.
@@ -249,7 +247,7 @@ let private assemble catalog profile (request: TripRequest) places stops : Trip 
 
 /// Builds a realistic trip from rules and data alone. The same input gives the same trip.
 let build (catalog: Catalog) (request: TripRequest) : Result<Trip, TripError> =
-    if request.Days < minDays || request.Days > maxDays then
+    if request.Days < RequestRules.minDays || request.Days > RequestRules.maxDays then
         Error(TripError.InvalidDays request.Days)
     else
         let profile = Profile.from catalog.Cards request
