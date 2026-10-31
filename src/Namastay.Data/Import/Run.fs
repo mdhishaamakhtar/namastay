@@ -52,6 +52,12 @@ let private applyAll transaction catalog =
     Events.apply transaction catalog
     Journey.apply transaction catalog
 
+let private reject (connection: NpgsqlConnection) mode hash (message: string) =
+    if mode = Apply then
+        recordBatch connection hash "failed" Map.empty
+
+    Error [ message ]
+
 let private write (connection: NpgsqlConnection) mode hash catalog =
     let counts = countsOf catalog
 
@@ -67,20 +73,22 @@ let private write (connection: NpgsqlConnection) mode hash catalog =
 
         Ok counts
     with :? PostgresException as error ->
-        if mode = Apply then
-            recordBatch connection hash "failed" Map.empty
+        reject connection mode hash $"database rejected the batch: {error.MessageText}"
 
-        Error [ $"database rejected the batch: {error.MessageText}" ]
-
-/// Validates, then writes everything in one transaction or nothing at all.
-let run (connectionString: string) (mode: Mode) (hash: string) (catalog: Catalog) : Result<ImportCounts, string list> =
-    use connection = new NpgsqlConnection(connectionString)
-    connection.Open()
-
-    match Namastay.Domain.Catalog.Validation.check catalog with
+let private validated (connection: NpgsqlConnection) mode hash catalog =
+    match Validation.check catalog with
     | [] -> write connection mode hash catalog
     | errors ->
         if mode = Apply then
             recordBatch connection hash "failed" Map.empty
 
         Error(errors |> List.map (fun error -> $"{error.Table}/{error.Slug}: {error.Message}"))
+
+/// Validates, then writes everything in one transaction or nothing at all.
+let run (connectionString: string) (mode: Mode) (hash: string) (catalog: Catalog) : Result<ImportCounts, string list> =
+    try
+        use connection = new NpgsqlConnection(connectionString)
+        connection.Open()
+        validated connection mode hash catalog
+    with :? NpgsqlException as error ->
+        Error [ $"couldn't reach the database: {error.Message}" ]

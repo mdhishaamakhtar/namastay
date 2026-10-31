@@ -8,8 +8,12 @@ open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.ResponseCompression
 open Microsoft.AspNetCore.RateLimiting
+open Microsoft.AspNetCore.Routing
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Logging
+open Npgsql
+open Namastay.Data
+open Namastay.Shared
 open Namastay.Shared.Contracts
 open Namastay.Web.Http
 
@@ -91,3 +95,18 @@ let guard (logger: ILogger) (context: HttpContext) (next: RequestDelegate) : Tas
 
 let useErrorHandling (app: WebApplication) =
     app.Use(Func<HttpContext, RequestDelegate, Task>(guard app.Logger)) |> ignore
+
+/// Says whether this instance can serve visitors, unlike `/health`, which only says it's running.
+let mapHealth (app: IEndpointRouteBuilder) (source: NpgsqlDataSource) =
+    Endpoint.mapGet app Routes.health (fun _ -> Task.FromResult(Ok { Status = "ok" }))
+
+    let ready (_: HttpContext) =
+        task {
+            try
+                let! _ = Sql.query<int> source "select 1" null
+                return Ok { Status = "ready" }
+            with :? NpgsqlException ->
+                return Error(ApiError.create ErrorCode.Unavailable "We're not ready yet. Please try again shortly.")
+        }
+
+    Endpoint.mapGet app Routes.ready ready

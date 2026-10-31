@@ -15,6 +15,7 @@ let statusCode code =
     | ErrorCode.UnsupportedMedia -> StatusCodes.Status415UnsupportedMediaType
     | ErrorCode.TooLarge -> StatusCodes.Status413PayloadTooLarge
     | ErrorCode.RateLimited -> StatusCodes.Status429TooManyRequests
+    | ErrorCode.Unavailable -> StatusCodes.Status503ServiceUnavailable
     | ErrorCode.Internal -> StatusCodes.Status500InternalServerError
 
 let write (context: HttpContext) (error: ApiError) : Task =

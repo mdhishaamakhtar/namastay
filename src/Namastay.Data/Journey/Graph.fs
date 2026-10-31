@@ -3,6 +3,7 @@ module Namastay.Data.Journey.Graph
 open System.Threading.Tasks
 open Npgsql
 open Namastay.Data.Sql
+open Namastay.Shared
 open Namastay.Shared.Contracts
 
 [<CLIMutable>]
@@ -42,8 +43,6 @@ let private cardsSql =
      left join colour_families f on f.slug = p.family_slug
      order by c.slug"
 
-let private mediaUrl (path: string) = "/media/" + path
-
 let private colours (row: CardRow) =
     match row.Deep, row.Mid, row.Pale, row.TextOnDeep with
     | Some deep, Some mid, Some pale, Some text ->
@@ -65,12 +64,12 @@ let private toCard (branches: BranchRow list) (row: CardRow) : JourneyCard =
         Title = row.Title
         Line = row.Line
         IsStart = row.IsStart
-        ImageUrl = row.PhotoPath |> Option.orElse row.MarkPath |> Option.map mediaUrl
+        ImageUrl = row.PhotoPath |> Option.orElse row.MarkPath |> Option.map Routes.mediaUrl
         ImageAlt = if hasPhoto then row.PhotoAlt else row.MarkAlt
         ImageCredit = row.PhotoCredit
         MarkUrl =
             if hasPhoto then
-                row.MarkPath |> Option.map mediaUrl
+                row.MarkPath |> Option.map Routes.mediaUrl
             else
                 None
         Colours = colours row

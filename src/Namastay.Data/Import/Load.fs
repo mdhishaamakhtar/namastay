@@ -1,5 +1,6 @@
 module Namastay.Data.Import.Load
 
+open System
 open System.IO
 open System.Text.Json
 open System.Text.Json.Serialization
@@ -62,6 +63,13 @@ let save (folder: string) (catalog: Catalog) =
     write fileNames.Photos catalog.Photos
     write fileNames.Cards catalog.Cards
 
+let private isReadProblem (error: exn) =
+    match error with
+    | :? JsonException
+    | :? IOException
+    | :? UnauthorizedAccessException -> true
+    | _ -> false
+
 let private withOverrides (core: Place list) (full: Place list) =
     let replaced =
         core
@@ -87,7 +95,7 @@ let fromFolder (folder: string) : Result<Catalog, string list> =
         let parse (path: string) (fallback: 'T) : 'T =
             try
                 JsonSerializer.Deserialize<'T>(File.ReadAllText path, options)
-            with :? JsonException as error ->
+            with error when isReadProblem error ->
                 errors.Add $"{path}: {error.Message}"
                 fallback
 

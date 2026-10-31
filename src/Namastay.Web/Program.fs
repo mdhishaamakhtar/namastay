@@ -1,10 +1,7 @@
 open System
-open System.Threading.Tasks
 open Microsoft.AspNetCore.Builder
 open Npgsql
 open Namastay.Data.Media
-open Namastay.Shared
-open Namastay.Shared.Contracts
 open Namastay.Web
 open Namastay.Web.Media
 open Namastay.Web.Guides
@@ -30,10 +27,9 @@ let main args =
     Server.useErrorHandling app
     Server.useRateLimits app
 
-    Endpoint.mapGet app Routes.health (fun _ -> Task.FromResult(Ok { Status = "ok" }))
-
     MediaRoute.map app (MediaStore.create settings.Media)
     use database = NpgsqlDataSource.Create settings.Database
+    Server.mapHealth app database
     use data = DataCache.create database
     PlacesApi.map app data
     JourneyApi.map app data

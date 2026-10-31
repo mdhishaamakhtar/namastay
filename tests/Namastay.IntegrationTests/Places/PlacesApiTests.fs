@@ -50,20 +50,8 @@ type PlacesApiTests(postgres: PostgresFixture) =
     }
 
     let start (catalog: Catalog) =
-        task {
-            let! db = scope.NewDatabase()
-            migrated db
-            Assert.True((Run.run db Run.Apply "test" catalog).IsOk)
-            let builder = WebApplication.CreateBuilder()
-            builder.WebHost.UseTestServer() |> ignore
-            Server.configureServices builder.Services
-            let app = scope.Own(builder.Build())
-            Server.useErrorHandling app
-            let data = scope.Own(DataCache.create (scope.Own(NpgsqlDataSource.Create db)))
-            PlacesApi.map app data
-            do! app.StartAsync()
-            return app.GetTestClient(), db
-        }
+        TestApp.start scope catalog PlacesApi.map
+
 
     let search (http: HttpClient) (query: string) =
         http.GetFromJsonAsync<PlaceSummary list>(Route.url [] [ "query", query ] Routes.searchPlaces, Json.options)

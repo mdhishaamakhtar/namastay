@@ -6,6 +6,7 @@ open Namastay.Data.Catalog
 open Namastay.Data.Places.Rows
 open Namastay.Data.Sql
 open Namastay.Domain.Catalog
+open Namastay.Shared
 open Namastay.Shared.Contracts
 
 let private hedged = "status in ('one_source', 'conflict') as hedged"
@@ -146,7 +147,7 @@ let tryLoad (source: NpgsqlDataSource) (slug: string) : Task<PlaceGuide option> 
                         Photos =
                             photos
                             |> List.map (fun row -> {
-                                Url = "/media/" + row.FilePath
+                                Url = Routes.mediaUrl row.FilePath
                                 Alt = row.Alt
                                 Credit = row.Credit
                                 Licence = row.Licence

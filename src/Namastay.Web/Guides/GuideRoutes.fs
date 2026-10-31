@@ -6,6 +6,7 @@ open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Routing
 open Namastay.Data.Places
+open Namastay.Shared
 open Namastay.Web.Http
 
 let private html (context: HttpContext) (status: int) (body: string) : Task =
@@ -43,7 +44,8 @@ let private sitemap (data: DataCache) (context: HttpContext) : Task =
         let entries =
             slugs
             |> List.map (fun slug ->
-                $"<url><loc>{SecurityElement.Escape origin}/places/{SecurityElement.Escape slug}</loc></url>")
+                let path = Route.url [ "slug", slug ] [] Routes.guidePage
+                $"<url><loc>{SecurityElement.Escape(origin + path)}</loc></url>")
             |> String.concat ""
 
         context.Response.ContentType <- "application/xml; charset=utf-8"
@@ -54,5 +56,5 @@ let private sitemap (data: DataCache) (context: HttpContext) : Task =
     }
 
 let map (app: IEndpointRouteBuilder) (data: DataCache) =
-    app.MapGet("/places/{slug}", RequestDelegate(guide data)) |> ignore
-    app.MapGet("/sitemap.xml", RequestDelegate(sitemap data)) |> ignore
+    app.MapGet(Routes.guidePage.Template, RequestDelegate(guide data)) |> ignore
+    app.MapGet(Routes.sitemap.Template, RequestDelegate(sitemap data)) |> ignore

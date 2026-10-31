@@ -3,6 +3,7 @@ module Namastay.Web.Guides.GuidePage
 open System
 open System.Globalization
 open Giraffe.ViewEngine
+open Namastay.Shared
 open Namastay.Shared.Contracts
 
 let private hedgeNote =
@@ -136,8 +137,8 @@ let private photos (place: PlaceGuide) = [
 
 let private navigation =
     nav [] [
-        a [ _href "/" ] [ str "Namastay" ]
-        a [ _href "/journey" ] [ str "Plan a trip" ]
+        a [ _href Routes.home.Template ] [ str "Namastay" ]
+        a [ _href Routes.journey.Template ] [ str "Plan a trip" ]
     ]
 
 let render (place: PlaceGuide) =
@@ -156,7 +157,7 @@ let render (place: PlaceGuide) =
             yield! stays place
             yield! notices place
             yield! photos place |> List.skip (min 1 place.Photos.Length)
-            a [ _class "plan"; _href "/journey" ] [ str "Plan a trip around this" ]
+            a [ _class "plan"; _href Routes.journey.Template ] [ str "Plan a trip around this" ]
             footer [] [ p [] [ str $"Last checked {lastChecked place.LastChecked}" ] ]
         ]
     ]
@@ -172,7 +173,7 @@ let notFound () =
             main [] [
                 h1 [] [ str "We don't have that guide yet" ]
                 p [] [ str "It may not be written yet, or the address may have changed." ]
-                a [ _class "plan"; _href "/" ] [ str "Back to Namastay" ]
+                a [ _class "plan"; _href Routes.home.Template ] [ str "Back to Namastay" ]
             ]
         ]
     |> RenderView.AsString.htmlDocument

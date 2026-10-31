@@ -3,8 +3,11 @@ namespace Namastay.IntegrationTests.Web
 open System
 open System.Net
 open System.Net.Http.Json
+open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Mvc.Testing
+open Microsoft.AspNetCore.TestHost
+open Npgsql
 open Xunit
 open Namastay.Data
 open Namastay.Data.Import
@@ -45,6 +48,37 @@ type WiringTests(postgres: PostgresFixture) =
                 http.GetFromJsonAsync<HealthStatus>(Routes.health.Template, Json.options)
 
             Assert.Equal("ok", health.Status)
+        }
+
+    [<Fact>]
+    member _.``ready confirms the database``() =
+        task {
+            let! http = start ()
+
+            let! status =
+                http.GetFromJsonAsync<HealthStatus>(Routes.ready.Template, Json.options)
+
+            Assert.Equal("ready", status.Status)
+        }
+
+    [<Fact>]
+    member _.``ready returns 503 with the error shape when the database is down``() =
+        task {
+            let builder = WebApplication.CreateBuilder()
+            builder.WebHost.UseTestServer() |> ignore
+            let app = scope.Own(builder.Build())
+
+            let source =
+                scope.Own(NpgsqlDataSource.Create "Host=127.0.0.1;Port=1;Database=none;Username=x;Password=x")
+
+            Server.useErrorHandling app
+            Server.mapHealth app source
+            do! app.StartAsync()
+            let http = app.GetTestClient()
+            let! response = http.GetAsync Routes.ready.Template
+            let! error = response.Content.ReadFromJsonAsync<ApiError>(Json.options)
+            Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode)
+            Assert.Equal(ErrorCode.Unavailable, error.Code)
         }
 
     [<Fact>]

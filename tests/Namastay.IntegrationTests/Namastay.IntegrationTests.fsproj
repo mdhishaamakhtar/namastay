@@ -3,6 +3,7 @@
   <ItemGroup>
     <Compile Include="Support/Postgres.fs" />
     <Compile Include="Support/Sample.fs" />
+    <Compile Include="Support/TestApp.fs" />
     <Compile Include="HealthTests.fs" />
     <Compile Include="Http/ErrorHandlingTests.fs" />
     <Compile Include="Data/MigrationTests.fs" />

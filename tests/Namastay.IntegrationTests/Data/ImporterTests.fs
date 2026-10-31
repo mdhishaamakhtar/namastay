@@ -47,6 +47,14 @@ type ImporterTests(postgres: PostgresFixture) =
         | Error errors -> errors
 
     [<Fact>]
+    member _.``unreachable database is a clear error``() =
+        let errors =
+            Run.run "Host=127.0.0.1;Port=1;Database=none;Username=x;Password=x" Run.Apply "x" Sample.catalog
+            |> expectErrors
+
+        Assert.Contains("couldn't reach the database", errors.Head)
+
+    [<Fact>]
     member _.``dry run writes nothing``() =
         task {
             let! db = database ()

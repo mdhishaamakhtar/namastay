@@ -83,22 +83,10 @@ type JourneyApiTests(postgres: PostgresFixture) =
     }
 
     let start () =
-        task {
-            let! db = scope.NewDatabase()
-            migrated db
-            Assert.True((Run.run db Run.Apply "test" catalog).IsOk)
-            let builder = WebApplication.CreateBuilder()
-            builder.WebHost.UseTestServer() |> ignore
-            Server.configureServices builder.Services
-            let app = scope.Own(builder.Build())
-            Server.useErrorHandling app
-            Server.useRateLimits app
-            let data = scope.Own(DataCache.create (scope.Own(NpgsqlDataSource.Create db)))
+        TestApp.start scope catalog (fun app data ->
             JourneyApi.map app data
-            TripsApi.map app data
-            do! app.StartAsync()
-            return app.GetTestClient(), db
-        }
+            TripsApi.map app data)
+
 
     let post (http: HttpClient) (request: TripRequest) =
         http.PostAsJsonAsync(Routes.createItinerary.Template, request, Json.options)

@@ -62,20 +62,8 @@ type GuidePageTests(postgres: PostgresFixture) =
     }
 
     let start () =
-        task {
-            let! db = scope.NewDatabase()
-            migrated db
-            Assert.True((Run.run db Run.Apply "test" catalog).IsOk)
-            let builder = WebApplication.CreateBuilder()
-            builder.WebHost.UseTestServer() |> ignore
-            Server.configureServices builder.Services
-            let app = scope.Own(builder.Build())
-            Server.useCompression app
-            Server.useErrorHandling app
-            GuideRoutes.map app (scope.Own(DataCache.create (scope.Own(NpgsqlDataSource.Create db))))
-            do! app.StartAsync()
-            return app.GetTestClient(), db
-        }
+        TestApp.start scope catalog GuideRoutes.map
+
 
     let page (http: HttpClient) (path: string) = http.GetStringAsync path
 

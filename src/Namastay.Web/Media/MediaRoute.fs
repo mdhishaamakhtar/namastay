@@ -6,6 +6,7 @@ open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Routing
 open Namastay.Data.Media
+open Namastay.Shared
 open Namastay.Shared.Contracts
 open Namastay.Web.Http
 
@@ -31,4 +32,4 @@ let map (app: IEndpointRouteBuilder) (store: MediaStore) =
                 do! content.CopyToAsync context.Response.Body
         }
 
-    app.MapGet("/media/{**key}", RequestDelegate serve) |> ignore
+    app.MapGet(Routes.mediaFile.Template, RequestDelegate serve) |> ignore

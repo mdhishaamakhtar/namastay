@@ -11,6 +11,7 @@ type ErrorCode =
     | UnsupportedMedia
     | TooLarge
     | RateLimited
+    | Unavailable
     | Internal
 
 type FieldError = { Field: string; Message: string }
