@@ -1,9 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    
-  </PropertyGroup>
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <Compile Include="Migrate.fs" />
@@ -11,8 +6,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="dbup-postgresql" Version="7.0.1" />
-    <PackageReference Include="Npgsql" Version="10.0.3" />
+    <PackageReference Include="dbup-postgresql" />
+    <PackageReference Include="Npgsql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Namastay.Domain\Namastay.Domain.fsproj" />
   </ItemGroup>
 
 </Project>

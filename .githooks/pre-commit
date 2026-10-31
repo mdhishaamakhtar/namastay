@@ -1,0 +1,9 @@
+#!/bin/sh
+# Formats staged F# files, then lints the solution. Blocks the commit on lint findings.
+set -e
+files=$(git diff --cached --name-only --diff-filter=ACM -- '*.fs')
+if [ -n "$files" ]; then
+    dotnet fantomas $files
+    git add $files
+fi
+make lint

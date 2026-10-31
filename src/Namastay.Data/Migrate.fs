@@ -13,4 +13,7 @@ let run (connectionString: string) : Result<unit, string> =
             .Build()
             .PerformUpgrade()
 
-    if result.Successful then Ok() else Error result.Error.Message
+    if result.Successful then
+        Ok()
+    else
+        Error result.Error.Message

@@ -1,4 +1,4 @@
-module Namastay.Tests.HealthTests
+module Namastay.IntegrationTests.HealthTests
 
 open System.Net
 open Microsoft.AspNetCore.Mvc.Testing
@@ -6,7 +6,7 @@ open Xunit
 open Namastay.Web
 
 [<Fact>]
-let health_returns_ok () =
+let ``health returns ok`` () =
     task {
         use factory = new WebApplicationFactory<Marker>()
         use client = factory.CreateClient()

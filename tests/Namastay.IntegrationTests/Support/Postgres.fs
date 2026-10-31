@@ -1,4 +1,4 @@
-namespace Namastay.Tests
+namespace Namastay.IntegrationTests
 
 open System
 open System.Threading.Tasks

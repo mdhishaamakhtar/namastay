@@ -1,12 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-  </PropertyGroup>
-
   <ItemGroup>
     <Compile Include="Marker.fs" />
     <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Namastay.Shared\Namastay.Shared.fsproj" />
+    <ProjectReference Include="..\Namastay.Data\Namastay.Data.fsproj" />
   </ItemGroup>
 
 </Project>

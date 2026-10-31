@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <Compile Include="Catalog/Evidence.fs" />
+    <Compile Include="Catalog/Geography.fs" />
+    <Compile Include="Catalog/Place.fs" />
+    <Compile Include="Catalog/Transport.fs" />
+    <Compile Include="Catalog/Festival.fs" />
+    <Compile Include="Catalog/Notice.fs" />
+    <Compile Include="Catalog/Journey.fs" />
+    <Compile Include="Catalog/Catalog.fs" />
+    <Compile Include="Catalog/Validation.fs" />
+  </ItemGroup>
+
+</Project>
