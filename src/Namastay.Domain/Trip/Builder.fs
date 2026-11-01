@@ -407,7 +407,7 @@ let buildWithin (allowed: Set<string> option) (catalog: Catalog) (request: TripR
         | [] -> Error TripError.NoPlaces
         | _ ->
             let stops =
-                Routing.route catalog request (profile.Depth > 0) profile.Collected (rank profile request usable)
+                Routing.route catalog request (profile.Depth > 0) profile.Collected places (rank profile request usable)
 
             Ok(assemble catalog profile request places stops)
 

@@ -1013,7 +1013,7 @@ let ``the trip says where you fly home from`` () =
 let ``no gateways in the data means no arrival is claimed`` () = Assert.True((hubTrip 7).Arrive.IsNone)
 
 [<Fact>]
-let ``a trip that includes the landing city starts there`` () =
+let ``a trip that includes the landing city stays there last`` () =
     let world = {
         gatewayCatalog with
             Places = [
@@ -1025,7 +1025,7 @@ let ``a trip that includes the landing city starts there`` () =
     }
 
     let trip = build world (request (liked [ "likes-side" ]) 6 None)
-    Assert.Equal<string list>([ "capital"; "side" ], trip.Stops |> List.map _.PlaceSlug)
+    Assert.Equal<string list>([ "side"; "capital" ], trip.Stops |> List.map _.PlaceSlug)
 
 let private hubAirport slug cluster family interest = {
     airport slug cluster family interest with
@@ -1350,3 +1350,145 @@ let ``a limited trip only uses the allowed places`` () =
     match result with
     | Ok trip -> Assert.Equal<string list>([ "inside" ], trip.Stops |> List.map _.PlaceSlug)
     | Error error -> raise (Xunit.Sdk.XunitException $"expected a trip, got {error}")
+
+let private likingRemote places links days month =
+    let world = {
+        catalog with
+            Places = places
+            Links = links
+            Cards = [ card "likes-remote" "interest:mountains" (Some "remote") ]
+    }
+
+    build world (request (liked [ "likes-remote" ]) days month)
+
+[<Fact>]
+let ``a trip ends with a stay in a major city`` () =
+    let trip =
+        likingRemote
+            [
+                hubAirport "main" "c-plains" "stone" "forts"
+                place "remote" "c-hills" "pine" "mountains"
+            ]
+            (both "main" "remote")
+            6
+            None
+
+    Assert.Equal("main", (List.last trip.Stops).PlaceSlug)
+    Assert.Equal("MAIN", trip.Depart.Value.City)
+    Assert.Equal(None, trip.Depart.Value.Leg)
+
+[<Fact>]
+let ``a city a trip starts in moves to the end instead of appearing twice`` () =
+    let trip =
+        likingRemote
+            [
+                hubAirport "main" "c-plains" "stone" "forts"
+                place "remote" "c-hills" "pine" "mountains"
+            ]
+            (both "main" "remote")
+            6
+            None
+
+    Assert.Equal<string list>([ "remote"; "main" ], slugs trip)
+    Assert.Equal(None, trip.Stops.Head.Arrival)
+    Assert.Equal("MAIN", trip.Arrive.Value.City)
+
+[<Theory>]
+[<InlineData(7, 1)>]
+[<InlineData(8, 2)>]
+[<InlineData(14, 2)>]
+let ``the closing city gets a day or two and the days still add up`` days closing =
+    let trip =
+        likingRemote
+            [
+                hubAirport "main" "c-plains" "stone" "forts"
+                place "remote" "c-hills" "pine" "mountains"
+            ]
+            (both "main" "remote")
+            days
+            None
+
+    Assert.Equal(closing, (List.last trip.Stops).Days)
+    Assert.Equal(days, trip.Stops |> List.sumBy _.Days)
+
+[<Fact>]
+let ``a smaller airport hands over to a major city nearby`` () =
+    let trip =
+        likingRemote
+            [
+                hubAirport "main" "c-plains" "stone" "forts"
+                {
+                    airport "remote" "c-hills" "pine" "mountains" with
+                        DaysMin = 2
+                }
+            ]
+            (both "main" "remote")
+            6
+            None
+
+    Assert.Equal("main", (List.last trip.Stops).PlaceSlug)
+
+[<Fact>]
+let ``a smaller airport can end a trip when no major city is in reach`` () =
+    let trip = likingRemote [ airport "remote" "c-hills" "pine" "mountains" ] [] 6 None
+
+    Assert.Equal<string list>([ "remote" ], slugs trip)
+    Assert.Equal("REMOTE", trip.Depart.Value.City)
+
+[<Fact>]
+let ``you can still end in a major city in its hard month`` () =
+    let trip =
+        likingRemote
+            [
+                {
+                    hubAirport "main" "c-plains" "stone" "forts" with
+                        Months = months [] [ 3 ]
+                }
+                {
+                    place "remote" "c-hills" "pine" "mountains" with
+                        Months = months [ 3 ] []
+                }
+            ]
+            (both "main" "remote")
+            6
+            (Some 3)
+
+    Assert.Equal("main", (List.last trip.Stops).PlaceSlug)
+
+[<Fact>]
+let ``a trip kept to one area doesn't leave it to end`` () =
+    let world = {
+        catalog with
+            Places = [
+                hubAirport "main" "c-plains" "stone" "forts"
+                place "remote" "c-hills" "pine" "mountains"
+            ]
+            Links = both "main" "remote"
+            Cards = [ card "likes-remote" "interest:mountains" (Some "remote") ]
+    }
+
+    match Builder.buildWithin (Some(Set.singleton "remote")) world (request (liked [ "likes-remote" ]) 6 None) with
+    | Ok trip ->
+        Assert.Equal<string list>([ "remote" ], slugs trip)
+        Assert.Equal("MAIN", trip.Depart.Value.City)
+    | Error error -> raise (Xunit.Sdk.XunitException $"expected a trip, got {error}")
+
+[<Fact>]
+let ``a major city sits at the start or end and not in the middle`` () =
+    let world = {
+        catalog with
+            Places = [
+                place "north" "c-hills" "pine" "mountains"
+                hubAirport "main" "c-plains" "stone" "forts"
+                place "south" "c-plains" "stone" "mountains"
+            ]
+            Links = both "north" "main" @ both "main" "south" @ both "north" "south"
+            Cards = [
+                card "likes-north" "interest:mountains" (Some "north")
+                card "likes-south" "interest:mountains" (Some "south")
+            ]
+    }
+
+    let trip = build world (request (liked [ "likes-north"; "likes-south" ]) 9 None)
+    Assert.Equal("main", (List.last trip.Stops).PlaceSlug)
+    Assert.Equal(3, trip.Stops.Length)

@@ -2335,7 +2335,10 @@ button:focus-visible {
   height: 34px;
 }
 
-.home-hero,
+.home-hero {
+  padding-top: 28px;
+}
+
 .browse {
   min-height: 100dvh;
   background: var(--paper);
@@ -2651,7 +2654,10 @@ button:focus-visible {
     height: 40px;
   }
 
-  .home-hero,
+  .home-hero {
+    padding-top: 36px;
+  }
+
   .browse-head {
     padding: 36px max(64px, calc((100% - 1240px) / 2)) 48px;
   }

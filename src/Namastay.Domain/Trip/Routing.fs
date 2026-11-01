@@ -13,6 +13,7 @@ let private beamWidth = 60
 let private unfilledDayPenalty = 10
 let private oneLinkCost = 25
 let private farCost = 70
+let private midTripHubCost = 40
 
 let private regionLimit days =
     if days <= 7 then 1
@@ -129,7 +130,15 @@ let private startCost (catalog: Catalog) (links: Map<string * string, TransportL
 
 /// The route's taste, less penalties for days it can't honestly fill and for ends nobody can fly to.
 let private worth days cost (path: Path) =
+    let midTripHubs =
+        path.Stops
+        |> List.skip 1
+        |> List.truncate (path.Stops.Length - 2)
+        |> List.filter _.Place.Hub
+        |> List.length
+
     path.Score
+    - midTripHubCost * midTripHubs
     - unfilledDayPenalty * max 0 (days - path.Capacity)
     - cost (List.last path.Stops).Place.Slug
     - cost path.Stops.Head.Place.Slug / 2
@@ -189,6 +198,36 @@ let rec private trim excess (stops: RoutedStop list) =
 
 let private planned (stops: RoutedStop list) = stops |> List.sumBy _.Days
 
+/// A week or less leaves one day for the last city, a longer trip two.
+let private closingDays days = if days <= 7 then 1 else 2
+
+/// Where to stay before flying home, if the route doesn't already end somewhere people fly
+/// home from: the nearest main hub, or failing that, the nearest international airport.
+let private closingCity (links: Map<string * string, TransportLink>) (closers: Place list) (stops: RoutedStop list) =
+    let last = (List.last stops).Place
+    let visited = stops |> List.tail |> List.map _.Place.Slug
+
+    let reach (city: Place) =
+        [ links.TryFind(last.Slug, city.Slug); links.TryFind(city.Slug, last.Slug) ]
+        |> List.choose id
+        |> List.sortBy _.MinutesMin
+        |> List.tryHead
+        |> Option.map (fun link -> city, link)
+
+    let nearest (cities: Place list) =
+        cities
+        |> List.filter (fun city -> not (List.contains city.Slug visited))
+        |> List.choose reach
+        |> List.sortBy (fun (city, link) -> link.MinutesMin, city.Slug)
+        |> List.tryHead
+
+    if last.Hub then
+        None
+    else
+        match nearest (closers |> List.filter _.Hub) with
+        | None when last.Airport.IsNone -> nearest (closers |> List.filter _.Airport.IsSome)
+        | found -> found
+
 /// Regions holding a place someone liked are always open. The limit stops sprawl into the others.
 let private allowsRegions (catalog: Catalog) (request: TripRequest) liked (scored: (Place * int) list) =
     let likedRegions =
@@ -202,7 +241,15 @@ let private allowsRegions (catalog: Catalog) (request: TripRequest) liked (score
     fun (regions: Set<string>) -> (regions - likedRegions).Count <= spare
 
 /// Chooses connected stops within the allowed regions, with days adding up exactly.
-let route (catalog: Catalog) (request: TripRequest) prefersDepth liked (scored: (Place * int) list) : RoutedStop list =
+/// `closers` are the cities a trip may end in, which a hard month for sightseeing doesn't rule out.
+let route
+    (catalog: Catalog)
+    (request: TripRequest)
+    prefersDepth
+    liked
+    (closers: Place list)
+    (scored: (Place * int) list)
+    : RoutedStop list =
     let stopDays (place: Place) =
         if prefersDepth then
             place.DaysMax
@@ -228,5 +275,27 @@ let route (catalog: Catalog) (request: TripRequest) prefersDepth liked (scored: 
         |> _.Stops
         |> List.rev
 
-    let trimmed = trim (planned stops - request.Days) stops
-    fill (request.Days - planned trimmed) 0 trimmed
+    let fitted total (stops: RoutedStop list) =
+        let trimmed = trim (planned stops - total) stops
+        fill (total - planned trimmed) 0 trimmed
+
+    let closing = closingDays request.Days
+    let beforeClosing = fitted (request.Days - closing) stops
+
+    match closingCity links closers beforeClosing with
+    | None -> fitted request.Days stops
+    | Some(city, link) ->
+        // A city the trip began in moves to the end, so nobody sees it twice.
+        let rest =
+            match beforeClosing with
+            | first :: next :: others when first.Place.Slug = city.Slug -> { next with Arrival = None } :: others
+            | all -> all
+
+        fitted (request.Days - closing) rest
+        @ [
+            {
+                Place = city
+                Days = closing
+                Arrival = Some link
+            }
+        ]
