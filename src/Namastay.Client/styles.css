@@ -201,6 +201,7 @@ button:focus-visible {
   max-width: none;
   aspect-ratio: 200 / 144;
   margin: 0 -12px 8px;
+  border-bottom: 3px solid var(--brand);
 }
 
 .mood.bone {
@@ -2516,6 +2517,7 @@ button:focus-visible {
 .region-top img {
   display: block;
   width: 100%;
+  border-bottom: 3px solid var(--brand);
 }
 
 .region-name {
@@ -2626,6 +2628,7 @@ button:focus-visible {
   margin: 0 -14px 8px;
   object-fit: cover;
   object-position: bottom;
+  border-bottom: 3px solid var(--brand);
 }
 
 .door strong {
