@@ -39,24 +39,36 @@ type JourneyTests(browser: BrowserFixture) =
             let y = box.Y + box.Height / 2.0f
             do! page.Mouse.MoveAsync(x, y)
             do! page.Mouse.DownAsync()
-            do! page.WaitForTimeoutAsync(120.0f)
             do! page.Mouse.MoveAsync(x + distance, y, MouseMoveOptions(Steps = 12))
-            do! page.WaitForTimeoutAsync(120.0f)
             do! page.Mouse.UpAsync()
         }
+
+    /// A swipe's speed comes from the clock, so tests set the clock instead of racing it.
+    let withClock (page: IPage) (nextReading: string) =
+        task {
+            let! _ =
+                page.EvaluateAsync $"(() => {{ let now = 0; performance.now = () => ({nextReading}); }})()"
+
+            return ()
+        }
+
+    let slowClock (page: IPage) = withClock page "now += 10000"
+    let stoppedClock (page: IPage) = withClock page "now"
 
     /// Passes every card, and fails rather than looping if the cards never end.
     let finishCards (page: IPage) =
         task {
             let mutable swipes = 0
+            let cardsLeft = "document.querySelector('.card-text h1')?.textContent ?? ''"
             let! first = page.Locator(".card-text h1").CountAsync()
             let mutable left = first > 0
 
             while left do
                 Assert.True(swipes < 30, "the cards never ended")
                 swipes <- swipes + 1
+                let! current = page.EvaluateAsync<string> cardsLeft
                 do! (button page "Not for me").ClickAsync(LocatorClickOptions(Timeout = 5000.0f))
-                do! page.WaitForTimeoutAsync(320.0f)
+                let! _ = page.WaitForFunctionAsync($"title => ({cardsLeft}) !== title", current)
                 let! remaining = page.Locator(".card-text h1").CountAsync()
                 left <- remaining > 0
         }
@@ -80,10 +92,23 @@ type JourneyTests(browser: BrowserFixture) =
         task {
             let! page = openJourney ()
             let! first = title page
+            do! slowClock page
             do! drag page 40.0f
-            do! page.WaitForTimeoutAsync(500.0f)
+
+            let! _ =
+                page.WaitForFunctionAsync "!document.querySelector('.card-label').style.transform"
+
             let! current = title page
             Assert.Equal(first, current)
+        }
+
+    [<Fact>]
+    member _.``a quick flick collects however short``() =
+        task {
+            let! page = openJourney ()
+            do! stoppedClock page
+            do! drag page 40.0f
+            do! waitForCard page 2
         }
 
     [<Fact>]

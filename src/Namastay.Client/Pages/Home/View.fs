@@ -170,6 +170,14 @@ let private fan (model: Model) =
         ]
     ]
 
+let private visitorNote visitor =
+    match visitor with
+    | Visitor.Unknown -> ""
+    | Visitor.SignedOut -> "Free, and no sign-up needed. Sign in only to keep your trips."
+    | Visitor.SignedIn 0 -> "Welcome back."
+    | Visitor.SignedIn 1 -> "Welcome back. You have one saved trip."
+    | Visitor.SignedIn count -> $"Welcome back. You have {count} saved trips."
+
 let private hero (model: Model) (navigate: string -> unit) =
     Html.section [
         prop.className "home-hero"
@@ -178,11 +186,20 @@ let private hero (model: Model) (navigate: string -> unit) =
                 prop.className "home-top"
                 prop.children [
                     Html.div [ prop.className "home-brand"; prop.text "Namastay" ]
-                    Html.a [
-                        prop.className "home-account"
-                        prop.href Routes.myTripsPage.Template
-                        prop.text "My trips"
-                    ]
+                    match model.Visitor with
+                    | Visitor.Unknown -> Html.none
+                    | Visitor.SignedOut ->
+                        Html.a [
+                            prop.className "home-account"
+                            prop.href Routes.signInPage.Template
+                            prop.text "Sign in"
+                        ]
+                    | Visitor.SignedIn _ ->
+                        Html.a [
+                            prop.className "home-account"
+                            prop.href Routes.myTripsPage.Template
+                            prop.text "My trips"
+                        ]
                 ]
             ]
             Html.h1 "India is a lot. Find yours."
@@ -199,7 +216,7 @@ let private hero (model: Model) (navigate: string -> unit) =
                                 prop.text "Plan my trip"
                                 prop.onClick (fun _ -> navigate Routes.journey.Template)
                             ]
-                            Html.span "Free, and no sign-up needed."
+                            Html.span (visitorNote model.Visitor)
                         ]
                     ]
                 ]

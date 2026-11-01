@@ -77,16 +77,12 @@ let private savedTrip index =
     Html.li [
         prop.key (string index)
         prop.className "my-trip"
-        prop.children [
-            Html.div [ prop.className "my-trip-photo bone" ]
-            bone "bone-title"
-            bone "bone-line"
-        ]
+        prop.children [ Html.div [ prop.className "label bone" ]; bone "bone-line" ]
     ]
 
-/// The cards on My trips. The panel beside them doesn't wait for anything.
+/// The labels on My trips. The header above them doesn't wait for anything.
 let myTrips (label: string) =
-    waiting label "my-trips" [ for index in 1..2 -> savedTrip index ]
+    waiting label "my-trips" [ for index in 1..3 -> savedTrip index ]
 
 /// The page for changing a trip.
 let editor (label: string) =

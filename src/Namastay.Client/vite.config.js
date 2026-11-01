@@ -7,7 +7,10 @@ const buildFolder = process.env.NAMASTAY_BUILD ?? "build";
 
 const useBuildFolder = {
   name: "use-build-folder",
-  transformIndexHtml: (html) => html.replace("/build/App.js", `/${buildFolder}/App.js`),
+  transformIndexHtml: {
+    order: "pre",
+    handler: (html) => html.replace("/build/App.js", `/${buildFolder}/App.js`),
+  },
 };
 
 export default defineConfig({

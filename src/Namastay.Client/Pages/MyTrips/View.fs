@@ -6,41 +6,55 @@ open Namastay.Client.Pages.MyTrips.State
 open Namastay.Shared
 open Namastay.Shared.Contracts
 
-let private photo (trip: SavedTripSummary) =
-    match trip.Photo with
-    | Some item ->
-        Html.figure [
-            prop.className "my-trip-photo"
-            prop.children [
-                Html.img [ prop.src item.Url; prop.alt item.Alt; prop.custom ("loading", "lazy") ]
-                Html.figcaption [ prop.text $"{item.Credit}, {item.Licence}" ]
+let private label (trip: SavedTripSummary) =
+    let colour = trip.Colours |> Option.map _.Deep |> Option.defaultValue "#3A2C0A"
+
+    Html.a [
+        prop.className "label-link my-trip-open"
+        prop.href (Route.url [ "id", trip.Id ] [] Routes.myTripPage)
+        prop.children [
+            Html.div [
+                prop.className "label"
+                prop.children [
+                    Html.div [
+                        prop.className "label-frame"
+                        prop.style [ style.borderColor colour ]
+                        prop.children [
+                            match trip.Photo with
+                            | Some photo ->
+                                Html.img [ prop.src photo.Url; prop.alt photo.Alt; prop.custom ("loading", "lazy") ]
+                            | None ->
+                                Html.div [
+                                    prop.className "my-trip-no-photo"
+                                    prop.style [ style.backgroundColor colour ]
+                                ]
+                            Html.div [
+                                prop.className "label-text"
+                                prop.style [ style.backgroundColor colour ]
+                                prop.children [
+                                    Html.strong trip.Title
+                                    if not trip.Route.IsEmpty then
+                                        Html.span (String.concat " → " trip.Route)
+                                    match trip.Photo with
+                                    | Some photo -> Html.small $"{photo.Credit}, {photo.Licence}"
+                                    | None -> Html.none
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
             ]
         ]
-    | None -> Html.div [ prop.className "my-trip-photo my-trip-no-photo" ]
+    ]
 
 let private card (model: Model) dispatch (trip: SavedTripSummary) =
     let confirming = model.Confirming = Some trip.Id
 
-    let frame =
-        match trip.Colours with
-        | Some colours -> [ style.backgroundColor colours.Deep; style.color colours.TextOnDeep ]
-        | None -> []
-
     Html.li [
         prop.key trip.Id
         prop.className "my-trip"
-        prop.style frame
         prop.children [
-            Html.a [
-                prop.className "my-trip-open press"
-                prop.href (Route.url [ "id", trip.Id ] [] Routes.myTripPage)
-                prop.children [
-                    photo trip
-                    Html.h2 trip.Title
-                    if not trip.Route.IsEmpty then
-                        Html.p [ prop.className "my-trip-route"; prop.text (String.concat " → " trip.Route) ]
-                ]
-            ]
+            label trip
             Html.div [
                 prop.className "my-trip-foot"
                 prop.children [
@@ -73,43 +87,49 @@ let private trips (model: Model) dispatch (saved: SavedTripSummary list) =
 
 let private count (model: Model) =
     match model.Trips with
-    | Remote.Loading -> Skeletons.line
     | Remote.Loaded [ _ ] -> Html.p [ prop.className "reveal"; prop.text "One trip saved" ]
     | Remote.Loaded(_ :: _ as saved) -> Html.p [ prop.className "reveal"; prop.text $"{saved.Length} trips saved" ]
-    | Remote.Loaded []
-    | Remote.Failed _ -> Html.none
+    | _ -> Html.none
 
-let private panel (model: Model) dispatch =
-    Html.aside [
-        prop.className "trip-panel"
+let private header (model: Model) dispatch =
+    Html.header [
+        prop.className "my-head"
         prop.children [
-            Html.a [
-                prop.className "journey-brand"
-                prop.href Routes.home.Template
-                prop.text "Namastay"
+            Html.div [
+                prop.className "home-top"
+                prop.children [
+                    Html.a [
+                        prop.className "home-brand"
+                        prop.href Routes.home.Template
+                        prop.text "Namastay"
+                    ]
+                    Html.button [
+                        prop.className "account-switch"
+                        prop.text "Sign out"
+                        prop.onClick (fun _ -> dispatch SignOut)
+                    ]
+                ]
             ]
-            Html.h1 "My trips"
-            count model
-            Html.a [
-                prop.className "button trip-share press"
-                prop.href Routes.journey.Template
-                prop.text "Plan a new trip"
-            ]
-            Html.button [
-                prop.className "account-switch"
-                prop.text "Sign out"
-                prop.onClick (fun _ -> dispatch SignOut)
+            Html.div [
+                prop.className "my-title"
+                prop.children [
+                    Html.div [ prop.children [ Html.h1 "My trips"; count model ] ]
+                    Html.a [
+                        prop.className "button home-plan press"
+                        prop.href Routes.journey.Template
+                        prop.text "Plan a new trip"
+                    ]
+                ]
             ]
         ]
     ]
 
 let view (model: Model) dispatch =
     Html.div [
-        prop.className "trip"
+        prop.className "my-page"
         prop.children [
-            panel model dispatch
-            Html.div [
-                prop.className "trip-content"
+            header model dispatch
+            Html.main [
                 prop.children [
                     match model.Trips with
                     | Remote.Loading -> Skeletons.myTrips "Finding your trips"

@@ -10,6 +10,13 @@ open Namastay.Shared.Contracts
 /// Waits for a pause in typing before searching.
 let private searchDelay = 200
 
+/// Who's looking, so the page can offer what's useful to them.
+[<RequireQualifiedAccess>]
+type Visitor =
+    | Unknown
+    | SignedOut
+    | SignedIn of savedTrips: int
+
 type Model = {
     Query: string
     /// Counts searches, so a slow old answer can't replace a newer one.
@@ -19,6 +26,7 @@ type Model = {
     FromFeeling: bool
     Feelings: Remote<Feeling list>
     Landing: Remote<LandingCard list>
+    Visitor: Visitor
 }
 
 type Msg =
@@ -30,6 +38,7 @@ type Msg =
     | FeelingsLoaded of Result<Feeling list, Client.ClientError>
     | ChooseFeeling of Feeling
     | LoadLanding
+    | VisitorKnown of Result<SavedTripSummary list, Client.ClientError>
     | LandingLoaded of Result<LandingCard list, Client.ClientError>
 
 let private loadFeelings () =
@@ -44,6 +53,9 @@ let private loadLanding () =
         Routes.landing.Template
         LandingLoaded
 
+let private loadVisitor () =
+    Cmd.OfPromise.perform Client.get<SavedTripSummary list> Routes.myItineraries.Template VisitorKnown
+
 let init () =
     {
         Query = ""
@@ -52,8 +64,9 @@ let init () =
         FromFeeling = false
         Feelings = Remote.Loading
         Landing = Remote.Loading
+        Visitor = Visitor.Unknown
     },
-    Cmd.batch [ loadFeelings (); loadLanding () ]
+    Cmd.batch [ loadFeelings (); loadLanding (); loadVisitor () ]
 
 let private waitForPause attempt =
     Cmd.OfPromise.perform (fun () -> Promise.sleep searchDelay) () (fun () -> PauseEnded attempt)
@@ -114,6 +127,18 @@ let update msg (model: Model) =
         {
             model with
                 Feelings = Remote.Failed error
+        },
+        Cmd.none
+    | VisitorKnown(Ok trips) ->
+        {
+            model with
+                Visitor = Visitor.SignedIn trips.Length
+        },
+        Cmd.none
+    | VisitorKnown(Error _) ->
+        {
+            model with
+                Visitor = Visitor.SignedOut
         },
         Cmd.none
     | LoadLanding -> { model with Landing = Remote.Loading }, loadLanding ()

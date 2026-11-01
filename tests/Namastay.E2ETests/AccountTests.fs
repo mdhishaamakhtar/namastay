@@ -99,6 +99,23 @@ type AccountTests(browser: BrowserFixture) =
         }
 
     [<Fact>]
+    member _.``the landing page offers sign in to a stranger``() =
+        task {
+            let! page = browser.NewPage()
+            let! _ = page.GotoAsync browser.BaseUrl
+            do! (link page "Sign in").WaitForAsync()
+        }
+
+    [<Fact>]
+    member _.``the landing page offers my trips once signed in``() =
+        task {
+            let! page = saveNewTrip ()
+            let! _ = page.GotoAsync browser.BaseUrl
+            do! (link page "My trips").WaitForAsync()
+            do! page.GetByText("You have one saved trip.", PageGetByTextOptions(Exact = false)).WaitForAsync()
+        }
+
+    [<Fact>]
     member _.``my trips starts a new trip``() =
         task {
             let! page = saveNewTrip ()

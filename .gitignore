@@ -41,3 +41,4 @@ coverage.cobertura.xml
 /.claude/
 TestResults/
 src/Namastay.Client/build-e2e/
+dist-e2e/
