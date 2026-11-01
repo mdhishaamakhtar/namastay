@@ -27,6 +27,10 @@ psql_admin() {
     docker compose exec -T postgres psql --quiet -U namastay -d postgres -c "$1"
 }
 
+until docker compose exec -T postgres pg_isready --quiet -U namastay; do
+    sleep 1
+done
+
 psql_admin "drop database if exists $database with (force)"
 psql_admin "create database $database"
 
