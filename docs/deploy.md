@@ -16,6 +16,10 @@ Everything runs on Railway, as two services plus Postgres and a bucket. Both ser
 
 The server refuses to start without these, and names what's missing.
 
+## CDN
+
+Turn on Railway's CDN for both services, so pages, images and fonts come from the location nearest each visitor. Check it with a static file requested twice: the second answer should say `x-cache: HIT`. Pre-rendered HTML and the `/media` photos are safe to cache, because they only change through an import. After an import, purge the CDN cache as well.
+
 ## First deploy
 
 The website saves its pages from the live API while building, so the API and its data come first.
