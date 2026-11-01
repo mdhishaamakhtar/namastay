@@ -22,7 +22,7 @@ let private result (place: PlaceSummary) =
         Html.a [
             prop.key place.Slug
             prop.className "result press"
-            prop.href (Client.fromApi (Route.url [ "slug", place.Slug ] [] Routes.guidePage))
+            prop.href (Route.url [ "slug", place.Slug ] [] Routes.guidePage)
             prop.children [ colourBar place.FamilyDeep; resultText place place.Region ]
         ]
     else

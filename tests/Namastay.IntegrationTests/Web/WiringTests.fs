@@ -45,6 +45,7 @@ type WiringTests(postgres: PostgresFixture) =
             let! response = http.GetAsync Routes.health.Template
             Assert.Equal("nosniff", String.Join("", response.Headers.GetValues "X-Content-Type-Options"))
             Assert.Equal("DENY", String.Join("", response.Headers.GetValues "X-Frame-Options"))
+            Assert.Equal("noindex", String.Join("", response.Headers.GetValues "X-Robots-Tag"))
 
             Assert.Equal(
                 "strict-origin-when-cross-origin",

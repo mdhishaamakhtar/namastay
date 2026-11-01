@@ -102,7 +102,7 @@ let listing (href: Listing -> string) (item: Listing) =
     ]
 
 let guideUrl (item: Listing) =
-    Client.fromApi (Route.url [ "slug", item.Slug ] [] Routes.guidePage)
+    Route.url [ "slug", item.Slug ] [] Routes.guidePage
 
 let dishUrl (item: Listing) =
     Route.url [ "slug", item.Slug ] [] Routes.dishPage

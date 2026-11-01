@@ -1,0 +1,22 @@
+# The website: compiles F# to JavaScript, builds with Vite, saves every public page
+# as finished HTML from the live API, then serves the files with Caddy.
+FROM mcr.microsoft.com/playwright:v1.64.1-noble AS build
+ARG API_URL=https://api.namastay.hishaam.dev
+ARG SITE_URL=https://namastay.hishaam.dev
+# Change this to rebuild pages after an import, when no code has changed.
+ARG CONTENT_STAMP=none
+RUN curl -sSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 10.0 --install-dir /usr/share/dotnet \
+    && ln -s /usr/share/dotnet/dotnet /usr/local/bin/dotnet
+WORKDIR /repo
+COPY . .
+WORKDIR /repo/src/Namastay.Client
+RUN dotnet tool restore \
+    && npm ci \
+    && dotnet fable . -o build \
+    && npx vite build \
+    && echo "$CONTENT_STAMP" \
+    && SITE_URL="$SITE_URL" API_URL="$API_URL" node scripts/prerender.mjs
+
+FROM caddy:2-alpine
+COPY src/Namastay.Client/Caddyfile /etc/caddy/Caddyfile
+COPY --from=build /repo/src/Namastay.Client/dist /srv

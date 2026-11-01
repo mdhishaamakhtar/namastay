@@ -185,6 +185,31 @@ type HomeTests(browser: BrowserFixture) =
         }
 
     [<Fact>]
+    member _.``each public page names itself for search``() =
+        task {
+            let! page = browser.NewPage()
+            let! _ = page.GotoAsync(browser.BaseUrl + "/food")
+
+            let! _ =
+                page.WaitForFunctionAsync "document.title.startsWith('What to eat in India')"
+
+            let! canonical = page.Locator("link[rel=canonical]").GetAttributeAsync "href"
+            Assert.EndsWith("/food", canonical)
+        }
+
+    [<Fact>]
+    member _.``sign in stays out of search``() =
+        task {
+            let! page = browser.NewPage()
+            let! _ = page.GotoAsync(browser.BaseUrl + "/sign-in")
+
+            let! _ =
+                page.WaitForFunctionAsync "document.querySelector('meta[name=robots]')?.content === 'noindex'"
+
+            return ()
+        }
+
+    [<Fact>]
     member _.``an unknown region says so``() =
         task {
             let! page = browser.NewPage()

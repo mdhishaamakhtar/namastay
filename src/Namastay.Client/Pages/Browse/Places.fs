@@ -13,7 +13,7 @@ let private placeLine (place: PlaceSummary) =
         prop.key place.Slug
         prop.children [
             Html.a [
-                prop.href (Client.fromApi (Route.url [ "slug", place.Slug ] [] Routes.guidePage))
+                prop.href (Route.url [ "slug", place.Slug ] [] Routes.guidePage)
                 prop.children [
                     Html.span [
                         prop.className "listing-colour"
@@ -90,6 +90,14 @@ let page (model: Model) dispatch (regions: DirectoryRegion list) =
     Html.div [
         prop.className "browse"
         prop.children [
+            Seo.View {
+                Title = $"{count} places to visit in India, with travel guides | Namastay"
+                Description =
+                    "Honest travel guides to India for first-time visitors, by region: what to see, when to go, how to get there and where to stay."
+                Path = Routes.explorePage.Template
+                Image = None
+                Trail = [ "Home", "/"; "Places", Routes.explorePage.Template ]
+            }
             head
                 Menu.Section.Places
                 None

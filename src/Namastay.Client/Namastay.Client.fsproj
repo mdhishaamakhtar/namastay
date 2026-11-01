@@ -12,6 +12,7 @@
     <Compile Include="Components/Icons.fs" />
     <Compile Include="Components/Label.fs" />
     <Compile Include="Components/Menu.fs" />
+    <Compile Include="Components/Seo.fs" />
     <Compile Include="Pages/Home/State.fs" />
     <Compile Include="Pages/Home/Search.fs" />
     <Compile Include="Pages/Home/Hero.fs" />

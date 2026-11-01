@@ -95,6 +95,14 @@ let page (model: Model) dispatch (page: FoodPage) =
     Html.div [
         prop.className "browse"
         prop.children [
+            Seo.View {
+                Title = "What to eat in India, region by region | Namastay"
+                Description =
+                    "The dishes worth finding across India, what they are, and where people go for them. A food guide for first-time visitors."
+                Path = Routes.foodPage.Template
+                Image = None
+                Trail = [ "Home", "/"; "Food", Routes.foodPage.Template ]
+            }
             head
                 Menu.Section.Food
                 None

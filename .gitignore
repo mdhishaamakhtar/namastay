@@ -42,3 +42,6 @@ coverage.cobertura.xml
 TestResults/
 src/Namastay.Client/build-e2e/
 dist-e2e/
+
+# The share image is our own artwork, not a travel photo.
+!src/Namastay.Client/public/og.png

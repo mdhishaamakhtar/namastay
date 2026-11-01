@@ -3,6 +3,7 @@ module Namastay.Client.App
 open Elmish
 open Elmish.React
 open Feliz
+open Namastay.Client.Components
 open Namastay.Client.Pages
 open Namastay.Client.Routing
 open Namastay.Client.Routing.Page
@@ -109,16 +110,23 @@ let private notFound () =
         ]
     ]
 
+let private personal (title: string) (page: ReactElement) =
+    Html.div [
+        prop.style [ style.display.contents ]
+        prop.children [ Seo.Private title; page ]
+    ]
+
 let view model dispatch =
     match model.Screen with
     | Screen.Home home -> Home.View.view home (HomeMsg >> dispatch) Browser.navigate
-    | Screen.Journey journey -> Journey.View.view journey (JourneyMsg >> dispatch)
-    | Screen.Trip trip -> Trip.View.view trip (TripMsg >> dispatch)
-    | Screen.SignIn signIn -> SignIn.View.view signIn (SignInMsg >> dispatch)
-    | Screen.MyTrips trips -> MyTrips.View.view trips (MyTripsMsg >> dispatch)
-    | Screen.Edit edit -> Edit.View.view edit (EditMsg >> dispatch)
+    | Screen.Journey journey ->
+        personal "Plan your trip | Namastay" (Journey.View.view journey (JourneyMsg >> dispatch))
+    | Screen.Trip trip -> personal "Your trip | Namastay" (Trip.View.view trip (TripMsg >> dispatch))
+    | Screen.SignIn signIn -> personal "Sign in | Namastay" (SignIn.View.view signIn (SignInMsg >> dispatch))
+    | Screen.MyTrips trips -> personal "My trips | Namastay" (MyTrips.View.view trips (MyTripsMsg >> dispatch))
+    | Screen.Edit edit -> personal "Change your trip | Namastay" (Edit.View.view edit (EditMsg >> dispatch))
     | Screen.Browse browse -> Browse.View.view browse (BrowseMsg >> dispatch)
-    | Screen.NotFound -> notFound ()
+    | Screen.NotFound -> personal "Page not found | Namastay" (notFound ())
 
 let subscribe (_: Model) : Sub<Msg> = [ [ "url" ], (fun dispatch -> Browser.subscribe (UrlChanged >> dispatch)) ]
 

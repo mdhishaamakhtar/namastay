@@ -35,7 +35,15 @@ let private guide (data: DataCache) (context: HttpContext) : Task =
         match found with
         | Some place ->
             if not (Endpoint.isFresh context version) then
-                do! html context StatusCodes.Status200OK (GuidePage.render site (tripFrom context) place)
+                do!
+                    html
+                        context
+                        StatusCodes.Status200OK
+                        (GuidePage.render
+                            site
+                            $"{context.Request.Scheme}://{context.Request.Host}"
+                            (tripFrom context)
+                            place)
         | None -> do! html context StatusCodes.Status404NotFound (GuidePage.notFound site)
     }
 

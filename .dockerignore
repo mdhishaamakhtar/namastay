@@ -1,0 +1,12 @@
+**/bin
+**/obj
+**/node_modules
+**/dist
+**/dist-e2e
+**/build
+**/build-e2e
+data
+reports
+research_notes
+media
+.git

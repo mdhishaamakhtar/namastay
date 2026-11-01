@@ -90,6 +90,8 @@ let private addSecurityHeaders (context: HttpContext) (next: RequestDelegate) : 
     headers.XContentTypeOptions <- "nosniff"
     headers.XFrameOptions <- "DENY"
     headers["Referrer-Policy"] <- "strict-origin-when-cross-origin"
+    // The website is what search engines should list, not this address.
+    headers["X-Robots-Tag"] <- "noindex"
 
     if context.Request.IsHttps then
         headers.StrictTransportSecurity <- "max-age=31536000"

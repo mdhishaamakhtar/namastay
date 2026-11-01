@@ -75,7 +75,9 @@ type GuidePageTests(postgres: PostgresFixture) =
             Assert.Contains("A valley town on the Parvati river.", html)
             Assert.Contains("Kheerganga", html)
             Assert.Contains("Old Kasol", html)
-            Assert.DoesNotContain("<script", html)
+            // Structured data is the only script tag, and it holds data rather than code.
+            let scripts = html.Split "<script" |> Array.tail
+            Assert.All(scripts, (fun tag -> Assert.StartsWith(" type=\"application/ld+json\"", tag)))
         }
 
     [<Fact>]
@@ -336,6 +338,27 @@ type GuidePageTests(postgres: PostgresFixture) =
             let! html = page http "/places/kasol"
             Assert.Contains("Getting there", html)
             Assert.Contains("Fly to Bhuntar.", html)
+        }
+
+    [<Fact>]
+    member _.``a guide tells search engines and link previews about itself``() =
+        task {
+            let! http, _ = start ()
+            let! html = page http "/places/kasol"
+            Assert.Contains($"rel=\"canonical\" href=\"{TestApp.testSite.Url}/places/kasol\"", html)
+            Assert.Contains("property=\"og:title\"", html)
+            Assert.Contains("twitter:card", html)
+            Assert.Contains("\"@type\":\"TouristDestination\"", html)
+            Assert.Contains("\"@type\":\"BreadcrumbList\"", html)
+        }
+
+    [<Fact>]
+    member _.``a missing guide stays out of search``() =
+        task {
+            let! http, _ = start ()
+            let! response = http.GetAsync "/places/manali"
+            let! html = response.Content.ReadAsStringAsync()
+            Assert.Contains("noindex", html)
         }
 
     [<Fact>]

@@ -2,6 +2,7 @@ module Namastay.Web.Guides.GuidePage
 
 open System
 open System.Globalization
+open System.Text.Json
 open Giraffe.ViewEngine
 open Namastay.Shared
 open Namastay.Shared.Contracts
@@ -44,13 +45,47 @@ let private icon (size: string) (path: XmlNode list) =
 let private backIcon = icon "20" [ voidTag "path" [ attr "d" "M12.5 4l-6 6l6 6" ] ]
 let private openIcon = icon "20" [ voidTag "path" [ attr "d" "M4 7l6 6l6 -6" ] ]
 
-let private shell (pageTitle: string) (description: string) (colours: string) (content: XmlNode list) =
+/// Where this page is shared from, and what search engines should know about it.
+type private Listing = {
+    Address: string
+    Image: string option
+    Data: string list
+}
+
+let private listingTags (pageTitle: string) (description: string) (listing: Listing option) =
+    match listing with
+    | None -> [ meta [ _name "robots"; _content "noindex" ] ]
+    | Some found -> [
+        link [ _rel "canonical"; _href found.Address ]
+        meta [ attr "property" "og:site_name"; _content "Namastay" ]
+        meta [ attr "property" "og:type"; _content "article" ]
+        meta [ attr "property" "og:title"; _content pageTitle ]
+        meta [ attr "property" "og:description"; _content description ]
+        meta [ attr "property" "og:url"; _content found.Address ]
+        meta [ _name "twitter:card"; _content "summary_large_image" ]
+        yield!
+            found.Image
+            |> Option.toList
+            |> List.map (fun image -> meta [ attr "property" "og:image"; _content image ])
+        yield!
+            found.Data
+            |> List.map (fun data -> script [ _type "application/ld+json" ] [ rawText data ])
+      ]
+
+let private shell
+    (pageTitle: string)
+    (description: string)
+    (listing: Listing option)
+    (colours: string)
+    (content: XmlNode list)
+    =
     html [ _lang "en" ] [
         head [] [
             meta [ _charset "utf-8" ]
             meta [ _name "viewport"; _content "width=device-width, initial-scale=1" ]
             title [] [ str pageTitle ]
             meta [ _name "description"; _content description ]
+            yield! listingTags pageTitle description listing
             style [] [ rawText colours; rawText GuideStyles.page ]
         ]
         body [] content
@@ -335,8 +370,61 @@ let private content (site: string) (place: PlaceGuide) =
     ]
 
 /// `trip` adds a way back to the itinerary that led here.
-let render (site: string) (trip: string option) (place: PlaceGuide) =
-    shell $"{place.Name} travel guide | Namastay" place.Summary (GuideStyles.colours place.Colours) [
+let private schema (kind: string) (fields: (string * obj) list) : obj =
+    box (dict (("@context", box "https://schema.org") :: ("@type", box kind) :: fields))
+
+let private destination (address: string) (image: string option) (place: PlaceGuide) =
+    let postal =
+        dict [
+            "@type", box "PostalAddress"
+            "addressRegion", box place.State
+            "addressCountry", box "IN"
+        ]
+
+    JsonSerializer.Serialize(
+        schema "TouristDestination" [
+            "name", box place.Name
+            "description", box place.Summary
+            "url", box address
+            "image", box (Option.toObj image)
+            "address", box postal
+        ]
+    )
+
+let private breadcrumbs (site: string) (address: string) (place: PlaceGuide) =
+    let step (position: int) (name: string) (item: string) =
+        dict [
+            "@type", box "ListItem"
+            "position", box position
+            "name", box name
+            "item", box item
+        ]
+
+    JsonSerializer.Serialize(
+        schema "BreadcrumbList" [
+            "itemListElement",
+            box [
+                step 1 "Home" site
+                step 2 "Places" (site + Routes.explorePage.Template)
+                step 3 place.Name address
+            ]
+        ]
+    )
+
+/// `api` is this server's own address, because share images need a full one.
+let render (site: string) (api: string) (trip: string option) (place: PlaceGuide) =
+    let address = site + Route.url [ "slug", place.Slug ] [] Routes.guidePage
+
+    let image =
+        place.Photos |> List.tryHead |> Option.map (fun photo -> api + photo.Url)
+
+    let listing = {
+        Address = address
+        Image = image
+        Data = [ destination address image place; breadcrumbs site address place ]
+    }
+
+    shell $"{place.Name} travel guide | Namastay" place.Summary (Some listing) (GuideStyles.colours place.Colours) [
         div [ _class "guide" ] [ panel site trip place; content site place ]
         yield! lightboxes place
     ]
@@ -346,6 +434,7 @@ let notFound (site: string) =
     shell
         "Guide not found | Namastay"
         "We don't have a guide for that place yet."
+        None
         ":root{--deep:#F2B52B;--mid:#F2B52B;--pale:#FFF8E6;--on-deep:#2B2108}"
         [
             main [ _class "content" ] [
