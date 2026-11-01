@@ -33,6 +33,7 @@ type JourneyApiTests(postgres: PostgresFixture) =
         PhotoSlug = None
         IllustrationSlug = Some "valley"
         IsStart = true
+        Landing = None
         Branches = [
             {
                 OnAnswer = true
@@ -54,6 +55,7 @@ type JourneyApiTests(postgres: PostgresFixture) =
             PlaceSlug = None
             IllustrationSlug = None
             IsStart = false
+            Landing = None
             Branches = []
             Signals = []
     }

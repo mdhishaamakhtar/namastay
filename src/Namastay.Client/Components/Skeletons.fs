@@ -132,5 +132,5 @@ let swipeCard (label: string) =
 /// The feeling tiles on the home page.
 let feelings (label: string) =
     waiting label "moods" [
-        for index in 1..12 -> Html.div [ prop.key (string index); prop.className "mood bone" ]
+        for index in 1..14 -> Html.div [ prop.key (string index); prop.className "mood bone" ]
     ]

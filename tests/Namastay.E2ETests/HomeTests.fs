@@ -27,7 +27,12 @@ type HomeTests(browser: BrowserFixture) =
         task {
             let! page = openHome ()
             do! search page "example"
-            do! page.GetByRole(AriaRole.Link, PageGetByRoleOptions(Name = "Example Valley")).WaitForAsync()
+
+            do!
+                page
+                    .Locator(".results")
+                    .GetByRole(AriaRole.Link, LocatorGetByRoleOptions(Name = "Example Valley"))
+                    .WaitForAsync()
         }
 
     [<Fact>]
@@ -35,7 +40,13 @@ type HomeTests(browser: BrowserFixture) =
         task {
             let! page = openHome ()
             do! search page "example valley"
-            do! page.GetByRole(AriaRole.Link, PageGetByRoleOptions(Name = "Example Valley")).ClickAsync()
+
+            do!
+                page
+                    .Locator(".results")
+                    .GetByRole(AriaRole.Link, LocatorGetByRoleOptions(Name = "Example Valley"))
+                    .ClickAsync()
+
             do! page.WaitForURLAsync "**/places/example-valley"
             let! title = page.Locator("h1").First.TextContentAsync()
             Assert.Equal("Example Valley", title)
@@ -57,7 +68,10 @@ type HomeTests(browser: BrowserFixture) =
             do! page.GetByText("guide coming soon").WaitForAsync()
 
             let! links =
-                page.GetByRole(AriaRole.Link, PageGetByRoleOptions(Name = "Example Island")).CountAsync()
+                page
+                    .Locator(".results")
+                    .GetByRole(AriaRole.Link, LocatorGetByRoleOptions(Name = "Example Island"))
+                    .CountAsync()
 
             Assert.Equal(0, links)
         }
@@ -75,11 +89,20 @@ type HomeTests(browser: BrowserFixture) =
         task {
             let! page = openHome ()
             do! search page "example"
-            do! page.GetByRole(AriaRole.Link, PageGetByRoleOptions(Name = "Example Valley")).WaitForAsync()
+
+            do!
+                page
+                    .Locator(".results")
+                    .GetByRole(AriaRole.Link, LocatorGetByRoleOptions(Name = "Example Valley"))
+                    .WaitForAsync()
+
             do! search page ""
 
             let! links =
-                page.GetByRole(AriaRole.Link, PageGetByRoleOptions(Name = "Example Valley")).CountAsync()
+                page
+                    .Locator(".results")
+                    .GetByRole(AriaRole.Link, LocatorGetByRoleOptions(Name = "Example Valley"))
+                    .CountAsync()
 
             Assert.Equal(0, links)
         }
@@ -106,6 +129,30 @@ type HomeTests(browser: BrowserFixture) =
                 page.EvaluateAsync<bool> "document.documentElement.scrollWidth > window.innerWidth"
 
             Assert.False wide
+        }
+
+    [<Fact>]
+    member _.``a place on the wall opens its guide``() =
+        task {
+            let! page = openHome ()
+            do! page.Locator(".label-link").First.ClickAsync()
+            do! page.WaitForURLAsync "**/places/**"
+        }
+
+    [<Fact>]
+    member _.``the last call opens the journey``() =
+        task {
+            let! page = openHome ()
+            do! page.Locator(".home-again").ClickAsync()
+            do! page.WaitForURLAsync "**/journey"
+        }
+
+    [<Fact>]
+    member _.``a feeling's places appear beside the feelings``() =
+        task {
+            let! page = openHome ()
+            do! page.Locator(".mood:not(.bone)").First.ClickAsync()
+            do! page.Locator(".home-moods .result").First.WaitForAsync()
         }
 
     interface IClassFixture<BrowserFixture>

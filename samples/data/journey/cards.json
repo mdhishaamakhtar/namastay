@@ -23,7 +23,8 @@
         "signal": "interest:mountains",
         "weight": 3
       }
-    ]
+    ],
+    "landing": 1
   },
   {
     "slug": "palm-bays",

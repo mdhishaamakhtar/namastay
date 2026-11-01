@@ -63,6 +63,12 @@ let private feelings (data: DataCache) (_: HttpContext) =
         return Ok all
     }
 
+let private landing (data: DataCache) (_: HttpContext) =
+    task {
+        let! cards = DataCache.getOrLoad data "landing" (fun () -> Landing.all data.Source)
+        return Ok cards
+    }
+
 let private feelingPlaces (data: DataCache) (context: HttpContext) =
     task {
         let slug = string context.Request.RouteValues["slug"]
@@ -78,6 +84,7 @@ let private feelingPlaces (data: DataCache) (context: HttpContext) =
 
 let map (app: IEndpointRouteBuilder) (data: DataCache) =
     Endpoint.mapData app data Routes.feelings (feelings data)
+    Endpoint.mapData app data Routes.landing (landing data)
     Endpoint.mapData app data Routes.feelingPlaces (feelingPlaces data)
     Endpoint.mapGet app Routes.searchPlaces (search data)
     Endpoint.mapData app data Routes.placeGuide (guide data)

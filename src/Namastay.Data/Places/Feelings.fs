@@ -30,7 +30,10 @@ let private feelingsSql =
 let private toFeeling (rows: FeelingRow list) = {
     Slug = rows.Head.Slug
     Name = rows.Head.Name
-    Places = rows |> List.truncate namedPlaces |> List.map _.Place
+    Places =
+        rows
+        |> List.truncate namedPlaces
+        |> List.map (fun row -> row.Place.Split(" with ")[0])
     Colour =
         rows
         |> List.countBy _.Colour

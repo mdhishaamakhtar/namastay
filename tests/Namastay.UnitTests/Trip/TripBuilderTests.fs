@@ -102,6 +102,7 @@ let card slug signal placeSlug = {
     PhotoSlug = None
     IllustrationSlug = None
     IsStart = false
+    Landing = None
     Branches = []
     Signals = [ { Signal = signal; Weight = 3 } ]
 }

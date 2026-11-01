@@ -120,6 +120,16 @@ type GuidePhoto = {
     SourceUrl: string
 }
 
+/// A card chosen for the landing page, shown by what it's a photo of.
+type LandingCard = {
+    PlaceSlug: string
+    Place: string
+    Title: string
+    Colour: string
+    Food: bool
+    Photo: GuidePhoto
+}
+
 type PlaceGuide = {
     Slug: string
     Name: string

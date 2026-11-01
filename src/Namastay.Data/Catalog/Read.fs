@@ -186,6 +186,7 @@ let private loadCards source =
                 PhotoSlug = None
                 IllustrationSlug = None
                 IsStart = false
+                Landing = None
                 Branches = []
                 Signals =
                     matching card.Slug signals _.CardSlug

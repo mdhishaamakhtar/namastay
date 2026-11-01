@@ -353,6 +353,7 @@ let ``card branch must lead to a known card`` () =
         PhotoSlug = None
         IllustrationSlug = None
         IsStart = true
+        Landing = None
         Branches = [
             {
                 OnAnswer = true
@@ -452,6 +453,7 @@ let ``card photo must exist`` () =
         PhotoSlug = Some "missing-photo"
         IllustrationSlug = None
         IsStart = true
+        Landing = None
         Branches = []
         Signals = []
     }

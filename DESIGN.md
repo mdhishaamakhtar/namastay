@@ -51,6 +51,10 @@ Desktop has its own layouts, never a stretched phone. Colour is always a full-he
 
 Swipes always have button alternatives. Touch targets are at least 44px, text contrast is at least 4.5:1, and controls use real buttons and links with visible focus.
 
+## Landing page
+
+Home is a full landing page. A hand of three labels fans out in the hero, then the wall of labels sits on the dark ink colour with the place search beside it. The word India in the closing heading runs through saffron, white and green, and that is the only tricolour on the page.
+
 ## Still to design
 
 Desktop question screens; tablet checks; all final illustrations.

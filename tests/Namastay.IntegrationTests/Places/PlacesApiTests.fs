@@ -338,6 +338,52 @@ type PlacesApiTests(postgres: PostgresFixture) =
         }
 
     [<Fact>]
+    member _.``the landing page gets its chosen cards in order``() =
+        task {
+            let photo = {
+                Slug = "p1"
+                PlaceSlug = "kasol"
+                FilePath = "photos/kasol.webp"
+                Alt = "A river."
+                Credit = "Someone"
+                Licence = "CC BY 4.0"
+                SourceUrl = "https://example.org/photo"
+                Sort = 1
+            }
+
+            let card slug landing signals = {
+                Slug = slug
+                PlaceSlug = Some "kasol"
+                Title = slug
+                Line = "A line."
+                PhotoSlug = Some "p1"
+                IllustrationSlug = None
+                IsStart = false
+                Landing = landing
+                Branches = []
+                Signals = signals
+            }
+
+            let! http, _ =
+                start {
+                    catalog with
+                        Photos = [ photo ]
+                        Cards = [
+                            card "second" (Some 2) [ { Signal = "interest:food"; Weight = 3 } ]
+                            card "first" (Some 1) []
+                            card "left-out" None []
+                        ]
+                }
+
+            let! cards =
+                http.GetFromJsonAsync<LandingCard list>(Routes.landing.Template, Json.options)
+
+            Assert.Equal<string list>([ "first"; "second" ], cards |> List.map _.Title)
+            Assert.Equal<bool list>([ false; true ], cards |> List.map _.Food)
+            Assert.Equal("/media/photos/kasol.webp", cards.Head.Photo.Url)
+        }
+
+    [<Fact>]
     member _.``control characters in a search are a validation error``() =
         task {
             let! http, _ = start catalog

@@ -43,11 +43,12 @@ let private upsertPhoto transaction (photo: Photo) =
 let private upsertCard transaction (card: Card) =
     exec
         transaction
-        "insert into cards (slug, place_slug, title, line, photo_slug, illustration_slug, is_start)
-         values (@slug, @place, @title, @line, @photo, @illustration, @isStart)
+        "insert into cards (slug, place_slug, title, line, photo_slug, illustration_slug, is_start, landing_sort)
+         values (@slug, @place, @title, @line, @photo, @illustration, @isStart, @landing)
          on conflict (slug) do update set
             place_slug = excluded.place_slug, title = excluded.title, line = excluded.line,
-            retired_at = null, photo_slug = excluded.photo_slug, illustration_slug = excluded.illustration_slug, is_start = excluded.is_start"
+            retired_at = null, photo_slug = excluded.photo_slug, illustration_slug = excluded.illustration_slug, is_start = excluded.is_start,
+            landing_sort = excluded.landing_sort"
         {|
             slug = card.Slug
             place = card.PlaceSlug
@@ -56,6 +57,7 @@ let private upsertCard transaction (card: Card) =
             photo = card.PhotoSlug
             illustration = card.IllustrationSlug
             isStart = card.IsStart
+            landing = card.Landing
         |}
     |> ignore
 

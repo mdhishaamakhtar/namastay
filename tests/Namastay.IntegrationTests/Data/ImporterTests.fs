@@ -252,6 +252,7 @@ type ImporterTests(postgres: PostgresFixture) =
                 PhotoSlug = None
                 IllustrationSlug = None
                 IsStart = true
+                Landing = None
                 Branches = []
                 Signals = []
             }

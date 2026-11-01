@@ -41,6 +41,8 @@ type Card = {
     PhotoSlug: string option
     IllustrationSlug: string option
     IsStart: bool
+    /// Where the card sits on the landing page, for the few that appear there.
+    Landing: int option
     Branches: CardBranch list
     Signals: CardSignal list
 }
