@@ -199,7 +199,7 @@ button:focus-visible {
   flex: none;
   width: calc(100% + 24px);
   max-width: none;
-  aspect-ratio: 200 / 122;
+  aspect-ratio: 200 / 144;
   margin: 0 -12px 8px;
 }
 
