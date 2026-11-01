@@ -1044,6 +1044,13 @@ button:focus-visible {
   max-width: none;
 }
 
+/* A faint hairline tells one trip from the next. Inset, so no background shows through. */
+.my-trip + .my-trip {
+  box-shadow:
+    inset 1px 0 0 rgb(255 255 255 / 16%),
+    inset 0 1px 0 rgb(255 255 255 / 16%);
+}
+
 .my-trip {
   display: flex;
   flex-direction: column;
@@ -1107,10 +1114,6 @@ button:focus-visible {
 
   .my-trip-open h2 {
     min-height: 2.3em;
-  }
-
-  .my-trip + .my-trip {
-    margin-left: -1px;
   }
 
 }
