@@ -1,6 +1,7 @@
 module Namastay.Client.Pages.Browse.View
 
 open Feliz
+open Namastay.Client.Api
 open Namastay.Client.Components
 open Namastay.Client.Pages.Browse.Parts
 open Namastay.Client.Pages.Browse
@@ -144,6 +145,7 @@ let view (model: Model) dispatch =
         | Browse.FoodRegion _
         | Browse.Dish _ -> Skeletons.listed "Finding this page" Menu.Section.Food
         | _ -> Skeletons.listed "Finding this page" Menu.Section.Places
+    | Remote.Failed error when Client.isNotFound error -> NotFound.view
     | Remote.Failed error ->
         Html.div [
             prop.className "browse"

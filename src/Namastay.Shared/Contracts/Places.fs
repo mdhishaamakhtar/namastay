@@ -184,6 +184,15 @@ type DishPage = {
     Places: Listing list
 }
 
+/// Who took a photo, for the credits page.
+type PhotoCredit = {
+    Place: string
+    Subject: string
+    Credit: string
+    Licence: string
+    SourceUrl: string
+}
+
 type PlaceGuide = {
     Slug: string
     Name: string

@@ -463,6 +463,17 @@ type PlacesApiTests(postgres: PostgresFixture) =
         }
 
     [<Fact>]
+    member _.``photo credits name each photographer``() =
+        task {
+            let! http, _ = start catalog
+
+            let! credits =
+                http.GetFromJsonAsync<PhotoCredit list>(Routes.credits.Template, Json.options)
+
+            Assert.All(credits, (fun credit -> Assert.NotEmpty credit.Credit))
+        }
+
+    [<Fact>]
     member _.``a region page lists its places``() =
         task {
             let! http, _ = start catalog

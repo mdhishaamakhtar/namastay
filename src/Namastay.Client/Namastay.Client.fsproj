@@ -9,6 +9,8 @@
     <Compile Include="Components/Remote.fs" />
     <Compile Include="Components/States.fs" />
     <Compile Include="Components/Menu.fs" />
+    <Compile Include="Components/Footer.fs" />
+    <Compile Include="Components/NotFound.fs" />
     <Compile Include="Components/Skeletons.fs" />
     <Compile Include="Components/Icons.fs" />
     <Compile Include="Components/Label.fs" />
@@ -31,6 +33,9 @@
     <Compile Include="Pages/SignIn/View.fs" />
     <Compile Include="Pages/MyTrips/State.fs" />
     <Compile Include="Pages/MyTrips/View.fs" />
+    <Compile Include="Pages/Reading/View.fs" />
+    <Compile Include="Pages/Credits/State.fs" />
+    <Compile Include="Pages/Credits/View.fs" />
     <Compile Include="Pages/Account/State.fs" />
     <Compile Include="Pages/Account/View.fs" />
     <Compile Include="Pages/Edit/State.fs" />

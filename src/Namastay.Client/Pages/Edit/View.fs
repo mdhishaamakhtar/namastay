@@ -324,5 +324,6 @@ let private editor (model: Model) dispatch =
 let view (model: Model) dispatch =
     match model.Trip with
     | Remote.Loading -> Skeletons.editor "Finding your trip"
+    | Remote.Failed error when Client.isNotFound error -> NotFound.view
     | Remote.Failed error -> Html.main [ States.failed error (fun () -> dispatch Load) ]
     | Remote.Loaded _ -> editor model dispatch

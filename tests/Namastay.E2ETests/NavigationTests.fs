@@ -19,8 +19,11 @@ type NavigationTests(browser: BrowserFixture) =
             do! page.WaitForURLAsync "**/journey"
             let! _ = page.GoBackAsync()
             do! page.WaitForURLAsync(browser.BaseUrl + "/")
-            let! title = heading page
-            Assert.Equal("India is a lot. Find yours.", title)
+
+            do!
+                page
+                    .GetByRole(AriaRole.Heading, PageGetByRoleOptions(Name = "India is a lot. Find yours."))
+                    .WaitForAsync()
         }
 
     [<Fact>]
@@ -39,7 +42,7 @@ type NavigationTests(browser: BrowserFixture) =
             let! page = browser.NewPage()
             let! _ = page.GotoAsync(browser.BaseUrl + "/no/such/page")
             let! title = heading page
-            Assert.Equal("We can't find that page", title)
+            Assert.Equal("Lost in India?", title)
         }
 
     [<Fact>]
@@ -54,12 +57,11 @@ type NavigationTests(browser: BrowserFixture) =
         }
 
     [<Fact>]
-    member _.``missing trip shows the server message``() =
+    member _.``missing trip shows the lost page``() =
         task {
             let! page = browser.NewPage()
             let! _ = page.GotoAsync(browser.BaseUrl + "/trip/AAAAAAAAAAAA")
-            let! message = page.GetByRole(AriaRole.Alert).TextContentAsync()
-            Assert.Contains("couldn't find that trip", message)
+            do! page.GetByText("This road doesn't go anywhere").WaitForAsync()
         }
 
     [<Fact>]

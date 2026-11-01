@@ -43,6 +43,10 @@ const appPages = async () => {
     "/",
     "/explore",
     "/food",
+    "/privacy",
+    "/terms",
+    "/contact",
+    "/credits",
     ...regions.map((region) => `/explore/${region.slug}`),
     ...food.regions.map((region) => `/food/${region.slug}`),
     ...feelings.map((feeling) => `/feelings/${feeling.slug}`),
@@ -190,6 +194,7 @@ await inBatches(
     ["/trip/shell", "shells/trip.html"],
     ["/my/shell", "shells/my-trip.html"],
     ["/my/shell/edit", "shells/edit.html"],
+    ["/this-address-goes-nowhere", "404.html"],
   ],
   ([path, file]) => renderShell(context, path, file),
 );

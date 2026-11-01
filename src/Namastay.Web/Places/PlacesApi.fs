@@ -77,6 +77,12 @@ let private directory (data: DataCache) (_: HttpContext) =
         return Ok regions
     }
 
+let private credits (data: DataCache) (_: HttpContext) =
+    task {
+        let! found = DataCache.getOrLoad data "credits" (fun () -> Credits.all data.Source)
+        return Ok found
+    }
+
 let private food (data: DataCache) (_: HttpContext) =
     task {
         let! page = DataCache.getOrLoad data "food" (fun () -> Directory.food data.Source)
@@ -115,6 +121,7 @@ let map (app: IEndpointRouteBuilder) (data: DataCache) =
     Endpoint.mapData app data Routes.feelings (feelings data)
     Endpoint.mapData app data Routes.landing (landing data)
     Endpoint.mapData app data Routes.directory (directory data)
+    Endpoint.mapData app data Routes.credits (credits data)
     Endpoint.mapData app data Routes.food (food data)
     Endpoint.mapData app data Routes.regionDetail (bySlug data "region" (Browse.region data.Source))
     Endpoint.mapData app data Routes.foodRegionDetail (bySlug data "food-region" (Browse.foodRegion data.Source))
