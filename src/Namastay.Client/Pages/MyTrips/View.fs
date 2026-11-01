@@ -59,7 +59,7 @@ let private trips (model: Model) dispatch (saved: SavedTripSummary list) =
     match saved with
     | [] ->
         Html.div [
-            prop.className "my-trips-empty"
+            prop.className "my-trips-empty reveal"
             prop.children [
                 Html.h2 "You haven't saved a trip yet."
                 Html.p "Swipe through places you like, and we'll turn them into a trip you can keep and change."
@@ -67,15 +67,17 @@ let private trips (model: Model) dispatch (saved: SavedTripSummary list) =
         ]
     | items ->
         Html.ul [
-            prop.className "my-trips"
+            prop.className "my-trips reveal"
             prop.children (items |> List.map (card model dispatch))
         ]
 
 let private count (model: Model) =
     match model.Trips with
-    | Remote.Loaded [ _ ] -> "One trip saved"
-    | Remote.Loaded(_ :: _ as saved) -> $"{saved.Length} trips saved"
-    | _ -> "Your saved trips live here"
+    | Remote.Loading -> Skeletons.line
+    | Remote.Loaded [ _ ] -> Html.p [ prop.className "reveal"; prop.text "One trip saved" ]
+    | Remote.Loaded(_ :: _ as saved) -> Html.p [ prop.className "reveal"; prop.text $"{saved.Length} trips saved" ]
+    | Remote.Loaded []
+    | Remote.Failed _ -> Html.none
 
 let private panel (model: Model) dispatch =
     Html.aside [
@@ -87,7 +89,7 @@ let private panel (model: Model) dispatch =
                 prop.text "Namastay"
             ]
             Html.h1 "My trips"
-            Html.p (count model)
+            count model
             Html.a [
                 prop.className "button trip-share press"
                 prop.href Routes.journey.Template

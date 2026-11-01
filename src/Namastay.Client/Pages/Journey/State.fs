@@ -51,7 +51,10 @@ type Msg =
 let questionCount = 5
 
 let private loadGraph () =
-    Cmd.OfPromise.perform (fun url -> Client.get<JourneyGraph> url) Routes.journeyStart.Template GraphLoaded
+    Cmd.OfPromise.perform
+        (fun url -> Client.held (Client.get<JourneyGraph> url))
+        Routes.journeyStart.Template
+        GraphLoaded
 
 let init () =
     {
@@ -97,7 +100,7 @@ let private build (model: Model) =
     Cmd.batch [
         Cmd.ofEffect (fun _ -> Theme.neutral ())
         Cmd.OfPromise.perform
-            (fun request -> Client.post<TripRequest, SavedTrip> Routes.createItinerary.Template request)
+            (fun request -> Client.held (Client.post<TripRequest, SavedTrip> Routes.createItinerary.Template request))
             (tripRequest model)
             TripBuilt
     ]
@@ -168,12 +171,7 @@ let update msg (model: Model) =
             Cmd.none
     | BuildTrip, _, _ -> build model
     | TripBuilt(Ok saved), _, _ ->
-        let address = Route.url [ "shareToken", saved.ShareToken ] [] Routes.trip
-
-        model,
-        Cmd.ofEffect (fun _ ->
-            Theme.ofTrip saved.Trip |> Option.iter (Theme.remember address)
-            Browser.navigate address)
+        model, Cmd.ofEffect (fun _ -> Browser.navigate (Route.url [ "shareToken", saved.ShareToken ] [] Routes.trip))
     | TripBuilt(Error error), _, _ -> { model with Step = Step.Failed error }, Cmd.none
     | Decided _, _, _
     | Chose _, _, _ -> model, Cmd.none

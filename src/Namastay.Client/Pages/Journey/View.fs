@@ -65,7 +65,12 @@ let private swiping graph (model: Model) dispatch =
         shell $"Card {number} of about {JourneyPath.maxCards}" [
             Html.div [
                 prop.key card.Slug
-                prop.className "journey-stage"
+                prop.className (
+                    if number = 1 then
+                        "journey-stage reveal"
+                    else
+                        "journey-stage"
+                )
                 prop.children [ mix graph model; SwipeCard.SwipeCard(card, Decided >> dispatch) ]
             ]
         ]

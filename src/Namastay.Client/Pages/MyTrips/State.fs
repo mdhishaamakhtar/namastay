@@ -25,7 +25,10 @@ type Msg =
     | SignedOut of Result<unit, Client.ClientError>
 
 let private load () =
-    Cmd.OfPromise.perform (fun url -> Client.get<SavedTripSummary list> url) Routes.myItineraries.Template Loaded
+    Cmd.OfPromise.perform
+        (fun url -> Client.held (Client.get<SavedTripSummary list> url))
+        Routes.myItineraries.Template
+        Loaded
 
 let init () =
     {

@@ -6,6 +6,13 @@ open Feliz
 let private bone (size: string) =
     Html.span [ prop.className $"bone {size}" ]
 
+/// A line of text that isn't known yet, where a page has one to wait for.
+let line = bone "bone-line"
+
+/// A real button shape, so the page around it doesn't move when the real one arrives.
+let private button =
+    Html.span [ prop.className "button trip-share skeleton-button"; prop.text "\u00A0" ]
+
 let private waiting (label: string) (className: string) (children: ReactElement list) =
     Html.div [
         prop.className className
@@ -42,20 +49,25 @@ let trip (label: string) =
         Html.aside [
             prop.className "trip-panel"
             prop.children [
-                bone "bone-short"
-                bone "bone-title"
+                Html.span [ prop.className "journey-brand"; prop.text "Namastay" ]
+                bone "bone-heading"
+                Html.div [ prop.className "route"; prop.children [ for _ in 1..4 -> bone "bone-route" ] ]
                 Html.div [
-                    prop.className "route"
-                    prop.children [ bone "bone-line"; bone "bone-line"; bone "bone-line" ]
+                    prop.className "trip-mix"
+                    prop.children [ bone "bone-subheading"; bone "bone-track"; bone "bone-track" ]
                 ]
+                button
+                button
+                button
             ]
         ]
         Html.div [
             prop.className "trip-content"
             prop.children [
+                bone "bone-best"
                 Html.ol [
                     prop.className "trip-stops"
-                    prop.children [ for index in 1..4 -> stop index ]
+                    prop.children (stop 1 :: bone "bone-open" :: List.map stop [ 2; 3; 4 ])
                 ]
             ]
         ]

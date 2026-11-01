@@ -150,7 +150,7 @@ let private editor (model: Model) dispatch =
     let total = model.Rows |> List.sumBy _.Days
 
     Html.form [
-        prop.className "edit-form"
+        prop.className "edit-form reveal"
         prop.onSubmit (fun event ->
             event.preventDefault ()
             dispatch Save)

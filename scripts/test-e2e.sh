@@ -37,8 +37,8 @@ dotnet build src/Namastay.Web --verbosity quiet
 ASPNETCORE_ENVIRONMENT=Development ConnectionStrings__Namastay="$connection" \
     dotnet run --no-build --no-launch-profile --project src/Namastay.Web --urls "http://localhost:$api_port" > /dev/null &
 
-(cd src/Namastay.Client && dotnet fable . -o build > /dev/null)
-(cd src/Namastay.Client && NAMASTAY_API="http://localhost:$api_port" exec npx vite --port "$client_port" --strictPort > /dev/null) &
+(cd src/Namastay.Client && dotnet fable . -o build-e2e > /dev/null)
+(cd src/Namastay.Client && NAMASTAY_API="http://localhost:$api_port" NAMASTAY_BUILD=build-e2e exec npx vite --port "$client_port" --strictPort > /dev/null) &
 
 wait_for "http://localhost:$api_port/health"
 wait_for "http://localhost:$client_port"

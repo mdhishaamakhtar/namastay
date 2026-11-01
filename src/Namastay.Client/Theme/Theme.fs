@@ -23,32 +23,6 @@ let neutral () =
         TextOnDeep = "#2B2108"
     }
 
-let private storageKey (path: string) = "colours:" + path
-
-/// Storage can be blocked or full. Colours are only a nicety, so that's never an error.
-let remember (path: string) (colours: PlaceColours) =
-    try
-        let text =
-            String.concat "|" [ colours.Deep; colours.Mid; colours.Pale; colours.TextOnDeep ]
-
-        localStorage.setItem (storageKey path, text)
-    with _ ->
-        ()
-
-let recall (path: string) =
-    try
-        match (localStorage.getItem (storageKey path) |> string).Split '|' with
-        | [| deep; mid; pale; text |] ->
-            Some {
-                Deep = deep
-                Mid = mid
-                Pale = pale
-                TextOnDeep = text
-            }
-        | _ -> None
-    with _ ->
-        None
-
 /// The colours a trip is shown in.
 let ofTrip (trip: Trip) =
     trip.Stops

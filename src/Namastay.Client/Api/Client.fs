@@ -84,6 +84,17 @@ let isSignedOut =
     | ClientError.Server error -> error.Code = ErrorCode.Unauthorized
     | _ -> false
 
+let private shortestSkeleton = 350
+
+/// Keeps a skeleton up long enough to read as calm. A faster answer would look like a flicker.
+let held (work: JS.Promise<'Result>) =
+    promise {
+        let pause = Promise.sleep shortestSkeleton
+        let! result = work
+        do! pause
+        return result
+    }
+
 /// What a visitor should read, for any failure.
 let describe =
     function

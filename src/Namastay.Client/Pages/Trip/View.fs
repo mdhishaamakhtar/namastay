@@ -144,7 +144,7 @@ let view (model: Model) dispatch =
     | Remote.Failed error -> Html.main [ States.failed error (fun () -> dispatch Load) ]
     | Remote.Loaded saved ->
         Html.div [
-            prop.className "trip"
+            prop.className "trip reveal"
             prop.children [
                 panel model saved.Trip dispatch
                 Html.div [

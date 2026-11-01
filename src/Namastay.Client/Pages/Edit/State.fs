@@ -49,7 +49,10 @@ type Msg =
     | Saved of Result<EditedTrip, Client.ClientError>
 
 let private load id =
-    Cmd.OfPromise.perform (fun url -> Client.get<SavedTrip> url) (Route.url [ "id", id ] [] Routes.getMine) Loaded
+    Cmd.OfPromise.perform
+        (fun url -> Client.held (Client.get<SavedTrip> url))
+        (Route.url [ "id", id ] [] Routes.getMine)
+        Loaded
 
 let init id =
     let search, _ = Search.init ()
@@ -123,6 +126,7 @@ let private addRow slug name (model: Model) = {
 
 let private showTrip id =
     Cmd.ofEffect (fun _ -> Browser.navigate (Route.url [ "id", id ] [] Routes.myTripPage))
+
 
 let update msg (model: Model) =
     match msg with

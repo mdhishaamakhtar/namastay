@@ -40,3 +40,4 @@ coverage.cobertura.xml
 # Local tooling
 /.claude/
 TestResults/
+src/Namastay.Client/build-e2e/
