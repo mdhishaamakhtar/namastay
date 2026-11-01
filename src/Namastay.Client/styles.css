@@ -625,3 +625,257 @@ button:focus-visible {
     transition: none;
   }
 }
+
+.trip-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 24px 24px;
+  background: var(--deep);
+  color: var(--on-deep);
+}
+
+.trip-panel h1 {
+  font-size: 40px;
+  line-height: 1.05;
+}
+
+.trip-panel h2,
+.trip-note h2 {
+  font-size: 24px;
+  line-height: 1.15;
+}
+
+.route {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 12px;
+  border-radius: 4px;
+  background: var(--paper);
+  color: var(--ink);
+  list-style: none;
+}
+
+.route li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 32px;
+  font-weight: 600;
+}
+
+.route-dot {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+}
+
+.trip-mix {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.trip-mix .mix-track {
+  height: 8px;
+  background: color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.trip-mix .mix-fill {
+  height: 100%;
+  background: currentColor;
+}
+
+.trip-share {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.trip-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px 24px 40px;
+}
+
+.trip-note {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.trip-note p,
+.trip-best {
+  margin: 0;
+}
+
+.trip-stops {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stop {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stop-leg {
+  margin: 0;
+  padding: 0 16px;
+  font-size: 15px;
+}
+
+.stop-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  min-height: 72px;
+  padding: 8px 16px;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.stop-title {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.stop-title small {
+  font: 400 14px/1.3 Mukta, system-ui, sans-serif;
+}
+
+.stop-title strong {
+  font-family: "Yatra One", Mukta, serif;
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.chevron {
+  flex: none;
+  transition: transform 220ms var(--ease-out);
+}
+
+.chevron-open {
+  transform: rotate(180deg);
+}
+
+.stop-body {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+  color: var(--ink);
+}
+
+.stop-photo {
+  margin: 0;
+}
+
+.stop-photo img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 8 / 5;
+  object-fit: cover;
+}
+
+.stop-photo figcaption {
+  padding-top: 4px;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.stop-text {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.stop-text p {
+  margin: 0;
+}
+
+.stop-days {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stop-days li {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.stop-warning {
+  padding: 12px;
+  background: var(--warning);
+  color: #ffffff;
+}
+
+.stop-guide {
+  color: inherit;
+  font-weight: 600;
+}
+
+@media (min-width: 720px) {
+  .stop-body-photo {
+    grid-template-columns: 240px minmax(0, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .trip {
+    display: grid;
+    grid-template-columns: minmax(380px, 520px) minmax(0, 1fr);
+    min-height: 100dvh;
+  }
+
+  .trip-panel {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100dvh;
+    gap: 20px;
+    padding: 32px 48px 40px;
+    overflow-y: auto;
+  }
+
+  .trip-panel h1 {
+    font-size: 52px;
+  }
+
+  .trip-share {
+    margin-top: auto;
+    flex: none;
+  }
+
+  .trip-content {
+    padding: 36px 56px 48px;
+  }
+
+  .trip-content > * {
+    width: 100%;
+    max-width: 900px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron {
+    transition: none;
+  }
+}

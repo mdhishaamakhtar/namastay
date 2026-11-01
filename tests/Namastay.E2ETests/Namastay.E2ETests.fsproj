@@ -5,6 +5,7 @@
     <Compile Include="NavigationTests.fs" />
     <Compile Include="HomeTests.fs" />
     <Compile Include="JourneyTests.fs" />
+    <Compile Include="TripTests.fs" />
   </ItemGroup>
 
   <ItemGroup>

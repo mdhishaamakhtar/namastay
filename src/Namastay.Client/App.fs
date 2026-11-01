@@ -6,6 +6,7 @@ open Feliz
 open Namastay.Client.Pages
 open Namastay.Client.Routing
 open Namastay.Client.Routing.Page
+open Namastay.Client.Theme
 open Namastay.Shared
 
 [<RequireQualifiedAccess>]
@@ -36,11 +37,16 @@ let private show (segments: string list) =
         let trip, command = Trip.State.init token
         { Screen = Screen.Trip trip }, Cmd.map TripMsg command
 
-let init () = show (Browser.currentPath ())
+/// Each page starts from brand colours, and sets its own if it has them.
+let private showFresh segments =
+    let model, command = show segments
+    model, Cmd.batch [ Cmd.ofEffect (fun _ -> Theme.reset ()); command ]
+
+let init () = showFresh (Browser.currentPath ())
 
 let update msg model =
     match msg, model.Screen with
-    | UrlChanged segments, _ -> show segments
+    | UrlChanged segments, _ -> showFresh segments
     | HomeMsg inner, Screen.Home home ->
         let updated, command = Home.State.update inner home
         { Screen = Screen.Home updated }, Cmd.map HomeMsg command
