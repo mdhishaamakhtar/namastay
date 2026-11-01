@@ -31,6 +31,7 @@ module TestApp =
             Server.useCompression app
             Server.useErrorHandling app
             Server.useRateLimits app
+            Server.useSessions app
             mapRoutes app (scope.Own(DataCache.create (scope.Own(NpgsqlDataSource.Create db))))
             do! app.StartAsync()
             let client: HttpClient = app.GetTestClient()

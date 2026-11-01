@@ -11,6 +11,7 @@
     <Compile Include="Places/PlacesApiTests.fs" />
     <Compile Include="Journey/JourneyApiTests.fs" />
     <Compile Include="Guides/GuidePageTests.fs" />
+    <Compile Include="Auth/AuthTests.fs" />
     <Compile Include="Web/SettingsTests.fs" />
     <Compile Include="Web/WiringTests.fs" />
     <Compile Include="Data/ImporterTests.fs" />

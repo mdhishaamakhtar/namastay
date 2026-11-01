@@ -1,8 +1,10 @@
 open System
 open Microsoft.AspNetCore.Builder
+open Microsoft.Extensions.DependencyInjection
 open Npgsql
 open Namastay.Data.Media
 open Namastay.Web
+open Namastay.Web.Auth
 open Namastay.Web.Media
 open Namastay.Web.Guides
 open Namastay.Web.Http
@@ -22,11 +24,17 @@ let main args =
             raise (InvalidOperationException $"Missing settings: {names}")
 
     Server.configureServices builder.Services
+    let google = Settings.google builder.Configuration
+
+    google
+    |> Option.iter (GoogleSignIn.configure (builder.Services.AddAuthentication()))
+
     let app = builder.Build()
     Server.useCompression app
     Server.useErrorHandling app
     app.UseStaticFiles() |> ignore
     Server.useRateLimits app
+    Server.useSessions app
 
     MediaRoute.map app (MediaStore.create settings.Media)
     use database = NpgsqlDataSource.Create settings.Database
@@ -36,5 +44,7 @@ let main args =
     JourneyApi.map app data
     TripsApi.map app data
     GuideRoutes.map app data
+    AuthApi.map app database
+    google |> Option.iter (fun _ -> GoogleSignIn.map app database)
     app.Run()
     0

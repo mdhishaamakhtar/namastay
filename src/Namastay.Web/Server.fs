@@ -4,6 +4,8 @@ open System
 open System.Threading
 open System.Threading.RateLimiting
 open System.Threading.Tasks
+open Microsoft.AspNetCore.Authentication
+open Microsoft.AspNetCore.Authentication.Cookies
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.ResponseCompression
@@ -19,28 +21,41 @@ open Namastay.Web.Http
 
 let tripsPerMinute = Limits.tripsPerMinute
 
-let private partition (context: HttpContext) =
+let private partition (limit: int) (context: HttpContext) =
     let address = context.Connection.RemoteIpAddress
     let key = if isNull address then "unknown" else address.ToString()
 
     RateLimitPartition.GetFixedWindowLimiter(
         key,
-        fun _ ->
-            FixedWindowRateLimiterOptions(
-                PermitLimit = tripsPerMinute,
-                Window = TimeSpan.FromMinutes 1.0,
-                QueueLimit = 0
-            )
+        fun _ -> FixedWindowRateLimiterOptions(PermitLimit = limit, Window = TimeSpan.FromMinutes 1.0, QueueLimit = 0)
     )
 
 let private rejected (context: OnRejectedContext) (_: CancellationToken) =
     Errors.write
         context.HttpContext
-        (ApiError.create ErrorCode.RateLimited "That's a lot of trips. Please wait a minute.")
+        (ApiError.create ErrorCode.RateLimited "That's a lot of requests. Please wait a minute.")
     |> ValueTask
+
+let private unauthorized (context: RedirectContext<CookieAuthenticationOptions>) : Task =
+    context.Response.StatusCode <- StatusCodes.Status401Unauthorized
+    Task.CompletedTask
+
+let private configureSessions (services: IServiceCollection) =
+    services
+        .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+        .AddCookie(fun options ->
+            options.Cookie.Name <- "namastay"
+            options.Cookie.HttpOnly <- true
+            options.Cookie.SameSite <- SameSiteMode.Lax
+            options.Cookie.SecurePolicy <- CookieSecurePolicy.SameAsRequest
+            options.ExpireTimeSpan <- TimeSpan.FromDays 30.0
+            options.SlidingExpiration <- true
+            options.Events.OnRedirectToLogin <- Func<RedirectContext<CookieAuthenticationOptions>, Task>(unauthorized))
+    |> ignore
 
 let configureServices (services: IServiceCollection) =
     services.AddLogging() |> ignore
+    configureSessions services
 
     services.AddResponseCompression(fun options ->
         options.EnableForHttps <- true
@@ -49,7 +64,13 @@ let configureServices (services: IServiceCollection) =
     |> ignore
 
     services.AddRateLimiter(fun options ->
-        options.AddPolicy(Limits.tripsPolicy, Func<HttpContext, RateLimitPartition<string>>(partition))
+        options.AddPolicy(Limits.tripsPolicy, Func<HttpContext, RateLimitPartition<string>>(partition tripsPerMinute))
+        |> ignore
+
+        options.AddPolicy(
+            Limits.signInPolicy,
+            Func<HttpContext, RateLimitPartition<string>>(partition Limits.signInsPerMinute)
+        )
         |> ignore
 
         options.OnRejected <- Func<OnRejectedContext, CancellationToken, ValueTask>(rejected))
@@ -58,6 +79,8 @@ let configureServices (services: IServiceCollection) =
 let useCompression (app: WebApplication) = app.UseResponseCompression() |> ignore
 
 let useRateLimits (app: WebApplication) = app.UseRateLimiter() |> ignore
+
+let useSessions (app: WebApplication) = app.UseAuthentication() |> ignore
 
 let private clientClosedRequest = 499
 

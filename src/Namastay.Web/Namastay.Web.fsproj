@@ -2,7 +2,6 @@
 
   <ItemGroup>
     <Compile Include="Marker.fs" />
-    <Compile Include="Settings.fs" />
     <Compile Include="Http/Json.fs" />
     <Compile Include="Http/Errors.fs" />
     <Compile Include="Http/Limits.fs" />
@@ -14,10 +13,13 @@
     <Compile Include="Journey/JourneyApi.fs" />
     <Compile Include="Trips/TripSnapshot.fs" />
     <Compile Include="Trips/TripsApi.fs" />
+    <Compile Include="Auth/AuthApi.fs" />
+    <Compile Include="Auth/GoogleSignIn.fs" />
     <Compile Include="Guides/GuideStyles.fs" />
     <Compile Include="Guides/GuidePage.fs" />
     <Compile Include="Guides/GuideRoutes.fs" />
     <Compile Include="Server.fs" />
+    <Compile Include="Settings.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
@@ -30,6 +32,7 @@
   <ItemGroup>
     <PackageReference Include="FSharp.SystemTextJson" />
     <PackageReference Include="Giraffe.ViewEngine" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" />
   </ItemGroup>
 
 </Project>

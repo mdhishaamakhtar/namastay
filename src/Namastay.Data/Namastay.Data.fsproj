@@ -18,6 +18,7 @@
     <Compile Include="Places/Guide.fs" />
     <Compile Include="Catalog/Rows.fs" />
     <Compile Include="Catalog/Read.fs" />
+    <Compile Include="Accounts/Users.fs" />
     <Compile Include="Journey/Graph.fs" />
     <Compile Include="Trips/Itineraries.fs" />
     <EmbeddedResource Include="Migrations/*.sql" />

@@ -46,3 +46,18 @@ let ``blank setting counts as missing`` () =
     match Settings.load (configuration blank) with
     | Ok _ -> raise (Xunit.Sdk.XunitException "expected a blank setting to fail")
     | Error missing -> Assert.Equal<string list>([ "Media:SecretKey" ], missing)
+
+[<Fact>]
+let ``google is off without credentials`` () =
+    Assert.True((Settings.google (configuration complete)).IsNone)
+
+[<Fact>]
+let ``google needs both settings`` () =
+    Assert.True((Settings.google (configuration [ "Google:ClientId", "id" ])).IsNone)
+
+[<Fact>]
+let ``google turns on with both settings`` () =
+    let settings =
+        configuration [ "Google:ClientId", "id"; "Google:ClientSecret", "secret" ]
+
+    Assert.Equal(Some "id", Settings.google settings |> Option.map _.ClientId)

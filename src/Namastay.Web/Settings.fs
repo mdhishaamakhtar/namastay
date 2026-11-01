@@ -3,6 +3,7 @@ namespace Namastay.Web
 open System
 open Microsoft.Extensions.Configuration
 open Namastay.Data.Media
+open Namastay.Web.Auth.GoogleSignIn
 
 type Settings = {
     Database: string
@@ -36,3 +37,16 @@ module Settings =
                 }
             }
         | missing -> Error missing
+
+    /// Google stays off until both of its settings exist.
+    let google (configuration: IConfiguration) =
+        let clientId = configuration["Google:ClientId"]
+        let clientSecret = configuration["Google:ClientSecret"]
+
+        if String.IsNullOrWhiteSpace clientId || String.IsNullOrWhiteSpace clientSecret then
+            None
+        else
+            Some {
+                ClientId = clientId
+                ClientSecret = clientSecret
+            }
