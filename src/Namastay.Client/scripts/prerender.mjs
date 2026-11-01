@@ -108,6 +108,39 @@ const renderApp = async (context, path) => {
   await page.close();
 };
 
+const writeShell = async (file, html) => {
+  const target = join(dist, file);
+  await mkdir(dirname(target), { recursive: true });
+  await writeFile(target, html);
+};
+
+/// Personal pages can't be saved with content, so each is saved as its own skeleton.
+/// Holding the API back leaves the page exactly as it looks while loading.
+const renderShell = async (context, path, file) => {
+  const page = await context.newPage();
+  await page.route(`${api}/**`, () => {});
+  await page.goto(site + path);
+  await page.waitForFunction(() => document.getElementById("app").childElementCount > 0);
+  await page.waitForFunction(() => document.querySelector('meta[name="robots"]')?.content === "noindex");
+  await writeShell(file, await page.content());
+  await page.close();
+};
+
+/// Sign-in has no private data, so it's saved whole, with its options.
+const renderSignIn = async (context) => {
+  const page = await context.newPage();
+  const answers = {};
+  const path = "/api/auth/options";
+
+  page.on("response", async (response) => {
+    if (new URL(response.url()).pathname === path && response.ok()) answers[path] = await response.text();
+  });
+
+  await page.goto(`${site}/sign-in`, { waitUntil: "networkidle" });
+  await writeShell("sign-in/index.html", withSeed(await page.content(), answers));
+  await page.close();
+};
+
 const renderGuide = async (path) => {
   const response = await fetch(api + path);
   if (!response.ok) throw new Error(`${path} answered ${response.status}`);
@@ -147,6 +180,17 @@ const browser = await chromium.launch({ args: ["--disable-features=LocalNetworkA
 const context = await browser.newContext();
 await serveSite(context);
 await inBatches(pages, (path) => renderApp(context, path));
+await renderSignIn(context);
+await inBatches(
+  [
+    ["/journey", "journey/index.html"],
+    ["/my", "my/index.html"],
+    ["/trip/shell", "shells/trip.html"],
+    ["/my/shell", "shells/my-trip.html"],
+    ["/my/shell/edit", "shells/edit.html"],
+  ],
+  ([path, file]) => renderShell(context, path, file),
+);
 await browser.close();
 
 await inBatches(guides, renderGuide);

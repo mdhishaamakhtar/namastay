@@ -33,13 +33,15 @@ type Msg =
     | Answered of Result<Account, Client.ClientError>
 
 let init () =
+    let saved = Client.seeded<SignInOptions> Routes.signInOptions.Template
+
     {
         Mode = Mode.SignIn
         Email = ""
         Password = ""
         Working = false
-        Google = false
-        Photo = None
+        Google = saved |> Option.exists _.Google
+        Photo = saved |> Option.bind _.Photo
         Error = None
         UseGoogle = false
         Fields = []

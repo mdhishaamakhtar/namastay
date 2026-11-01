@@ -32,7 +32,7 @@ let private landing (model: Model) dispatch (navigate: string -> unit) =
 
 let view (model: Model) dispatch (navigate: string -> unit) =
     match model.Visitor with
-    | Visitor.Unknown -> Html.none
+    | Visitor.Unknown -> Skeletons.browse "Finding your trips"
     | Visitor.SignedIn trips -> Signed.view model trips dispatch
     | Visitor.SignedOut
     | Visitor.Unsure -> landing model dispatch navigate

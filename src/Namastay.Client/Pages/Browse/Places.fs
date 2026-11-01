@@ -70,7 +70,7 @@ let private placesBody (model: Model) dispatch (regions: DirectoryRegion list) =
     Html.section [
         prop.className "browse-body"
         prop.children [
-            searchBox "Find a place" "Find a place: Goa, Varanasi, Ladakh" model dispatch
+            searchBox "Find a place" "Find a place: Goa, Jaipur, Ladakh" model dispatch
             if shown.IsEmpty then
                 Html.p [
                     prop.className "no-results"

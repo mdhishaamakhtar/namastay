@@ -40,7 +40,7 @@ let private google (model: Model) =
         Html.a [
             prop.className "button account-google press"
             prop.href (Client.fromApi Routes.googleSignIn.Template)
-            prop.text "Continue with Google"
+            prop.children [ Icons.google; Html.span "Continue with Google" ]
         ]
     else
         Html.none
