@@ -40,7 +40,6 @@ The name is Namastay, a pun on namaste + stay, chosen by the owner. A trademark 
 
 ## Evidence on Hand
 
-`reports/India travel knowledge base gap closure.md` holds the research, with status tags and sources. There are no users, testimonials, partners or press, and none may be invented.
 
 ## Product Principles
 
