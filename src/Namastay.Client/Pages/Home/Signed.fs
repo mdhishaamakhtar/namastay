@@ -61,12 +61,15 @@ let private nextTrip (model: Model) dispatch (first: bool) =
 
 let private main (model: Model) (trips: SavedTripSummary list) dispatch =
     Html.section [
-        prop.className "signed-main"
+        prop.className (
+            if trips.IsEmpty then
+                "signed-main signed-first"
+            else
+                "signed-main"
+        )
         prop.children [
             match trips with
-            | [] ->
-                Html.h2 "Your next trip"
-                nextTrip model dispatch true
+            | [] -> nextTrip model dispatch true
             | newest :: _ ->
                 tripHeading trips
                 Html.h2 "Your next trip"

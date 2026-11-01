@@ -107,6 +107,20 @@ type AccountTests(browser: BrowserFixture) =
         }
 
     [<Fact>]
+    member _.``signing in with nowhere to return to goes home``() =
+        task {
+            let! page = browser.NewPage()
+            let! _ = page.GotoAsync $"{browser.BaseUrl}/sign-in"
+            do! (button page "Create an account").ClickAsync()
+            do! fillAccount page (email ())
+            do! (button page "Create account").ClickAsync()
+            do! page.GetByRole(AriaRole.Heading, PageGetByRoleOptions(Name = "Your India")).WaitForAsync()
+            do! (link page "Plan your first trip").WaitForAsync()
+            let! empty = page.GetByText("Your next trip").CountAsync()
+            Assert.Equal(0, empty)
+        }
+
+    [<Fact>]
     member _.``the landing page offers my trips once signed in``() =
         task {
             let! page = saveNewTrip ()
@@ -166,7 +180,7 @@ type AccountTests(browser: BrowserFixture) =
             do! (link page "My trips").ClickAsync()
             do! (button page "Delete").ClickAsync()
             do! (button page "Delete this trip?").ClickAsync()
-            do! page.GetByText("You haven't saved a trip yet.").WaitForAsync()
+            do! page.GetByText("No trips yet").WaitForAsync()
         }
 
     [<Fact>]

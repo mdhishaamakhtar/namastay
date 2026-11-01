@@ -40,14 +40,7 @@ let private card (model: Model) dispatch (trip: SavedTripSummary) =
 
 let private trips (model: Model) dispatch (saved: SavedTripSummary list) =
     match saved with
-    | [] ->
-        Html.div [
-            prop.className "my-trips-empty reveal"
-            prop.children [
-                Html.h2 "You haven't saved a trip yet."
-                Html.p "Swipe through places you like, and we'll turn them into a trip you can keep and change."
-            ]
-        ]
+    | [] -> Html.none
     | items ->
         Html.ul [
             prop.className "my-trips reveal"
@@ -56,6 +49,7 @@ let private trips (model: Model) dispatch (saved: SavedTripSummary list) =
 
 let private count (model: Model) =
     match model.Trips with
+    | Remote.Loaded [] -> Html.p [ prop.className "reveal"; prop.text "No trips yet" ]
     | Remote.Loaded [ _ ] -> Html.p [ prop.className "reveal"; prop.text "One trip saved" ]
     | Remote.Loaded(_ :: _ as saved) -> Html.p [ prop.className "reveal"; prop.text $"{saved.Length} trips saved" ]
     | _ -> Html.none
@@ -82,7 +76,11 @@ let private header (model: Model) dispatch =
                     Html.a [
                         prop.className "button home-plan press"
                         prop.href Routes.journey.Template
-                        prop.text "Plan a new trip"
+                        prop.text (
+                            match model.Trips with
+                            | Remote.Loaded [] -> "Plan your first trip"
+                            | _ -> "Plan a new trip"
+                        )
                     ]
                 ]
             ]

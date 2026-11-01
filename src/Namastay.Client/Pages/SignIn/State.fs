@@ -91,7 +91,7 @@ let update msg (model: Model) =
         submit model
     | Answered(Ok _) ->
         { model with Working = false },
-        Cmd.ofEffect (fun _ -> Browser.navigate (Browser.afterSignIn Routes.myTripsPage.Template))
+        Cmd.ofEffect (fun _ -> Browser.navigate (Browser.afterSignIn Routes.home.Template))
     | Answered(Error(Client.ClientError.Server error)) when not error.Fields.IsEmpty ->
         {
             model with

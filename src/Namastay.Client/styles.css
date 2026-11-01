@@ -2324,22 +2324,6 @@ button:focus-visible {
   min-height: 44px;
 }
 
-.my-trips-empty {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  max-width: 520px;
-}
-
-.my-trips-empty h2 {
-  font-size: 32px;
-}
-
-.my-trips-empty p {
-  margin: 0;
-  font-size: 18px;
-}
-
 @media (min-width: 1024px) {
   .my-page main {
     padding: 56px 64px 88px;
@@ -2782,6 +2766,14 @@ button:focus-visible {
   .signed-trip,
   .signed-next {
     height: 440px;
+  }
+
+  .signed-first {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .signed-first .signed-next {
+    height: auto;
   }
 
   .browse-photo .label {
