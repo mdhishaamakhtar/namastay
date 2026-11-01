@@ -126,7 +126,16 @@ type AccountTests(browser: BrowserFixture) =
             let! page = saveNewTrip ()
             let! _ = page.GotoAsync browser.BaseUrl
             do! (link page "My trips").WaitForAsync()
-            do! page.GetByText("Pick up where you left off").WaitForAsync()
+            do! page.GetByText("Your latest trip").WaitForAsync()
+        }
+
+    [<Fact>]
+    member _.``my trips leads back home``() =
+        task {
+            let! page = saveNewTrip ()
+            do! (link page "My trips").ClickAsync()
+            do! (link page "Home").ClickAsync()
+            do! page.GetByText("Your latest trip").WaitForAsync()
         }
 
     [<Fact>]

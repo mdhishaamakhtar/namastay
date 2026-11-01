@@ -29,8 +29,16 @@ let private tripHeading (trips: SavedTripSummary list) =
     Html.div [
         prop.className "signed-heading"
         prop.children [
-            Html.h2 "Pick up where you left off"
-            Html.a [ prop.href Routes.myTripsPage.Template; prop.text $"All {trips.Length} trips" ]
+            Html.h2 "Your latest trip"
+            Html.a [
+                prop.href Routes.myTripsPage.Template
+                prop.text (
+                    if trips.Length = 1 then
+                        "All trips"
+                    else
+                        $"All {trips.Length} trips"
+                )
+            ]
         ]
     ]
 
@@ -72,7 +80,6 @@ let private main (model: Model) (trips: SavedTripSummary list) dispatch =
             | [] -> nextTrip model dispatch true
             | newest :: _ ->
                 tripHeading trips
-                Html.h2 "Your next trip"
                 latest newest
                 nextTrip model dispatch false
         ]

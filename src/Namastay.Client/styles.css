@@ -2255,34 +2255,10 @@ button:focus-visible {
   padding: 28px 22px 40px;
 }
 
-.my-head {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 22px 22px 28px;
-  background: var(--brand);
-  color: var(--ink);
-}
-
-.my-head .home-brand {
-  color: inherit;
-  text-decoration: none;
-}
-
-.my-title {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.my-title h1 {
-  font-size: 54px;
-  line-height: 1;
-}
-
-.my-title p {
-  margin: 4px 0 0;
-  font-size: 18px;
+.my-actions {
+  flex-direction: row;
+  align-items: center;
+  gap: 20px;
 }
 
 .my-trips {
@@ -2329,27 +2305,6 @@ button:focus-visible {
     padding: 56px 64px 88px;
   }
 
-  .my-head {
-    gap: 40px;
-    padding: 32px max(64px, calc((100% - 1240px) / 2)) 56px;
-  }
-
-  .my-title {
-    flex-direction: row;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 32px;
-  }
-
-  .my-title h1 {
-    font-size: 88px;
-  }
-
-  .my-title p {
-    margin-top: 8px;
-    font-size: 21px;
-  }
-
   .my-trips {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 32px 28px;
@@ -2381,10 +2336,6 @@ button:focus-visible {
 }
 
 .home-hero,
-.my-head {
-  padding-top: 28px;
-}
-
 .browse {
   min-height: 100dvh;
   background: var(--paper);
@@ -2701,10 +2652,6 @@ button:focus-visible {
   }
 
   .home-hero,
-  .my-head {
-    padding-top: 36px;
-  }
-
   .browse-head {
     padding: 36px max(64px, calc((100% - 1240px) / 2)) 48px;
   }

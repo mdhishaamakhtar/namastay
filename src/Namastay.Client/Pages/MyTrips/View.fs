@@ -56,31 +56,32 @@ let private count (model: Model) =
 
 let private header (model: Model) dispatch =
     Html.header [
-        prop.className "my-head"
+        prop.className "browse-head"
         prop.children [
+            Menu.view Menu.Section.MyTrips
             Html.div [
-                prop.className "home-top"
+                prop.className "browse-title"
                 prop.children [
-                    Menu.brand
-                    Html.button [
-                        prop.className "account-switch"
-                        prop.text "Sign out"
-                        prop.onClick (fun _ -> dispatch SignOut)
-                    ]
-                ]
-            ]
-            Html.div [
-                prop.className "my-title"
-                prop.children [
-                    Html.div [ prop.children [ Html.h1 "My trips"; count model ] ]
-                    Html.a [
-                        prop.className "button home-plan press"
-                        prop.href Routes.journey.Template
-                        prop.text (
-                            match model.Trips with
-                            | Remote.Loaded [] -> "Plan your first trip"
-                            | _ -> "Plan a new trip"
-                        )
+                    Html.h1 "My trips"
+                    count model
+                    Html.div [
+                        prop.className "browse-plan my-actions"
+                        prop.children [
+                            Html.a [
+                                prop.className "button press"
+                                prop.href Routes.journey.Template
+                                prop.text (
+                                    match model.Trips with
+                                    | Remote.Loaded [] -> "Plan your first trip"
+                                    | _ -> "Plan a new trip"
+                                )
+                            ]
+                            Html.button [
+                                prop.className "account-switch"
+                                prop.text "Sign out"
+                                prop.onClick (fun _ -> dispatch SignOut)
+                            ]
+                        ]
                     ]
                 ]
             ]
