@@ -12,7 +12,11 @@ let private moodTile dispatch (feeling: Feeling) =
         prop.className "mood press"
         prop.style [ style.backgroundColor feeling.Colour ]
         prop.onClick (fun _ -> dispatch (ChooseFeeling feeling))
-        prop.children [ Html.strong feeling.Name; Html.span (String.concat ", " feeling.Places) ]
+        prop.children [
+            Html.img [ prop.src $"/feelings/{feeling.Slug}.svg"; prop.alt "" ]
+            Html.strong feeling.Name
+            Html.span (String.concat ", " feeling.Places)
+        ]
     ]
 
 let moods (model: Model) dispatch =
