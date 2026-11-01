@@ -26,3 +26,4 @@ let kindName kind =
     | GuideNoticeKind.Safety -> "Safety"
     | GuideNoticeKind.Legal -> "Rules"
     | GuideNoticeKind.Permit -> "Permit"
+    | GuideNoticeKind.Season -> "Season"

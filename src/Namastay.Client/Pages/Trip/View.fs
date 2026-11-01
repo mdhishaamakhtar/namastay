@@ -108,6 +108,12 @@ let private bestMonths (trip: Trip) =
 
         Html.p [ prop.className "trip-best"; prop.text $"Best months for this trip: {names}." ]
 
+/// A hard month was the traveller's choice, so it's said up front, not folded inside a stop.
+let private hardMonths (trip: Trip) =
+    trip.Notices
+    |> List.filter (fun notice -> notice.Kind = GuideNoticeKind.Season)
+    |> List.map (fun notice -> Html.p [ prop.key notice.Body; prop.className "trip-hard"; prop.text notice.Body ])
+
 let private leftOut (trip: Trip) =
     match trip.LeftOut with
     | [] -> Html.none
@@ -161,6 +167,7 @@ let view (model: Model) dispatch =
                     prop.children [
                         swaps saved.Trip
                         bestMonths saved.Trip
+                        yield! hardMonths saved.Trip
                         stops model saved dispatch
                         leftOut saved.Trip
                     ]

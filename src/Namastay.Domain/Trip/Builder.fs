@@ -322,7 +322,7 @@ let notices (catalog: Catalog) (month: int option) (stops: RoutedStop list) =
             |> List.tryFind (fun item -> item.Month = month && item.Rating = Rating.Avoid)
             |> Option.map (fun item -> {
                 TripNotice.PlaceSlug = Some place.Slug
-                Kind = GuideNoticeKind.Safety
+                Kind = GuideNoticeKind.Season
                 Severity = NoticeSeverity.Warning
                 Body =
                     $"{place.Name} is hard going in {monthName month}. {item.Note |> Option.defaultValue String.Empty}"

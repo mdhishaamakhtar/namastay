@@ -736,6 +736,11 @@ button:focus-visible {
 }
 
 .trip-note p,
+.trip-hard {
+  margin: 0;
+  font-weight: 600;
+}
+
 .trip-best {
   margin: 0;
 }

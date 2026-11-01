@@ -1228,10 +1228,11 @@ let ``a liked place stays in a hard month and the trip says why it's hard`` () =
     let trip = hardMonthTrip Rating.Avoid
     Assert.Equal<string list>([ "chosen" ], trip.Stops |> List.map _.PlaceSlug)
 
-    Assert.Contains(
-        trip.Notices,
-        (fun notice -> notice.Body.Contains "Very hot by day." && notice.Body.Contains "June")
-    )
+    let warning =
+        trip.Notices |> List.find (fun notice -> notice.Kind = GuideNoticeKind.Season)
+
+    Assert.Contains("Very hot by day.", warning.Body)
+    Assert.Contains("June", warning.Body)
 
 [<Fact>]
 let ``a liked place that is closed that month is still left out`` () =

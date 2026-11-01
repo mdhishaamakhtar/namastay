@@ -152,7 +152,7 @@ let private noticesLabel (notices: TripNotice list) =
 let private notices (trip: Trip) (stop: TripStop) =
     match
         trip.Notices
-        |> List.filter (fun notice -> notice.PlaceSlug = Some stop.PlaceSlug)
+        |> List.filter (fun notice -> notice.PlaceSlug = Some stop.PlaceSlug && notice.Kind <> GuideNoticeKind.Season)
     with
     | [] -> Html.none
     | found ->

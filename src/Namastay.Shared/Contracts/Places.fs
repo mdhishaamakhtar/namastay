@@ -12,6 +12,7 @@ type GuideNoticeKind =
     | Safety
     | Legal
     | Permit
+    | Season
 
 [<RequireQualifiedAccess>]
 type NoticeSeverity =
