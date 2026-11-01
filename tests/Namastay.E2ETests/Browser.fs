@@ -16,6 +16,14 @@ type BrowserFixture() =
         | "" -> "http://localhost:5173"
         | value -> value
 
+    member _.NewReducedMotionPage() =
+        task {
+            let! context =
+                browser.NewContextAsync(BrowserNewContextOptions(ReducedMotion = ReducedMotion.Reduce))
+
+            return! context.NewPageAsync()
+        }
+
     member _.NewPage() =
         task {
             let! context =

@@ -1,0 +1,90 @@
+[
+  {
+    "slug": "green-valleys",
+    "placeSlug": "example-valley",
+    "title": "Green valleys",
+    "line": "Pine forests and a fast river.",
+    "photoSlug": "example-valley-river",
+    "isStart": true,
+    "branches": [
+      {
+        "onAnswer": true,
+        "toCard": "high-trails",
+        "priority": 2
+      },
+      {
+        "onAnswer": true,
+        "toCard": "quiet-villages",
+        "priority": 1
+      }
+    ],
+    "signals": [
+      {
+        "signal": "interest:mountains",
+        "weight": 3
+      }
+    ]
+  },
+  {
+    "slug": "palm-bays",
+    "placeSlug": "example-bay",
+    "title": "Palm bays",
+    "line": "Warm water and slow afternoons.",
+    "isStart": true,
+    "branches": [
+      {
+        "onAnswer": true,
+        "toCard": "surf-towns",
+        "priority": 1
+      }
+    ],
+    "signals": [
+      {
+        "signal": "interest:beaches",
+        "weight": 3
+      }
+    ]
+  },
+  {
+    "slug": "high-trails",
+    "placeSlug": "example-valley",
+    "title": "High trails",
+    "line": "Long walks above the tree line.",
+    "isStart": false,
+    "branches": [],
+    "signals": [
+      {
+        "signal": "interest:mountains",
+        "weight": 3
+      }
+    ]
+  },
+  {
+    "slug": "quiet-villages",
+    "placeSlug": "example-valley",
+    "title": "Quiet villages",
+    "line": "Stone houses and apple orchards.",
+    "isStart": false,
+    "branches": [],
+    "signals": [
+      {
+        "signal": "interest:mountains",
+        "weight": 3
+      }
+    ]
+  },
+  {
+    "slug": "surf-towns",
+    "placeSlug": "example-bay",
+    "title": "Surf towns",
+    "line": "Boards, cafes and late sunsets.",
+    "isStart": false,
+    "branches": [],
+    "signals": [
+      {
+        "signal": "interest:beaches",
+        "weight": 3
+      }
+    ]
+  }
+]

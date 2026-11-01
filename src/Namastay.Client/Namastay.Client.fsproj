@@ -9,6 +9,9 @@
     <Compile Include="Components/States.fs" />
     <Compile Include="Pages/Home/State.fs" />
     <Compile Include="Pages/Home/View.fs" />
+    <Compile Include="Pages/Journey/State.fs" />
+    <Compile Include="Pages/Journey/Questions.fs" />
+    <Compile Include="Pages/Journey/SwipeCard.fs" />
     <Compile Include="Pages/Journey/View.fs" />
     <Compile Include="Pages/Trip/State.fs" />
     <Compile Include="Pages/Trip/View.fs" />

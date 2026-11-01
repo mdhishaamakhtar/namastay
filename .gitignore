@@ -39,3 +39,4 @@ coverage.cobertura.xml
 
 # Local tooling
 /.claude/
+TestResults/

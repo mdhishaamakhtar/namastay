@@ -46,8 +46,9 @@ type NavigationTests(browser: BrowserFixture) =
         task {
             let! page = browser.NewPage()
             let! _ = page.GotoAsync(browser.BaseUrl + "/journey")
+            do! page.Locator(".card-label").WaitForAsync()
             let! title = heading page
-            Assert.Equal("Your journey starts here", title)
+            Assert.Equal("Green valleys", title)
         }
 
     [<Fact>]

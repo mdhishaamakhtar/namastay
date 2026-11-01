@@ -1,6 +1,142 @@
 module Namastay.Client.Pages.Journey.View
 
 open Feliz
+open Namastay.Client.Components
+open Namastay.Client.Pages.Journey
+open Namastay.Client.Pages.Journey.State
+open Namastay.Shared
+open Namastay.Shared.Contracts
 
-let view () =
-    Html.main [ Html.h1 "Your journey starts here" ]
+let private shell (progress: string) (children: ReactElement list) =
+    Html.div [
+        prop.className "journey"
+        prop.children [
+            Html.div [
+                prop.className "journey-top"
+                prop.children [
+                    Html.a [
+                        prop.className "journey-brand"
+                        prop.href Routes.home.Template
+                        prop.text "Namastay"
+                    ]
+                    Html.span progress
+                ]
+            ]
+            yield! children
+        ]
+    ]
+
+let private mixBar (name: string, share: int) =
+    Html.div [
+        prop.key name
+        prop.className "mix-row"
+        prop.children [
+            Html.span name
+            Html.div [
+                prop.className "mix-track"
+                prop.children [
+                    Html.div [ prop.className "mix-fill"; prop.style [ style.width (length.percent share) ] ]
+                ]
+            ]
+        ]
+    ]
+
+let private mix (graph: JourneyGraph) (model: Model) =
+    Html.div [
+        prop.className "journey-mix"
+        prop.children [
+            Html.h2 "Your India so far"
+            match JourneyPath.mix graph model.Answers with
+            | [] -> Html.p "Keep swiping."
+            | rows -> yield! rows |> List.map mixBar
+        ]
+    ]
+
+let private swiping graph (model: Model) dispatch =
+    let current =
+        model.Queue
+        |> List.tryHead
+        |> Option.bind (fun slug -> graph.Cards |> List.tryFind (fun card -> card.Slug = slug))
+
+    let number = model.Answers.Length + 1
+
+    match current with
+    | Some card ->
+        shell $"Card {number} of about {JourneyPath.maxCards}" [
+            Html.div [
+                prop.key card.Slug
+                prop.className "journey-stage"
+                prop.children [ mix graph model; SwipeCard.SwipeCard(card, Decided >> dispatch) ]
+            ]
+        ]
+    | None ->
+        shell "" [
+            Html.main [ States.message "The journey isn't ready yet. Please come back soon." ]
+        ]
+
+let private optionButton dispatch (compact: bool) (option': Questions.Option') =
+    Html.button [
+        prop.key option'.Name
+        prop.className (
+            if compact then
+                "choice choice-compact press"
+            else
+                "choice press"
+        )
+        prop.onClick (fun _ -> dispatch (Chose option'.Choice))
+        prop.children [
+            Html.strong option'.Name
+            if option'.Note <> "" then
+                Html.span option'.Note
+        ]
+    ]
+
+let private question index dispatch =
+    let item = Questions.all[index]
+
+    Html.div [
+        prop.key item.Title
+        prop.className "journey-question"
+        prop.children [
+            Html.div [
+                prop.className "card-label"
+                prop.children [
+                    Html.div [
+                        prop.className "card-frame question-frame"
+                        prop.children [
+                            Html.h1 item.Title
+                            Html.p item.Line
+                            Html.div [
+                                prop.className (
+                                    if item.Compact then
+                                        "choices choices-compact"
+                                    else
+                                        "choices"
+                                )
+                                prop.children (item.Options |> List.map (optionButton dispatch item.Compact))
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ]
+    ]
+
+let private asking index dispatch =
+    let progress =
+        if index + 1 = State.questionCount then
+            "Last one"
+        else
+            "Nearly there"
+
+    shell progress [ question index dispatch ]
+
+let view (model: Model) dispatch =
+    match model.Graph, model.Step with
+    | Remote.Loading, _ -> shell "" [ Html.main [ States.loading "Getting your cards ready" ] ]
+    | Remote.Failed error, _ -> shell "" [ Html.main [ States.failed error (fun () -> dispatch LoadGraph) ] ]
+    | Remote.Loaded graph, Step.Swiping -> swiping graph model dispatch
+    | Remote.Loaded _, Step.Asking index -> asking index dispatch
+    | Remote.Loaded _, Step.Building -> shell "" [ Html.main [ States.loading "Building your trip" ] ]
+    | Remote.Loaded _, Step.Failed error ->
+        shell "" [ Html.main [ States.failed error (fun () -> dispatch BuildTrip) ] ]

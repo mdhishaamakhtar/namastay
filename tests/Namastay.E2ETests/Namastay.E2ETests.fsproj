@@ -4,6 +4,7 @@
     <Compile Include="Browser.fs" />
     <Compile Include="NavigationTests.fs" />
     <Compile Include="HomeTests.fs" />
+    <Compile Include="JourneyTests.fs" />
   </ItemGroup>
 
   <ItemGroup>

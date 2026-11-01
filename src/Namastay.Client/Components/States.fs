@@ -6,6 +6,9 @@ open Namastay.Client.Api
 let loading (label: string) =
     Html.div [ prop.className "state"; prop.role "status"; prop.text label ]
 
+let message (text: string) =
+    Html.div [ prop.className "state"; prop.text text ]
+
 let failed (error: Client.ClientError) (retry: unit -> unit) =
     Html.div [
         prop.className "state"

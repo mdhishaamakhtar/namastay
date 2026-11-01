@@ -11,7 +11,7 @@ open Namastay.Shared
 [<RequireQualifiedAccess>]
 type Screen =
     | Home of Home.State.Model
-    | Journey
+    | Journey of Journey.State.Model
     | Trip of Trip.State.Model
     | NotFound
 
@@ -20,6 +20,7 @@ type Model = { Screen: Screen }
 type Msg =
     | UrlChanged of string list
     | HomeMsg of Home.State.Msg
+    | JourneyMsg of Journey.State.Msg
     | TripMsg of Trip.State.Msg
 
 let private show (segments: string list) =
@@ -27,7 +28,9 @@ let private show (segments: string list) =
     | Page.Home ->
         let home, command = Home.State.init ()
         { Screen = Screen.Home home }, Cmd.map HomeMsg command
-    | Page.Journey -> { Screen = Screen.Journey }, Cmd.none
+    | Page.Journey ->
+        let journey, command = Journey.State.init ()
+        { Screen = Screen.Journey journey }, Cmd.map JourneyMsg command
     | Page.NotFound -> { Screen = Screen.NotFound }, Cmd.none
     | Page.Trip token ->
         let trip, command = Trip.State.init token
@@ -41,10 +44,14 @@ let update msg model =
     | HomeMsg inner, Screen.Home home ->
         let updated, command = Home.State.update inner home
         { Screen = Screen.Home updated }, Cmd.map HomeMsg command
+    | JourneyMsg inner, Screen.Journey journey ->
+        let updated, command = Journey.State.update inner journey
+        { Screen = Screen.Journey updated }, Cmd.map JourneyMsg command
     | TripMsg inner, Screen.Trip trip ->
         let updated, command = Trip.State.update inner trip
         { Screen = Screen.Trip updated }, Cmd.map TripMsg command
     | HomeMsg _, _
+    | JourneyMsg _, _
     | TripMsg _, _ -> model, Cmd.none
 
 let private notFound () =
@@ -60,7 +67,7 @@ let private notFound () =
 let view model dispatch =
     match model.Screen with
     | Screen.Home home -> Home.View.view home (HomeMsg >> dispatch) Browser.navigate
-    | Screen.Journey -> Journey.View.view ()
+    | Screen.Journey journey -> Journey.View.view journey (JourneyMsg >> dispatch)
     | Screen.Trip trip -> Trip.View.view trip (TripMsg >> dispatch)
     | Screen.NotFound -> notFound ()
 

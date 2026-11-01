@@ -14,6 +14,16 @@ let apply (colours: PlaceColours) =
     setColour "--pale" colours.Pale
     setColour "--on-deep" colours.TextOnDeep
 
+/// The journey stage. None returns it to brand marigold.
+let stage (colours: PlaceColours option) =
+    match colours with
+    | Some chosen ->
+        setColour "--stage" chosen.Deep
+        setColour "--on-stage" chosen.TextOnDeep
+    | None ->
+        document.documentElement?style?removeProperty "--stage"
+        document.documentElement?style?removeProperty "--on-stage"
+
 /// Back to the brand colours from styles.css.
 let reset () =
     for name in [ "--deep"; "--mid"; "--pale"; "--on-deep" ] do

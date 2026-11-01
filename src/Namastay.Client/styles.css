@@ -12,6 +12,8 @@
   --mid: var(--brand);
   --pale: var(--paper);
   --on-deep: var(--ink);
+  --stage: var(--brand);
+  --on-stage: var(--ink);
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
@@ -314,6 +316,312 @@ button:focus-visible {
 
 @media (prefers-reduced-motion: reduce) {
   .press {
+    transition: none;
+  }
+}
+
+.journey {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 100dvh;
+  padding: 16px 16px 24px;
+  background-color: var(--stage);
+  color: var(--on-stage);
+  transition: background-color 360ms var(--ease-out), color 360ms var(--ease-out);
+}
+
+.journey main {
+  margin: 0 auto;
+  padding: 0;
+}
+
+.journey-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 32px;
+  font-size: 15px;
+}
+
+.journey-brand {
+  color: inherit;
+  font-family: "Yatra One", Mukta, serif;
+  font-size: 22px;
+  text-decoration: none;
+}
+
+.journey-stage,
+.journey-question {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+}
+
+.journey-mix {
+  display: none;
+}
+
+.card-label {
+  flex: 1;
+  display: flex;
+  min-height: 480px;
+  padding: 8px;
+  border-radius: 4px;
+  background: #fbfaf2;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.22);
+  color: var(--ink);
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  will-change: transform;
+}
+
+.card-frame {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  border: 2px solid var(--ink);
+}
+
+.card-photo {
+  flex: 1;
+  display: block;
+  width: 100%;
+  min-height: 0;
+  height: 0;
+  object-fit: cover;
+  background: var(--pale);
+  pointer-events: none;
+}
+
+.card-text {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.card-text h1 {
+  font-size: 36px;
+  line-height: 1.05;
+}
+
+.card-text p {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.3;
+}
+
+.card-mark {
+  flex: none;
+  width: 62px;
+  height: 62px;
+  padding: 10px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+}
+
+.card-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.card-credit {
+  margin: 0;
+  font-size: 12px;
+}
+
+.journey-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.action-love {
+  order: 2;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.action-pass {
+  order: 1;
+  border: 1px solid currentColor;
+  background: transparent;
+  color: inherit;
+}
+
+.journey-hint {
+  display: none;
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.question-frame {
+  gap: 12px;
+  padding: 20px;
+}
+
+.question-frame h1 {
+  font-size: 38px;
+  line-height: 1.05;
+}
+
+.question-frame p {
+  margin: 0;
+}
+
+.choices {
+  display: grid;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.choices-compact {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.choice {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 72px;
+  padding: 10px 14px;
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  background: #ffffff;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  font: 400 15px/1.3 Mukta, system-ui, sans-serif;
+}
+
+.choices-compact .choice:last-child {
+  grid-column: 1 / -1;
+}
+
+.choice strong {
+  font-family: "Yatra One", Mukta, serif;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.choice-compact {
+  align-items: center;
+  min-height: 60px;
+  padding: 8px 4px;
+}
+
+.choice-compact strong {
+  font-size: 18px;
+}
+
+.choice:hover {
+  background: var(--paper);
+}
+
+@media (min-width: 1024px) {
+  .journey {
+    padding: 28px 48px 36px;
+  }
+
+  .journey-top {
+    font-size: 16px;
+  }
+
+  .journey-brand {
+    font-size: 26px;
+  }
+
+  .journey-stage {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 460px minmax(0, 1fr);
+    gap: 56px;
+    align-items: center;
+  }
+
+  .journey-question {
+    align-items: center;
+    justify-content: center;
+  }
+
+  .journey-question .card-label {
+    flex: none;
+    width: 520px;
+    min-height: 640px;
+  }
+
+  .journey-mix {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .journey-mix h2 {
+    font-size: 32px;
+    line-height: 1.1;
+  }
+
+  .journey-mix p {
+    margin: 0;
+  }
+
+  .mix-row {
+    font-size: 16px;
+  }
+
+  .mix-track {
+    height: 8px;
+    background: color-mix(in srgb, currentColor 18%, transparent);
+  }
+
+  .mix-fill {
+    height: 100%;
+    background: currentColor;
+    transition: width 360ms var(--ease-out);
+  }
+
+  .journey-stage .card-label {
+    flex: none;
+    height: 640px;
+  }
+
+  .card-text h1 {
+    font-size: 44px;
+  }
+
+  .journey-actions {
+    display: flex;
+    flex-direction: column;
+    justify-self: end;
+    width: 100%;
+    max-width: 240px;
+  }
+
+  .action-love {
+    order: 0;
+  }
+
+  .action-pass {
+    order: 0;
+  }
+
+  .journey-hint {
+    display: block;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .journey,
+  .mix-fill {
     transition: none;
   }
 }
