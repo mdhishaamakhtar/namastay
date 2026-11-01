@@ -76,6 +76,45 @@ type TripTests(browser: BrowserFixture) =
         }
 
     [<Fact>]
+    member _.``refreshing a trip keeps its colour while loading``() =
+        task {
+            let! page, token = openTrip ()
+
+            let panelColour =
+                "getComputedStyle(document.querySelector('.trip-panel')).backgroundColor"
+
+            let! loaded = page.EvaluateAsync<string> panelColour
+
+            let! _ =
+                page.RouteAsync($"**/api/itineraries/{token}", Func<IRoute, Task>(fun _ -> Task.CompletedTask))
+
+            let! _ =
+                page.ReloadAsync(PageReloadOptions(WaitUntil = WaitUntilState.DOMContentLoaded))
+
+            do! page.Locator(".trip .bone").First.WaitForAsync()
+            let! waiting = page.EvaluateAsync<string> panelColour
+            Assert.Equal(loaded, waiting)
+        }
+
+    [<Fact>]
+    member _.``a trip never seen before waits in a neutral colour``() =
+        task {
+            let! page = browser.NewPage()
+            let! token = createTrip page
+
+            let! _ =
+                page.RouteAsync($"**/api/itineraries/{token}", Func<IRoute, Task>(fun _ -> Task.CompletedTask))
+
+            let! _ = page.GotoAsync $"{browser.BaseUrl}/trip/{token}"
+            do! page.Locator(".trip .bone").First.WaitForAsync()
+
+            let! colour =
+                page.EvaluateAsync<string> "getComputedStyle(document.querySelector('.trip-panel')).backgroundColor"
+
+            Assert.Equal("rgb(239, 230, 208)", colour)
+        }
+
+    [<Fact>]
     member _.``first stop starts open``() =
         task {
             let! page, _ = openTrip ()

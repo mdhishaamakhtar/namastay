@@ -54,6 +54,18 @@ let private tripUrl source =
 let private load source =
     Cmd.OfPromise.perform (fun url -> Client.get<SavedTrip> url) (tripUrl source) Loaded
 
+let private address source =
+    match source with
+    | Source.Shared token -> Route.url [ "shareToken", token ] [] Routes.trip
+    | Source.Mine id -> Route.url [ "id", id ] [] Routes.myTripPage
+
+/// A refresh starts in the trip's own colours, and a new trip in a neutral one.
+let private startColours source =
+    Cmd.ofEffect (fun _ ->
+        match Theme.recall (address source) with
+        | Some colours -> Theme.apply colours
+        | None -> Theme.neutral ())
+
 let init source =
     {
         Source = source
@@ -62,7 +74,7 @@ let init source =
         Sharing = Sharing.Idle
         Problem = None
     },
-    load source
+    Cmd.batch [ startColours source; load source ]
 
 let private saveToAccount token =
     Cmd.OfPromise.perform
@@ -70,11 +82,12 @@ let private saveToAccount token =
         (Route.url [ "shareToken", token ] [] Routes.saveItinerary)
         SavedToAccount
 
-let private applyBase (trip: Trip) =
+let private applyBase source (trip: Trip) =
     Cmd.ofEffect (fun _ ->
-        trip.Stops
-        |> List.tryFind (fun stop -> stop.FamilySlug = trip.BaseFamily)
-        |> Option.iter (fun stop -> Theme.apply stop.Colours))
+        Theme.ofTrip trip
+        |> Option.iter (fun colours ->
+            Theme.apply colours
+            Theme.remember (address source) colours))
 
 let private copyLink () : JS.Promise<unit> =
     window?navigator?clipboard?writeText(window.location.href)
@@ -94,7 +107,7 @@ let update msg (model: Model) =
                 Trip = Remote.Loaded saved
                 Open = saved.Trip.Stops |> List.tryHead |> Option.map _.PlaceSlug
         },
-        applyBase saved.Trip
+        applyBase model.Source saved.Trip
     | Loaded(Error error) when Client.isSignedOut error -> model, Cmd.ofEffect (fun _ -> Navigation.signInThenReturn ())
     | Loaded(Error error) ->
         {

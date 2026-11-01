@@ -163,9 +163,16 @@ let update msg (model: Model) =
                     Step = Step.Asking(index + 1)
             },
             Cmd.none
-    | BuildTrip, _, _ -> build model
+    | BuildTrip, _, _ ->
+        let building, command = build model
+        building, Cmd.batch [ Cmd.ofEffect (fun _ -> Theme.neutral ()); command ]
     | TripBuilt(Ok saved), _, _ ->
-        model, Cmd.ofEffect (fun _ -> Browser.navigate (Route.url [ "shareToken", saved.ShareToken ] [] Routes.trip))
+        let address = Route.url [ "shareToken", saved.ShareToken ] [] Routes.trip
+
+        model,
+        Cmd.ofEffect (fun _ ->
+            Theme.ofTrip saved.Trip |> Option.iter (Theme.remember address)
+            Browser.navigate address)
     | TripBuilt(Error error), _, _ -> { model with Step = Step.Failed error }, Cmd.none
     | Decided _, _, _
     | Chose _, _, _ -> model, Cmd.none
