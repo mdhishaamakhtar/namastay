@@ -2,15 +2,32 @@ name: check
 
 on:
   push:
+    branches: [main]
   pull_request:
 
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
           global-json-file: global.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: src/Namastay.Client/package-lock.json
       - run: dotnet tool restore
-      - run: make check
+      - run: npm ci
+        working-directory: src/Namastay.Client
+      - name: Format, lint, integration tests and coverage
+        run: make check
+      - name: Install the test browser
+        run: |
+          dotnet build tests/Namastay.E2ETests --verbosity quiet
+          pwsh tests/Namastay.E2ETests/bin/Debug/net10.0/playwright.ps1 install --with-deps chromium
+      - run: docker compose up -d postgres
+      - name: Browser tests
+        run: make test-e2e

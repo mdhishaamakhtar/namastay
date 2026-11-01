@@ -105,7 +105,17 @@ let useCompression (app: WebApplication) = app.UseResponseCompression() |> ignor
 
 let useForwardedHeaders (app: WebApplication) = app.UseForwardedHeaders() |> ignore
 
-let useWebsiteAccess (app: WebApplication) = app.UseCors() |> ignore
+/// The CDN keeps one copy of each address whoever asked first, so an answer can't depend
+/// on who's asking. Every response names the website, which is the only one allowed.
+let private nameWebsite (site: Tokens.Site) (context: HttpContext) (next: RequestDelegate) : Task =
+    context.Response.Headers.AccessControlAllowOrigin <- site.Url
+    context.Response.Headers.AccessControlAllowCredentials <- "true"
+    next.Invoke context
+
+let useWebsiteAccess (app: WebApplication) =
+    app.UseCors() |> ignore
+    let site = app.Services.GetRequiredService<Tokens.Site>()
+    app.Use(Func<HttpContext, RequestDelegate, Task>(nameWebsite site)) |> ignore
 
 let useRateLimits (app: WebApplication) = app.UseRateLimiter() |> ignore
 

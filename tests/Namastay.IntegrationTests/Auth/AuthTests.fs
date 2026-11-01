@@ -344,7 +344,25 @@ type AuthTests(postgres: PostgresFixture) =
             use request = new HttpRequestMessage(HttpMethod.Get, Routes.me.Template)
             request.Headers.Add("Origin", "https://evil.test")
             let! response = http.SendAsync request
-            Assert.False(response.Headers.Contains "Access-Control-Allow-Origin")
+
+            Assert.Equal(
+                TestApp.testSite.Url,
+                String.Join("", response.Headers.GetValues "Access-Control-Allow-Origin")
+            )
+        }
+
+    [<Fact>]
+    member _.``an answer cached from a request with no origin still works for the website``() =
+        task {
+            let! http, _ = start ()
+            let! response = http.GetAsync Routes.me.Template
+
+            Assert.Equal(
+                TestApp.testSite.Url,
+                String.Join("", response.Headers.GetValues "Access-Control-Allow-Origin")
+            )
+
+            Assert.Equal("true", String.Join("", response.Headers.GetValues "Access-Control-Allow-Credentials"))
         }
 
     interface IClassFixture<PostgresFixture>
