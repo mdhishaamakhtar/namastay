@@ -1676,8 +1676,9 @@ button:focus-visible {
   font-size: 15px;
 }
 
-.edit-title input {
+.edit-title textarea {
   width: 100%;
+  resize: none;
   padding: 2px 0 6px;
   border: 0;
   border-bottom: 2px solid color-mix(in srgb, currentColor 50%, transparent);
@@ -1915,7 +1916,7 @@ button:focus-visible {
 }
 
 @media (min-width: 1024px) {
-  .edit-title input {
+  .edit-title textarea {
     font-size: 38px;
   }
 

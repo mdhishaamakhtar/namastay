@@ -131,7 +131,9 @@ let private adders (model: Model) dispatch =
 
 let private legText (row: Row) (previous: Row) =
     match row.Arrival with
-    | Some leg when row.ComesAfter = Some previous.Key -> Duration.describe leg.MinutesMin leg.MinutesMax
+    | Some leg when row.ComesAfter = Some previous.Key ->
+        let time = Duration.describe leg.MinutesMin leg.MinutesMax
+        time.Substring(0, 1).ToUpperInvariant() + time.Substring 1
     | _ -> "We'll check this route when you save"
 
 let private mark (row: Row) (previous: Row) =
@@ -262,8 +264,8 @@ let private panel (model: Model) dispatch =
                 prop.className "edit-title"
                 prop.children [
                     Html.span "Trip name"
-                    Html.input [
-                        prop.type'.text
+                    Html.textarea [
+                        prop.rows 2
                         prop.value model.Title
                         prop.onChange (TitleChanged >> dispatch)
                     ]
