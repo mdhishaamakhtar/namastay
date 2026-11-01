@@ -866,3 +866,73 @@ let ``mix shows the strongest interests as shares`` () =
 [<Fact>]
 let ``mix is empty when nothing was liked`` () =
     Assert.Empty((build catalog (request [] 5 None)).Mix)
+
+let private hubCatalog = {
+    catalog with
+        Places = [
+            place "end" "c-hills" "pine" "mountains"
+            place "hub" "c-hills" "pine" "food"
+            place "next" "c-hills" "pine" "food"
+            place "last" "c-hills" "pine" "food"
+            place "strong-one" "c-coast" "ocean" "mountains"
+            place "strong-two" "c-coast" "ocean" "mountains"
+            place "strong-three" "c-coast" "ocean" "mountains"
+        ]
+        Links =
+            both "end" "hub"
+            @ both "hub" "next"
+            @ both "next" "last"
+            @ both "strong-one" "strong-two"
+            @ both "strong-two" "strong-three"
+}
+
+let private hubCards = [ card "likes-end" "interest:mountains" (Some "end") ]
+
+let private hubTrip days =
+    build { hubCatalog with Cards = hubCards } (request (liked [ "likes-end" ]) days None)
+
+[<Fact>]
+let ``a liked place stays in the trip when another region scores higher`` () =
+    let trip = hubTrip 7
+    Assert.Contains("end", trip.Stops |> List.map _.PlaceSlug)
+
+[<Fact>]
+let ``a dead end does not stop the route`` () =
+    let trip = hubTrip 12
+    Assert.True(trip.Stops.Length >= 3)
+
+[<Fact>]
+let ``no stop runs past its maximum when a longer route exists`` () =
+    let trip = hubTrip 12
+    Assert.All(trip.Stops, (fun stop -> Assert.True(stop.Days <= 4)))
+
+[<Fact>]
+let ``no stop is cut below its minimum days`` () =
+    for days in [ 7; 9; 11; 13; 14 ] do
+        Assert.All((hubTrip days).Stops, (fun stop -> Assert.True(stop.Days >= 2)))
+
+[<Fact>]
+let ``a liked place survives a long route elsewhere`` () =
+    Assert.Contains("end", (hubTrip 14).Stops |> List.map _.PlaceSlug)
+
+[<Fact>]
+let ``fourteen days does not hop every two days`` () =
+    Assert.True((hubTrip 14).Stops.Length <= 5)
+
+[<Fact>]
+let ``a long fixed stay is not trimmed out of a short trip`` () =
+    let fixedStay = {
+        place "far" "c-hills" "pine" "mountains" with
+            DaysMin = 7
+            DaysMax = 7
+    }
+
+    let world = {
+        catalog with
+            Places = [ fixedStay; place "near" "c-hills" "pine" "mountains" ]
+            Links = both "near" "far"
+            Cards = [ card "likes-far" "interest:mountains" (Some "far") ]
+    }
+
+    let trip = build world (request (liked [ "likes-far" ]) 7 None)
+    Assert.Equal<string list>([ "far" ], trip.Stops |> List.map _.PlaceSlug)

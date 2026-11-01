@@ -4,7 +4,7 @@ open Namastay.Domain.Catalog
 open Namastay.Domain.Trip.Profile
 open Namastay.Shared.Contracts
 
-let private collectedBonus = 30
+let private collectedBonus = 100
 let private bestSeason = 8
 let private unknownSeason = -2
 let private fitWeight = 2

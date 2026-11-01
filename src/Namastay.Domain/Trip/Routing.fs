@@ -9,6 +9,9 @@ type RoutedStop = {
     Arrival: TransportLink option
 }
 
+let private beamWidth = 60
+let private unfilledDayPenalty = 10
+
 let private regionLimit days =
     if days <= 7 then 1
     elif days <= 14 then 2
@@ -16,12 +19,6 @@ let private regionLimit days =
 
 let private allowed (request: TripRequest) (link: TransportLink) =
     request.TransportComfort = TransportComfort.Anything || link.Mode <> Mode.Flight
-
-let private fastestLink (links: TransportLink list) (request: TripRequest) (from: string) (target: string) =
-    links
-    |> List.filter (fun link -> link.FromSlug = from && link.ToSlug = target && allowed request link)
-    |> List.sortBy (fun link -> link.MinutesMin, link.Slug)
-    |> List.tryHead
 
 /// The quickest link by any mode, for routes a traveller chose themselves.
 let linkBetween (links: TransportLink list) (from: string) (target: string) =
@@ -36,53 +33,86 @@ let private regionOf (catalog: Catalog) (place: Place) =
     |> Option.map _.RegionSlug
     |> Option.defaultValue place.ClusterSlug
 
-/// Regions ranked by their three best places.
-let private rankedRegions catalog (scored: (Place * int) list) =
-    scored
-    |> List.groupBy (fun (place, _) -> regionOf catalog place)
-    |> List.map (fun (region, places) ->
-        let strength =
-            places |> List.map snd |> List.sortDescending |> List.truncate 3 |> List.sum
+/// A route so far, newest stop first.
+type private Path = {
+    Stops: RoutedStop list
+    Regions: Set<string>
+    Score: int
+    FirstScore: int
+    Planned: int
+    Minimum: int
+    Capacity: int
+}
 
-        region, strength)
-    |> List.sortBy (fun (region, strength) -> -strength, region)
-    |> List.map fst
-
-/// Walks one region, adding the best places that connect to the route so far.
-[<TailCall>]
-let rec private walk (catalog: Catalog) request share stopDays (stops: RoutedStop list) used remaining =
-    let last = stops |> List.tryLast
-
-    let next =
-        remaining
-        |> List.tryPick (fun ((place: Place), _) ->
-            match last with
-            | None -> Some(place, None)
-            | Some stop ->
-                fastestLink catalog.Links request stop.Place.Slug place.Slug
-                |> Option.map (fun link -> place, Some link))
-
-    match next with
-    | Some(place, link) when used + stopDays place <= share || used = 0 ->
-        let days = stopDays place
-
-        let stop = {
+let private start catalog stopDays ((place: Place), score) = {
+    Stops = [
+        {
             Place = place
-            Days = days
-            Arrival = link
+            Days = stopDays place
+            Arrival = None
         }
+    ]
+    Regions = Set.singleton (regionOf catalog place)
+    Score = score
+    FirstScore = score
+    Planned = stopDays place
+    Minimum = place.DaysMin
+    Capacity = place.DaysMax
+}
 
-        let others =
-            remaining |> List.filter (fun (other: Place, _) -> other.Slug <> place.Slug)
+let private extend catalog (links: Map<string * string, TransportLink>) stopDays limit days scored (path: Path) =
+    let last = path.Stops.Head.Place
 
-        walk catalog request share stopDays (stops @ [ stop ]) (used + days) others
-    | _ -> stops
+    if path.Planned >= days then
+        []
+    else
+        scored
+        |> List.choose (fun ((place: Place), score) ->
+            let regions = path.Regions.Add(regionOf catalog place)
+            let used = path.Stops |> List.exists (fun stop -> stop.Place.Slug = place.Slug)
 
-let private walkRegion catalog request share prefersDepth (route: RoutedStop list) (candidates: (Place * int) list) =
-    let stopDays (place: Place) =
-        if prefersDepth then place.DaysMax else place.DaysMin
+            match links.TryFind(last.Slug, place.Slug) with
+            | Some link when not used && regions.Count <= limit && path.Minimum + place.DaysMin <= days ->
+                Some {
+                    Stops =
+                        {
+                            Place = place
+                            Days = stopDays place
+                            Arrival = Some link
+                        }
+                        :: path.Stops
+                    Regions = regions
+                    Score = path.Score + score
+                    FirstScore = path.FirstScore
+                    Planned = path.Planned + stopDays place
+                    Minimum = path.Minimum + place.DaysMin
+                    Capacity = path.Capacity + place.DaysMax
+                }
+            | _ -> None)
 
-    walk catalog request share stopDays route 0 candidates
+/// Every route the search reached, keeping only the strongest at each length.
+[<TailCall>]
+let rec private explore grow reached frontier =
+    match frontier with
+    | [] -> reached
+    | _ ->
+        let next =
+            frontier
+            |> List.collect grow
+            |> List.sortByDescending _.Score
+            |> List.truncate beamWidth
+
+        explore grow (next @ reached) next
+
+/// The route's taste, less a penalty for each day its stops can't honestly fill.
+let private worth days (path: Path) =
+    path.Score - unfilledDayPenalty * max 0 (days - path.Capacity)
+
+let private bestPath days (paths: Path list) =
+    paths
+    |> List.minBy (fun path ->
+        let slugs = path.Stops |> List.map _.Place.Slug
+        -(worth days path), -path.FirstScore, slugs)
 
 /// Shares spare days around the stops, then past their usual maximum if it must.
 [<TailCall>]
@@ -107,74 +137,55 @@ let rec private fill remaining cursor (stops: RoutedStop list) =
 
         fill (remaining - 1) (target + 1) grown
 
+/// Takes spare days from the latest stops. A stop goes only when none has a day to spare.
 [<TailCall>]
 let rec private trim excess (stops: RoutedStop list) =
-    if excess <= 0 then
-        stops
-    else
-        match List.rev stops with
-        | last :: earlier when last.Days > excess -> List.rev ({ last with Days = last.Days - excess } :: earlier)
-        | last :: earlier when not earlier.IsEmpty -> trim (excess - last.Days) (List.rev earlier)
-        | _ -> stops
+    let spare =
+        stops |> List.tryFindIndexBack (fun stop -> stop.Days > stop.Place.DaysMin)
 
-let private reversed catalog request (stops: RoutedStop list) =
-    let places = stops |> List.rev |> List.map _.Place
+    match stops, spare with
+    | _ when excess <= 0 -> stops
+    | _, Some index ->
+        let shorter =
+            stops
+            |> List.mapi (fun at stop ->
+                if at = index then
+                    { stop with Days = stop.Days - 1 }
+                else
+                    stop)
 
-    let arrivals =
-        places
-        |> List.pairwise
-        |> List.map (fun (from, target) -> fastestLink catalog.Links request from.Slug target.Slug)
+        trim (excess - 1) shorter
+    | [ only ], None when only.Days > excess -> [ { only with Days = only.Days - excess } ]
+    | _ :: _ :: _, None ->
+        let last = List.last stops
+        trim (excess - last.Days) (List.take (stops.Length - 1) stops)
+    | _ -> stops
 
-    if arrivals |> List.forall Option.isSome then
-        let days = stops |> List.rev |> List.map _.Days
+let private planned (stops: RoutedStop list) = stops |> List.sumBy _.Days
 
-        Some(
-            List.zip3 places days (None :: arrivals)
-            |> List.map (fun (place, days, arrival) -> {
-                Place = place
-                Days = days
-                Arrival = arrival
-            })
-        )
-    else
-        None
-
-/// Flips the route when only its other end connects to the next region.
-let private facing catalog request (route: RoutedStop list) (candidates: (Place * int) list) =
-    let reaches (stops: RoutedStop list) =
-        stops
-        |> List.tryLast
-        |> Option.exists (fun last ->
-            candidates
-            |> List.exists (fun (place, _) -> (fastestLink catalog.Links request last.Place.Slug place.Slug).IsSome))
-
-    if route.IsEmpty || reaches route then
-        route
-    else
-        match reversed catalog request route with
-        | Some flipped when reaches flipped -> flipped
-        | _ -> route
-
-/// Chooses connected stops across the allowed regions, with days adding up exactly.
+/// Chooses connected stops within the allowed regions, with days adding up exactly.
 let route (catalog: Catalog) (request: TripRequest) prefersDepth (scored: (Place * int) list) : RoutedStop list =
-    let regions =
-        rankedRegions catalog scored |> List.truncate (regionLimit request.Days)
+    let stopDays (place: Place) =
+        if prefersDepth then
+            place.DaysMax
+        else
+            (place.DaysMin + place.DaysMax + 1) / 2
 
-    let share = request.Days / regions.Length
+    let links =
+        catalog.Links
+        |> List.filter (allowed request)
+        |> List.sortBy (fun link -> link.MinutesMin, link.Slug)
+        |> List.rev
+        |> List.map (fun link -> (link.FromSlug, link.ToSlug), link)
+        |> Map.ofList
+
+    let grow =
+        extend catalog links stopDays (regionLimit request.Days) request.Days scored
+
+    let starts = scored |> List.map (start catalog stopDays)
 
     let stops =
-        regions
-        |> List.fold
-            (fun route region ->
-                let candidates =
-                    scored |> List.filter (fun (place, _) -> regionOf catalog place = region)
+        explore grow starts starts |> bestPath request.Days |> _.Stops |> List.rev
 
-                walkRegion catalog request share prefersDepth (facing catalog request route candidates) candidates)
-            []
-
-    let planned = stops |> List.sumBy _.Days
-
-    if planned > request.Days then
-        trim (planned - request.Days) stops
-    else
-        fill (request.Days - planned) 0 stops
+    let trimmed = trim (planned stops - request.Days) stops
+    fill (request.Days - planned trimmed) 0 trimmed
