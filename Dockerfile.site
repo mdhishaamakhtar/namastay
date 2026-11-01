@@ -13,7 +13,7 @@ WORKDIR /repo/src/Namastay.Client
 RUN dotnet tool restore \
     && npm ci \
     && dotnet fable . -o build \
-    && npx vite build \
+    && VITE_API_URL="$API_URL" VITE_SITE_URL="$SITE_URL" npx vite build \
     && echo "$CONTENT_STAMP" \
     && SITE_URL="$SITE_URL" API_URL="$API_URL" node scripts/prerender.mjs
 
