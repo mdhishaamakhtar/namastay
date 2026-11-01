@@ -1,5 +1,7 @@
 namespace Namastay.E2ETests
 
+open System
+open System.Threading.Tasks
 open Microsoft.Playwright
 open Xunit
 
@@ -195,6 +197,26 @@ type HomeTests(browser: BrowserFixture) =
 
             let! canonical = page.Locator("link[rel=canonical]").GetAttributeAsync "href"
             Assert.EndsWith("/food", canonical)
+        }
+
+    [<Fact>]
+    member _.``a saved page shows its own data at once and survives a failed refresh``() =
+        task {
+            let! page = browser.NewPage()
+
+            let! _ =
+                page.AddInitScriptAsync(
+                    script =
+                        """window.__seed = { "/api/food": JSON.stringify({ cards: [], regions: [{ slug: "seeded", name: "Seeded region", colour: "#000000", dishes: [] }] }) }"""
+                )
+
+            let! _ =
+                page.RouteAsync("**/api/food", Func<IRoute, Task>(fun route -> route.AbortAsync()))
+
+            let! _ = page.GotoAsync(browser.BaseUrl + "/food")
+            do! page.GetByText("Seeded region").WaitForAsync()
+            let! skeletons = page.Locator(".bone").CountAsync()
+            Assert.Equal(0, skeletons)
         }
 
     [<Fact>]

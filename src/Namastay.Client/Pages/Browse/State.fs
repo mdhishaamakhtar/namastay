@@ -23,6 +23,7 @@ type Model = {
 type Msg =
     | Load
     | Loaded of Result<Content, Client.ClientError>
+    | Refreshed of Result<Content, Client.ClientError>
     | QueryChanged of string
 
 let private bySlug (slug: string) route = Route.url [ "slug", slug ] [] route
@@ -45,13 +46,36 @@ let private loader target =
 let private load target =
     Cmd.OfPromise.perform loader target Loaded
 
+let private fromSeed target =
+    match target with
+    | Browse.Places ->
+        Client.seeded<DirectoryRegion list> Routes.directory.Template
+        |> Option.map Content.Places
+    | Browse.Food -> Client.seeded<FoodPage> Routes.food.Template |> Option.map Content.Food
+    | Browse.Region slug ->
+        Client.seeded<BrowsePage>(bySlug slug Routes.regionDetail)
+        |> Option.map Content.Listed
+    | Browse.FoodRegion slug ->
+        Client.seeded<BrowsePage>(bySlug slug Routes.foodRegionDetail)
+        |> Option.map Content.Listed
+    | Browse.Feeling slug ->
+        Client.seeded<BrowsePage>(bySlug slug Routes.feelingDetail)
+        |> Option.map Content.Listed
+    | Browse.Dish slug ->
+        Client.seeded<DishPage>(bySlug slug Routes.dishDetail)
+        |> Option.map Content.Dish
+
+/// A saved page shows straight away, then quietly catches up with the API.
 let init target =
-    {
+    let started content = {
         Target = target
-        Content = Remote.Loading
+        Content = content
         Query = ""
-    },
-    load target
+    }
+
+    match fromSeed target with
+    | Some content -> started (Remote.Loaded content), Cmd.OfPromise.perform loader target Refreshed
+    | None -> started Remote.Loading, load target
 
 let update msg (model: Model) =
     match msg with
@@ -68,4 +92,11 @@ let update msg (model: Model) =
                 Content = Remote.Failed error
         },
         Cmd.none
+    | Refreshed(Ok content) ->
+        {
+            model with
+                Content = Remote.Loaded content
+        },
+        Cmd.none
+    | Refreshed(Error _) -> model, Cmd.none
     | QueryChanged query -> { model with Query = query }, Cmd.none

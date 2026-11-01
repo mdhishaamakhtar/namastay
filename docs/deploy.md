@@ -50,8 +50,10 @@ Once there are real users, a full reset would delete them, so run `make import` 
 
 ## After changing travel data
 
-1. Load the data as above.
-2. Wait 5 minutes, so cached API data expires. If you replaced a photo at the same path, run `railway cdn purge all` on the API, because photos cache for a year.
-3. Change the website's `CONTENT_STAMP` variable to anything new. That rebuilds its pages, and the deploy clears the cached ones.
+```bash
+make publish
+```
+
+That opens a private tunnel to Postgres, imports `data/`, uploads photos, clears the API's CDN cache and rebuilds the website. Keep your laptop awake: the import runs row by row over the tunnel, so it can take 20 minutes or more.
 
 If the API can't be reached, or any page fails to load, the website build stops and the live site stays as it was.
