@@ -1109,6 +1109,10 @@ button:focus-visible {
     min-height: 2.3em;
   }
 
+  .my-trip + .my-trip {
+    margin-left: -1px;
+  }
+
 }
 
 .my-trip-no-photo {
