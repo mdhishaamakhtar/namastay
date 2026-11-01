@@ -17,6 +17,7 @@ type Screen =
     | Trip of Trip.State.Model
     | SignIn of SignIn.State.Model
     | MyTrips of MyTrips.State.Model
+    | Account of Account.State.Model
     | Edit of Edit.State.Model
     | Browse of Browse.State.Model
     | NotFound
@@ -30,6 +31,7 @@ type Msg =
     | TripMsg of Trip.State.Msg
     | SignInMsg of SignIn.State.Msg
     | MyTripsMsg of MyTrips.State.Msg
+    | AccountMsg of Account.State.Msg
     | EditMsg of Edit.State.Msg
     | BrowseMsg of Browse.State.Msg
 
@@ -54,6 +56,9 @@ let private show (segments: string list) =
     | Page.MyTrips ->
         let trips, command = MyTrips.State.init ()
         { Screen = Screen.MyTrips trips }, Cmd.map MyTripsMsg command
+    | Page.Account ->
+        let account, command = Account.State.init ()
+        { Screen = Screen.Account account }, Cmd.map AccountMsg command
     | Page.Browse target ->
         let browse, command = Browse.State.init target
         { Screen = Screen.Browse browse }, Cmd.map BrowseMsg command
@@ -95,6 +100,9 @@ let update msg model =
     | MyTripsMsg inner, Screen.MyTrips trips ->
         let updated, command = MyTrips.State.update inner trips
         { Screen = Screen.MyTrips updated }, Cmd.map MyTripsMsg command
+    | AccountMsg inner, Screen.Account account ->
+        let updated, command = Account.State.update inner account
+        { Screen = Screen.Account updated }, Cmd.map AccountMsg command
     | EditMsg inner, Screen.Edit edit ->
         let updated, command = Edit.State.update inner edit
         { Screen = Screen.Edit updated }, Cmd.map EditMsg command
@@ -106,6 +114,7 @@ let update msg model =
     | TripMsg _, _
     | SignInMsg _, _
     | MyTripsMsg _, _
+    | AccountMsg _, _
     | EditMsg _, _
     | BrowseMsg _, _ -> model, Cmd.none
 
@@ -133,6 +142,7 @@ let view model dispatch =
     | Screen.Trip trip -> personal "Your trip | Namastay" (Trip.View.view trip (TripMsg >> dispatch))
     | Screen.SignIn signIn -> personal "Sign in | Namastay" (SignIn.View.view signIn (SignInMsg >> dispatch))
     | Screen.MyTrips trips -> personal "My trips | Namastay" (MyTrips.View.view trips (MyTripsMsg >> dispatch))
+    | Screen.Account account -> personal "Your account | Namastay" (Account.View.view account (AccountMsg >> dispatch))
     | Screen.Edit edit -> personal "Change your trip | Namastay" (Edit.View.view edit (EditMsg >> dispatch))
     | Screen.Browse browse -> Browse.View.view browse (BrowseMsg >> dispatch)
     | Screen.NotFound -> personal "Page not found | Namastay" (notFound ())

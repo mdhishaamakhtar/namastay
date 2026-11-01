@@ -35,7 +35,6 @@ let private panel (model: Model) (trip: Trip) dispatch =
     Html.aside [
         prop.className "trip-panel"
         prop.children [
-            Menu.brand
             Html.h1 trip.Title
             RouteMap.view trip.Stops
             if not trip.Mix.IsEmpty then
@@ -61,12 +60,6 @@ let private panel (model: Model) (trip: Trip) dispatch =
                     prop.className "button trip-share press"
                     prop.href (Route.url [ "id", id ] [] Routes.editTripPage)
                     prop.text "Change this trip"
-                ]
-
-                Html.a [
-                    prop.className "trip-link"
-                    prop.href Routes.myTripsPage.Template
-                    prop.text "My trips"
                 ]
             Html.button [
                 prop.className "button trip-share press"
@@ -149,24 +142,44 @@ let private stops (model: Model) (saved: SavedTrip) dispatch =
         )
     ]
 
-let view (model: Model) dispatch =
-    match model.Trip with
-    | Remote.Loading -> Skeletons.trip "Finding your trip"
-    | Remote.Failed error -> Html.main [ States.failed error (fun () -> dispatch Load) ]
-    | Remote.Loaded saved ->
-        Html.div [
-            prop.className "trip reveal"
-            prop.children [
-                panel model saved.Trip dispatch
-                Html.div [
-                    prop.className "trip-content"
-                    prop.children [
-                        swaps saved.Trip
-                        bestMonths saved.Trip
-                        yield! hardMonths saved.Trip
-                        stops model saved dispatch
-                        leftOut saved.Trip
-                    ]
-                ]
-            ]
+let private withMenu (model: Model) (page: ReactElement) =
+    let section =
+        match model.Source with
+        | Source.Mine _ -> Menu.Section.MyTrips
+        | Source.Shared _ -> Menu.Section.Elsewhere
+
+    Html.div [
+        prop.className "trip-page"
+        prop.children [
+            Html.header [ prop.className "trip-menu"; prop.children [ Menu.view section ] ]
+            page
         ]
+    ]
+
+let private tripButtons (source: Source) =
+    match source with
+    | Source.Mine _ -> 2
+    | Source.Shared _ -> 3
+
+let view (model: Model) dispatch =
+    withMenu model
+    <| match model.Trip with
+       | Remote.Loading -> Skeletons.trip "Finding your trip" (tripButtons model.Source)
+       | Remote.Failed error -> Html.main [ States.failed error (fun () -> dispatch Load) ]
+       | Remote.Loaded saved ->
+           Html.div [
+               prop.className "trip reveal"
+               prop.children [
+                   panel model saved.Trip dispatch
+                   Html.div [
+                       prop.className "trip-content"
+                       prop.children [
+                           swaps saved.Trip
+                           bestMonths saved.Trip
+                           yield! hardMonths saved.Trip
+                           stops model saved dispatch
+                           leftOut saved.Trip
+                       ]
+                   ]
+               ]
+           ]

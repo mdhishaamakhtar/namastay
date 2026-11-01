@@ -43,22 +43,32 @@ let private stop index =
         ]
     ]
 
+/// The airport row at each end of a trip.
+let private airport (key: string) =
+    Html.li [
+        prop.key key
+        prop.className "stop stop-airport"
+        prop.children [ bone "bone-line" ]
+    ]
+
 /// The trip page, for opening a trip and for the moment one is being built.
-let trip (label: string) =
+let trip (label: string) (buttons: int) =
     waiting label "trip" [
         Html.aside [
             prop.className "trip-panel"
             prop.children [
-                Html.span [ prop.className "journey-brand"; prop.text "Namastay" ]
                 bone "bone-heading"
-                Html.div [ prop.className "route"; prop.children [ for _ in 1..4 -> bone "bone-route" ] ]
+                Html.div [ prop.className "route"; prop.children [ for _ in 1..6 -> bone "bone-route" ] ]
                 Html.div [
                     prop.className "trip-mix"
-                    prop.children [ bone "bone-subheading"; bone "bone-track"; bone "bone-track" ]
+                    prop.children [
+                        bone "bone-subheading"
+                        bone "bone-track"
+                        bone "bone-track"
+                        bone "bone-track"
+                    ]
                 ]
-                button
-                button
-                button
+                yield! List.replicate buttons button
             ]
         ]
         Html.div [
@@ -67,7 +77,13 @@ let trip (label: string) =
                 bone "bone-best"
                 Html.ol [
                     prop.className "trip-stops"
-                    prop.children (stop 1 :: bone "bone-open" :: List.map stop [ 2; 3; 4 ])
+                    prop.children [
+                        airport "land"
+                        stop 1
+                        bone "bone-open"
+                        yield! List.map stop [ 2; 3; 4; 5; 6; 7 ]
+                        airport "home"
+                    ]
                 ]
             ]
         ]
@@ -125,22 +141,193 @@ let swipeCard (label: string) =
         ]
     ]
 
-/// A browsing page: the dark header, then shapes for its list.
-let browse (label: string) =
-    waiting label "browse" [
-        Html.div [
-            prop.className "browse-head"
-            prop.children [
-                Html.div [
-                    prop.className "browse-title"
-                    prop.children [ bone "bone-heading"; bone "bone-line" ]
+/// Real elements with hidden text, so a skeleton takes the size the page will.
+let private blank = "\u00A0"
+
+let private hiddenText (text: string) = [ prop.className "bone-text"; prop.text text ]
+
+let private browseHead (section: Menu.Section) (title: string) (extra: ReactElement list) =
+    Html.div [
+        prop.className "browse-head"
+        prop.children [
+            Menu.view section
+            Html.div [
+                prop.className "browse-hero"
+                prop.children [
+                    Html.div [
+                        prop.className "browse-title"
+                        prop.children [
+                            Html.h1 (hiddenText title)
+                            Html.p (hiddenText "A short line about this page.")
+                            Html.div [
+                                prop.className "browse-plan"
+                                prop.children [
+                                    Html.span [ prop.className "button skeleton-button"; prop.text "Plan a trip" ]
+                                ]
+                            ]
+                        ]
+                    ]
+                    yield! extra
                 ]
+            ]
+        ]
+    ]
+
+let private regionCard index =
+    Html.div [
+        prop.key (string index)
+        prop.className "region-card"
+        prop.children [
+            Html.div [
+                prop.className "region-top"
+                prop.children [
+                    Html.div [ prop.className "bone bone-region" ]
+                    Html.span [
+                        prop.className "region-name"
+                        prop.children [ Html.strong (hiddenText "The Himalaya") ]
+                    ]
+                ]
+            ]
+            Html.ul [
+                prop.children [
+                    for row in 1..5 ->
+                        Html.li [
+                            prop.key (string row)
+                            prop.children [
+                                Html.span [
+                                    prop.className "region-line"
+                                    prop.children [ Html.span (hiddenText "A place name") ]
+                                ]
+                            ]
+                        ]
+                ]
+            ]
+            Html.span [
+                prop.className "region-all"
+                prop.children [ Html.span (hiddenText "All 10 places") ]
+            ]
+        ]
+    ]
+
+let private regions =
+    Html.div [
+        prop.className "region-grid"
+        prop.children [ for index in 1..8 -> regionCard index ]
+    ]
+
+let private search = Html.div [ prop.className "search-input bone" ]
+
+let private listing index =
+    Html.div [
+        prop.key (string index)
+        prop.className "listing"
+        prop.children [
+            Html.span [ prop.className "listing-colour bone" ]
+            Html.span [
+                prop.className "listing-text"
+                prop.children [
+                    Html.strong (hiddenText "A place")
+                    Html.span (hiddenText "A sentence about why this place is here, long enough to fill two lines.")
+                ]
+            ]
+        ]
+    ]
+
+/// Places: the search box and all eight regions.
+let places (label: string) =
+    waiting label "browse" [
+        browseHead Menu.Section.Places "68 places across India" []
+        Html.div [ prop.className "browse-body"; prop.children [ search; regions ] ]
+    ]
+
+/// Food: the search box, the leading dishes, then the regions.
+let food (label: string) =
+    waiting label "browse" [
+        browseHead Menu.Section.Food "Eat your way across India" []
+        Html.div [
+            prop.className "browse-body"
+            prop.children [
+                search
+                Html.div [
+                    prop.className "label-grid home-food-grid"
+                    prop.children [
+                        for index in 1..3 -> Html.div [ prop.key (string index); prop.className "label bone" ]
+                    ]
+                ]
+                Html.h2 (hiddenText "By region")
+                regions
+            ]
+        ]
+    ]
+
+/// A region, feeling or dish page: its drawing, then its list.
+let listed (label: string) (section: Menu.Section) =
+    waiting label "browse" [
+        browseHead section "A page title" [
+            Html.div [
+                prop.className "browse-art"
+                prop.children [ Html.div [ prop.className "bone bone-region" ] ]
             ]
         ]
         Html.div [
             prop.className "browse-body"
-            prop.children [ bone "bone-stop"; bone "bone-stop"; bone "bone-stop" ]
+            prop.children [
+                Html.h2 (hiddenText "Places here")
+                Html.div [
+                    prop.className "listings"
+                    prop.children [ for index in 1..8 -> listing index ]
+                ]
+            ]
         ]
+    ]
+
+/// Home for someone signed in: their latest trip, the ways onward, then the feelings.
+let signedHome (label: string) =
+    waiting label "browse" [
+        Html.div [
+            prop.className "browse-head"
+            prop.children [
+                Menu.view Menu.Section.Home
+                Html.div [
+                    prop.className "browse-title"
+                    prop.children [ Html.h1 "Your India"; Html.p "Welcome back." ]
+                ]
+            ]
+        ]
+        Html.div [
+            prop.className "signed-main"
+            prop.children [
+                Html.div [
+                    prop.className "signed-heading"
+                    prop.children [ Html.h2 "Your latest trip" ]
+                ]
+                Html.div [ prop.className "label bone signed-trip" ]
+                Html.div [
+                    prop.className "signed-next"
+                    prop.children [
+                        Html.span [ prop.className "button home-plan skeleton-button"; prop.text blank ]
+                        search
+                        Html.div [
+                            prop.className "doors"
+                            prop.children [
+                                Html.div [ prop.className "door bone" ]
+                                Html.div [ prop.className "door bone" ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ]
+    ]
+
+/// The account page's rows.
+let account (label: string) =
+    waiting label "account-details" [
+        bone "bone-subheading"
+        bone "bone-line"
+        bone "bone-subheading"
+        bone "bone-input"
+        bone "bone-input"
     ]
 
 /// The feeling tiles on the home page.

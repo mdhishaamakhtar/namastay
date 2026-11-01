@@ -163,6 +163,6 @@ let view (model: Model) dispatch =
     | Remote.Failed error, _ -> shell "" [ Html.main [ States.failed error (fun () -> dispatch LoadGraph) ] ]
     | Remote.Loaded graph, Step.Swiping -> swiping graph model dispatch
     | Remote.Loaded _, Step.Asking index -> asking index dispatch
-    | Remote.Loaded _, Step.Building -> Skeletons.trip "Building your trip"
+    | Remote.Loaded _, Step.Building -> Skeletons.trip "Building your trip" 3
     | Remote.Loaded _, Step.Failed error ->
         shell "" [ Html.main [ States.failed error (fun () -> dispatch BuildTrip) ] ]

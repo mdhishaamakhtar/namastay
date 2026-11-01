@@ -1021,6 +1021,24 @@ button:focus-visible {
   }
 }
 
+.bone-region {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2400 / 1764;
+}
+
+.bone-text {
+  width: fit-content;
+  max-width: 100%;
+  border-radius: 2px;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  color: transparent;
+}
+
+.bone-text * {
+  color: transparent;
+}
+
 .bone-title {
   width: 70%;
   height: 32px;
@@ -1048,7 +1066,7 @@ button:focus-visible {
 
 .bone-open {
   width: 100%;
-  height: 240px;
+  height: 420px;
 }
 
 .stop-bones {
@@ -1239,6 +1257,7 @@ button:focus-visible {
 
 @media print {
   .journey-brand,
+  .trip-menu,
   .trip-share,
   .trip-link,
   .stop-guide,
@@ -2279,6 +2298,59 @@ button:focus-visible {
   font-weight: 600;
 }
 
+.account-body {
+  padding: 28px 22px 56px;
+}
+
+.account-details {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+.account-details h2 {
+  font-family: "Yatra One", Mukta, serif;
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.account-email {
+  margin: 0 0 24px;
+  font-size: 19px;
+  overflow-wrap: anywhere;
+}
+
+.account-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 60px;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  font-size: 18px;
+}
+
+.account-way {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.account-out {
+  align-self: flex-start;
+  margin-top: 24px;
+  font-weight: 600;
+}
+
+.trip-menu {
+  padding: 16px 22px;
+  background: var(--ink);
+  color: var(--paper);
+}
+
 .my-actions {
   flex-direction: row;
   align-items: center;
@@ -2567,7 +2639,8 @@ button:focus-visible {
   list-style: none;
 }
 
-.region-card li a {
+.region-card li a,
+.region-line {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -2610,6 +2683,10 @@ button:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.signed-next .door.bone {
+  min-height: 210px;
 }
 
 .search-box {
@@ -2796,7 +2873,8 @@ button:focus-visible {
   }
 }
 
-.region-card li a {
+.region-card li a,
+.region-line {
   line-height: 1.2;
 }
 
