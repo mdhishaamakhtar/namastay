@@ -1554,3 +1554,23 @@ let ``a closer airport city with no guide is flown from directly`` () =
 
     Assert.Equal("NEAR", trip.Depart.Value.City)
     Assert.DoesNotContain("near", slugs trip)
+
+[<Fact>]
+let ``a short trip that can't fit the stop after a major city still ends there`` () =
+    let world = {
+        catalog with
+            Places = [
+                place "north" "c-hills" "pine" "mountains"
+                hubAirport "main" "c-plains" "stone" "forts"
+                place "south" "c-plains" "stone" "mountains"
+            ]
+            Links = timed "north" "main" 100 @ timed "main" "south" 200
+            Cards = [
+                card "likes-north" "interest:mountains" (Some "north")
+                card "likes-south" "interest:mountains" (Some "south")
+            ]
+    }
+
+    let trip = build world (request (liked [ "likes-north"; "likes-south" ]) 6 None)
+    Assert.Equal("main", (List.last trip.Stops).PlaceSlug)
+    Assert.Equal(6, trip.Stops |> List.sumBy _.Days)

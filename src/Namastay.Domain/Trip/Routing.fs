@@ -343,7 +343,11 @@ let route
     let closing = closingDays request.Days
     let beforeClosing = fitted (request.Days - closing) stops
 
+    let endsInHub (route: RoutedStop list) = (List.last route).Place.Hub
+
     match closingCity catalog links closers beforeClosing with
+    // Making room can drop a stop after a hub, and then the hub is the natural end.
+    | None when endsInHub beforeClosing -> fitted request.Days beforeClosing
     | None -> fitted request.Days stops
     | Some(city, link) ->
         fitted (request.Days - closing) (without city beforeClosing)
