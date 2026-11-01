@@ -20,4 +20,7 @@ type SavedTripSummary = {
     Title: string
     Days: int
     SavedOn: string
+    Route: string list
+    Photo: GuidePhoto option
+    Colours: PlaceColours option
 }

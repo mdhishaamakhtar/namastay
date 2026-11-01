@@ -5,6 +5,7 @@
     <Compile Include="Routing/Browser.fs" />
     <Compile Include="Routing/Page.fs" />
     <Compile Include="Theme/Theme.fs" />
+    <Compile Include="Components/Dates.fs" />
     <Compile Include="Components/Remote.fs" />
     <Compile Include="Components/States.fs" />
     <Compile Include="Components/Icons.fs" />

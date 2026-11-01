@@ -99,6 +99,15 @@ type AccountTests(browser: BrowserFixture) =
         }
 
     [<Fact>]
+    member _.``my trips starts a new trip``() =
+        task {
+            let! page = saveNewTrip ()
+            do! (link page "My trips").ClickAsync()
+            do! (link page "Plan a new trip").ClickAsync()
+            do! page.WaitForURLAsync "**/journey"
+        }
+
+    [<Fact>]
     member _.``renaming a trip shows on the saved copy``() =
         task {
             let! page = saveNewTrip ()

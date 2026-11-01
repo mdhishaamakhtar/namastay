@@ -7,21 +7,6 @@ open Namastay.Client.Pages.Edit.State
 open Namastay.Shared
 open Namastay.Shared.Contracts
 
-let private monthNames = [
-    "January"
-    "February"
-    "March"
-    "April"
-    "May"
-    "June"
-    "July"
-    "August"
-    "September"
-    "October"
-    "November"
-    "December"
-]
-
 let private small (label: string) (text: string) disabled action =
     Html.button [
         prop.className "edit-small press"
@@ -138,7 +123,7 @@ let private monthPicker (model: Model) dispatch =
                 prop.children [
                     Html.option [ prop.value ""; prop.text "Not decided" ]
                     yield!
-                        monthNames
+                        Dates.monthNames
                         |> List.mapi (fun index name ->
                             Html.option [ prop.key name; prop.value (index + 1); prop.text name ])
                 ]
@@ -199,18 +184,29 @@ let private editor (model: Model) dispatch =
     ]
 
 let view (model: Model) dispatch =
-    Html.main [
-        prop.className "account"
+    Html.div [
+        prop.className "trip"
         prop.children [
-            Html.a [
-                prop.className "account-brand"
-                prop.href (Route.url [ "id", model.Id ] [] Routes.myTripPage)
-                prop.text "Back to your trip"
+            Html.aside [
+                prop.className "trip-panel"
+                prop.children [
+                    Html.a [
+                        prop.className "journey-brand"
+                        prop.href (Route.url [ "id", model.Id ] [] Routes.myTripPage)
+                        prop.text "Back to your trip"
+                    ]
+                    Html.h1 "Change your trip"
+                    Html.p "Move stops, change days, or add somewhere of your own."
+                ]
             ]
-            Html.h1 "Change your trip"
-            match model.Trip with
-            | Remote.Loading -> States.loading "Finding your trip"
-            | Remote.Failed error -> States.failed error (fun () -> dispatch Load)
-            | Remote.Loaded _ -> editor model dispatch
+            Html.main [
+                prop.className "account"
+                prop.children [
+                    match model.Trip with
+                    | Remote.Loading -> States.loading "Finding your trip"
+                    | Remote.Failed error -> States.failed error (fun () -> dispatch Load)
+                    | Remote.Loaded _ -> editor model dispatch
+                ]
+            ]
         ]
     ]

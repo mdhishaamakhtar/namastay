@@ -942,8 +942,17 @@ button:focus-visible {
   display: none;
 }
 
-.account {
-  max-width: 520px;
+.trip .account {
+  width: 100%;
+  max-width: 600px;
+  margin: 0;
+  padding: 24px 16px 48px;
+}
+
+@media (min-width: 1024px) {
+  .trip .account {
+    padding: 56px;
+  }
 }
 
 .account > * + * {
@@ -1008,7 +1017,6 @@ button:focus-visible {
   font-weight: 500;
 }
 
-.my-trips,
 .edit-stops,
 .edit-results {
   display: flex;
@@ -1019,26 +1027,116 @@ button:focus-visible {
   list-style: none;
 }
 
-.my-trip {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 12px;
-  border: 2px solid var(--ink);
-  border-radius: 4px;
+.my-trips {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 4px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.my-trip a {
+.trip-content:has(> .my-trips) {
+  padding: 0;
+}
+
+.trip-content > .my-trips {
+  max-width: none;
+}
+
+.my-trip {
   display: flex;
   flex-direction: column;
+  padding: 16px 24px 24px;
+  background: var(--deep);
+  color: var(--on-deep);
+}
+
+.my-trip-open {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
   min-width: 0;
   color: inherit;
   text-decoration: none;
 }
 
+.my-trip-open h2 {
+  margin-top: 8px;
+  font-size: 26px;
+  overflow-wrap: anywhere;
+}
+
+.my-trip-route {
+  margin: 0;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.my-trip-photo {
+  position: relative;
+  aspect-ratio: 3 / 2;
+  margin: 0;
+  overflow: hidden;
+  border-radius: 2px;
+}
+
+.my-trip-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.my-trip-photo figcaption {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  max-width: 100%;
+  padding: 2px 8px;
+  background: rgb(0 0 0 / 60%);
+  color: #fff;
+  font-size: 12px;
+}
+
+@media (min-width: 1024px) {
+  .my-trip {
+    padding: 32px;
+  }
+
+  .my-trip-open h2 {
+    min-height: 2.3em;
+  }
+
+}
+
+.my-trip-no-photo {
+  background: color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.my-trip-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 12px;
+}
+
 .my-trip-delete {
   flex: none;
+}
+
+.my-trips-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 480px;
+}
+
+.my-trips-empty h2 {
+  font-size: 32px;
 }
 
 .edit-stop {

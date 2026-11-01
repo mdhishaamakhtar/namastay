@@ -7,21 +7,6 @@ open Namastay.Client.Pages.Trip.State
 open Namastay.Shared
 open Namastay.Shared.Contracts
 
-let private monthNames = [
-    "January"
-    "February"
-    "March"
-    "April"
-    "May"
-    "June"
-    "July"
-    "August"
-    "September"
-    "October"
-    "November"
-    "December"
-]
-
 let private shareLabel =
     function
     | Sharing.Idle -> "Copy your trip link"
@@ -117,7 +102,9 @@ let private bestMonths (trip: Trip) =
     | [] -> Html.none
     | months ->
         let names =
-            months |> List.map (fun month -> monthNames[month - 1]) |> String.concat ", "
+            months
+            |> List.map (fun month -> Dates.monthNames[month - 1])
+            |> String.concat ", "
 
         Html.p [ prop.className "trip-best"; prop.text $"Best months for this trip: {names}." ]
 

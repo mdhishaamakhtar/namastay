@@ -20,18 +20,27 @@ let private signInFirst =
 
 let private notFound = ApiError.notFound "We couldn't find that trip."
 
-let private days (trip: string) =
-    TripSnapshot.read trip
-    |> Option.map (fun parsed -> parsed.Stops |> List.sumBy _.Days)
-    |> Option.defaultValue 0
+/// The stop that gives a saved trip its colours and photo.
+let private leadStop (trip: Trip) =
+    trip.Stops
+    |> List.tryFind (fun stop -> stop.FamilySlug = trip.BaseFamily)
+    |> Option.orElse (List.tryHead trip.Stops)
 
-let private summary (row: SavedTrips.SavedRow) = {
-    Id = row.Id.ToString()
-    ShareToken = row.ShareToken
-    Title = row.Title
-    Days = days row.Trip
-    SavedOn = row.SavedOn
-}
+let private summary (row: SavedTrips.SavedRow) =
+    let trip = TripSnapshot.read row.Trip
+    let stops = trip |> Option.map _.Stops |> Option.defaultValue []
+    let lead = trip |> Option.bind leadStop
+
+    {
+        Id = row.Id.ToString()
+        ShareToken = row.ShareToken
+        Title = row.Title
+        Days = stops |> List.sumBy _.Days
+        SavedOn = row.SavedOn
+        Route = stops |> List.map _.Name
+        Photo = stops |> List.tryPick _.Photo
+        Colours = lead |> Option.map _.Colours
+    }
 
 /// Runs `action` for the signed-in user, or answers 401.
 let requireUser source (context: HttpContext) (action: Users.UserRow -> Task<Result<'Value, ApiError>>) =
