@@ -19,6 +19,8 @@ type Model = {
     Google: bool
     Photo: GuidePhoto option
     Error: string option
+    /// This email belongs to a Google account, so the page points there.
+    UseGoogle: bool
     Fields: FieldError list
 }
 
@@ -39,6 +41,7 @@ let init () =
         Google = false
         Photo = None
         Error = None
+        UseGoogle = false
         Fields = []
     },
     Cmd.OfPromise.perform (fun url -> Client.get<SignInOptions> url) Routes.signInOptions.Template OptionsLoaded
@@ -75,6 +78,7 @@ let update msg (model: Model) =
                     else
                         Mode.SignIn
                 Error = None
+                UseGoogle = false
                 Fields = []
         },
         Cmd.none
@@ -86,6 +90,7 @@ let update msg (model: Model) =
             model with
                 Working = true
                 Error = None
+                UseGoogle = false
                 Fields = []
         },
         submit model
@@ -97,6 +102,14 @@ let update msg (model: Model) =
             model with
                 Working = false
                 Fields = error.Fields
+        },
+        Cmd.none
+    | Answered(Error(Client.ClientError.Server error)) when error.Code = ErrorCode.UseGoogle ->
+        {
+            model with
+                Working = false
+                UseGoogle = true
+                Error = Some error.Message
         },
         Cmd.none
     | Answered(Error error) ->

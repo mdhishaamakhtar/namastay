@@ -10,7 +10,10 @@ type SignInProvider =
 type Account = {
     Email: string
     Provider: SignInProvider
+    HasPassword: bool
 }
+
+type NewPassword = { Password: string }
 
 /// What a native app keeps after signing in, and sends as a bearer token.
 type TokenGrant = { Token: string; Account: Account }

@@ -3,6 +3,8 @@ obj/
 node_modules/
 dist/
 .env
+# Google credentials downloads. Their keys belong in Railway.
+client_secret*.json
 .impeccable/
 .superpowers/
 .DS_Store

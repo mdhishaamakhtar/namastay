@@ -112,12 +112,15 @@ let private form (model: Model) (signingUp: bool) dispatch =
             match model.Error with
             | Some text -> Html.p [ prop.className "form-error"; prop.role "alert"; prop.text text ]
             | None -> Html.none
-            Html.button [
-                prop.className "button account-submit press"
-                prop.type'.submit
-                prop.disabled model.Working
-                prop.text (if signingUp then "Create account" else "Sign in")
-            ]
+            if model.UseGoogle then
+                google model
+            else
+                Html.button [
+                    prop.className "button account-submit press"
+                    prop.type'.submit
+                    prop.disabled model.Working
+                    prop.text (if signingUp then "Create account" else "Sign in")
+                ]
         ]
     ]
 

@@ -52,17 +52,34 @@ let tryCreate
         return List.tryHead rows
     }
 
-/// Google has confirmed this email belongs to the person. Any password on the account goes,
-/// because emails aren't verified at sign-up and a stranger could have set it first.
+/// Google has confirmed this email belongs to the person. A password from sign-up goes, because
+/// emails aren't verified there and a stranger could have set it first. One added after
+/// Google stays, because the confirmed owner chose it.
 let claimForGoogle (source: NpgsqlDataSource) (email: string) : Task<UserRow> =
     task {
         let! rows =
             query<UserRow>
                 source
                 "insert into users (email, provider) values (@email, 'google')
-                 on conflict (lower(email)) do update set provider = 'google', password_hash = null
+                 on conflict (lower(email)) do update
+                 set provider = 'google',
+                     password_hash = case when users.provider = 'google' then users.password_hash end
                  returning id, email, provider, password_hash"
                 {| email = email |}
 
         return List.head rows
+    }
+
+/// Adds a password to an account that has none. Returns None if it already has one.
+let trySetPassword (source: NpgsqlDataSource) (id: Guid) (hash: string) : Task<UserRow option> =
+    task {
+        let! rows =
+            query<UserRow>
+                source
+                "update users set password_hash = @hash
+                 where id = @id and password_hash is null
+                 returning id, email, provider, password_hash"
+                {| id = id; hash = hash |}
+
+        return List.tryHead rows
     }

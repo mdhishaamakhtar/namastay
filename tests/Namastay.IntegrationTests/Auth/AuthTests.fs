@@ -60,6 +60,20 @@ type AuthTests(postgres: PostgresFixture) =
             return value
         }
 
+    let setPassword (http: HttpClient) (user: Guid option) (secret: string) =
+        task {
+            use request = new HttpRequestMessage(HttpMethod.Post, Routes.setPassword.Template)
+            let body: NewPassword = { Password = secret }
+            request.Content <- JsonContent.Create(body, options = Json.options)
+
+            user
+            |> Option.iter (fun id ->
+                request.Headers.Authorization <-
+                    Headers.AuthenticationHeaderValue("Bearer", Tokens.create TestApp.testSite id))
+
+            return! http.SendAsync request
+        }
+
     let tokenFor http email =
         task {
             let! response = send http Routes.issueToken.Template (credentials email password)
@@ -186,7 +200,7 @@ type AuthTests(postgres: PostgresFixture) =
             do! sql db "insert into users (email, provider) values ('asha@example.org', 'google')"
 
             let! response = signIn http "asha@example.org" password
-            let! _ = expectError response HttpStatusCode.Unauthorized ErrorCode.Unauthorized
+            let! _ = expectError response HttpStatusCode.Conflict ErrorCode.UseGoogle
             return ()
         }
 
@@ -254,7 +268,86 @@ type AuthTests(postgres: PostgresFixture) =
             let! user = Users.claimForGoogle source "ASHA@example.org"
             let! attacker = signIn http "asha@example.org" password
             Assert.True user.PasswordHash.IsNone
-            let! _ = expectError attacker HttpStatusCode.Unauthorized ErrorCode.Unauthorized
+            let! _ = expectError attacker HttpStatusCode.Conflict ErrorCode.UseGoogle
+            return ()
+        }
+
+    [<Fact>]
+    member _.``a google account trying a password is told to use google``() =
+        task {
+            let! http, db = start ()
+            use source = NpgsqlDataSource.Create db
+            let! _ = Users.claimForGoogle source "meera@example.org"
+            let! response = signIn http "meera@example.org" password
+            let! error = expectError response HttpStatusCode.Conflict ErrorCode.UseGoogle
+            Assert.Contains("Google", error.Message)
+        }
+
+    [<Fact>]
+    member _.``signing up with a google email is told to use google``() =
+        task {
+            let! http, db = start ()
+            use source = NpgsqlDataSource.Create db
+            let! _ = Users.claimForGoogle source "meera@example.org"
+            let! response = signUp http "meera@example.org" password
+            let! _ = expectError response HttpStatusCode.Conflict ErrorCode.UseGoogle
+            return ()
+        }
+
+    [<Fact>]
+    member _.``a google account can add a password and use both``() =
+        task {
+            let! http, db = start ()
+            use source = NpgsqlDataSource.Create db
+            let! user = Users.claimForGoogle source "meera@example.org"
+            let! saved = setPassword http (Some user.Id) password
+            Assert.Equal(HttpStatusCode.OK, saved.StatusCode)
+            let! account = saved.Content.ReadFromJsonAsync<Account>(Json.options)
+            Assert.True account.HasPassword
+            let! withPassword = signIn http "meera@example.org" password
+            Assert.Equal(HttpStatusCode.OK, withPassword.StatusCode)
+        }
+
+    [<Fact>]
+    member _.``signing in with google again keeps a password its owner set``() =
+        task {
+            let! http, db = start ()
+            use source = NpgsqlDataSource.Create db
+            let! user = Users.claimForGoogle source "meera@example.org"
+            let! _ = setPassword http (Some user.Id) password
+            let! again = Users.claimForGoogle source "meera@example.org"
+            Assert.True again.PasswordHash.IsSome
+        }
+
+    [<Fact>]
+    member _.``setting a password needs a signed-in visitor``() =
+        task {
+            let! http, _ = start ()
+            let! response = setPassword http None password
+            let! _ = expectError response HttpStatusCode.Unauthorized ErrorCode.Unauthorized
+            return ()
+        }
+
+    [<Fact>]
+    member _.``a password account can't use this to replace its password``() =
+        task {
+            let! http, db = start ()
+            let! _ = signUp http "asha@example.org" password
+            use source = NpgsqlDataSource.Create db
+            let! user = Users.tryFindByEmail source "asha@example.org"
+            let! response = setPassword http (Some user.Value.Id) "a different password"
+            let! _ = expectError response HttpStatusCode.Conflict ErrorCode.Conflict
+            return ()
+        }
+
+    [<Fact>]
+    member _.``a weak password is refused``() =
+        task {
+            let! http, db = start ()
+            use source = NpgsqlDataSource.Create db
+            let! user = Users.claimForGoogle source "meera@example.org"
+            let! response = setPassword http (Some user.Id) "short"
+            let! _ = expectError response HttpStatusCode.BadRequest ErrorCode.ValidationFailed
             return ()
         }
 
