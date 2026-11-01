@@ -2217,6 +2217,13 @@ button:focus-visible {
   }
 }
 
+/* Seven across shares the fourteen feelings evenly. */
+@media (min-width: 1200px) {
+  .moods {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}
+
 /* My trips shares the landing page's header and labels. */
 .my-page main {
   max-width: 1368px;
