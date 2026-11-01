@@ -132,6 +132,7 @@ let catalog = {
                 Slug = "mountains"
                 Name = "Mountains"
                 ParentSlug = None
+                Colour = None
             }
         ]
         Sources = [

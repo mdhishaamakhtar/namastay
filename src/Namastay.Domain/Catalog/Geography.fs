@@ -28,4 +28,6 @@ type Interest = {
     Slug: string
     Name: string
     ParentSlug: string option
+    /// Its colour as a feeling on the landing page, chosen so tiles stay easy to tell apart.
+    Colour: string option
 }

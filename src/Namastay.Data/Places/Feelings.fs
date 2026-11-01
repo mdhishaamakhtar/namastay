@@ -20,7 +20,7 @@ type FeelingRow = {
 }
 
 let private feelingsSql =
-    "select i.slug, i.name, p.name as place, f.deep as colour
+    "select i.slug, i.name, p.name as place, coalesce(i.colour, f.deep) as colour
      from interests i
      join place_interests pi on pi.interest_slug = i.slug
      join places p on p.slug = pi.place_slug

@@ -48,11 +48,12 @@ let private upsertFamily transaction (family: ColourFamily) =
 let private upsertInterest transaction (interest: Interest) =
     exec
         transaction
-        "insert into interests (slug, name) values (@slug, @name)
-         on conflict (slug) do update set name = excluded.name"
+        "insert into interests (slug, name, colour) values (@slug, @name, @colour)
+         on conflict (slug) do update set name = excluded.name, colour = excluded.colour"
         {|
             slug = interest.Slug
             name = interest.Name
+            colour = interest.Colour
         |}
     |> ignore
 

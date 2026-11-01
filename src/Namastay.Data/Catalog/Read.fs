@@ -241,6 +241,7 @@ let load (source: NpgsqlDataSource) : Task<Catalog> =
                         Slug = row.Slug
                         Name = row.Name
                         ParentSlug = None
+                        Colour = None
                     })
                 Exclusions =
                     exclusions

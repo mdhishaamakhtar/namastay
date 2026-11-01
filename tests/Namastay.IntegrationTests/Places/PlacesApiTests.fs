@@ -421,6 +421,24 @@ type PlacesApiTests(postgres: PostgresFixture) =
         }
 
     [<Fact>]
+    member _.``a feeling's own colour wins over its places' colours``() =
+        task {
+            let interests =
+                catalog.Interests
+                |> List.map (fun interest -> {
+                    interest with
+                        Colour = Some "#123456"
+                })
+
+            let! http, _ = start { catalog with Interests = interests }
+
+            let! feelings =
+                http.GetFromJsonAsync<Feeling list>(Routes.feelings.Template, Json.options)
+
+            Assert.All(feelings, (fun feeling -> Assert.Equal("#123456", feeling.Colour)))
+        }
+
+    [<Fact>]
     member _.``an unknown feeling has no places``() =
         task {
             let! http, _ = start catalog

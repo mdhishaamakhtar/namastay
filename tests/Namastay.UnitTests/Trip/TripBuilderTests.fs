@@ -159,6 +159,7 @@ let catalog = {
                     Slug = slug
                     Name = "Name of " + slug
                     ParentSlug = None
+                    Colour = None
                 }
         ]
         Places = [

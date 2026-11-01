@@ -2,4 +2,4 @@
 <circle cx="100" cy="36" r="10" fill="#FFF8E6"></circle>
 <path d="M100 48 C 86 48 84 60 84 74 L 72 92 L 84 96 L 94 78 H106 L116 96 L128 92 L116 74 C 116 60 114 48 100 48 Z" fill="#FFF8E6"></path>
 <path d="M56 110 C 70 92 92 96 100 102 C 108 96 130 92 144 110 Z" fill="#FFF8E6"></path>
-<rect x="30" y="110" width="140" height="8" rx="3" fill="#7A2E08"></rect></svg>
+<rect x="30" y="110" width="140" height="8" rx="3" fill="#3A2E60"></rect></svg>
