@@ -46,6 +46,7 @@ let private cardsSql =
      left join illustrations mark on mark.slug = c.illustration_slug
      left join places p on p.slug = c.place_slug
      left join colour_families f on f.slug = p.family_slug
+     where c.retired_at is null
      order by c.slug"
 
 let private colours (row: CardRow) =
@@ -96,7 +97,9 @@ let load (source: NpgsqlDataSource) : Task<JourneyGraph> =
         let! branches =
             query<BranchRow>
                 source
-                "select from_card, on_answer, to_card, priority from card_branches order by priority desc, to_card"
+                "select b.from_card, b.on_answer, b.to_card, b.priority from card_branches b
+                 join cards target on target.slug = b.to_card and target.retired_at is null
+                 order by priority desc, to_card"
                 null
 
         return {

@@ -47,7 +47,7 @@ let private upsertCard transaction (card: Card) =
          values (@slug, @place, @title, @line, @photo, @illustration, @isStart)
          on conflict (slug) do update set
             place_slug = excluded.place_slug, title = excluded.title, line = excluded.line,
-            photo_slug = excluded.photo_slug, illustration_slug = excluded.illustration_slug, is_start = excluded.is_start"
+            retired_at = null, photo_slug = excluded.photo_slug, illustration_slug = excluded.illustration_slug, is_start = excluded.is_start"
         {|
             slug = card.Slug
             place = card.PlaceSlug
@@ -87,8 +87,17 @@ let private replaceBranches transaction (card: Card) =
         |}
         |> ignore
 
+let private retireMissing transaction (catalog: Catalog) =
+    exec transaction "update cards set retired_at = now() where retired_at is null and not (slug = any(@slugs))" {|
+        slugs = (catalog.Cards |> List.map _.Slug |> List.toArray)
+    |}
+    |> ignore
+
 let apply transaction (catalog: Catalog) =
     catalog.Illustrations |> List.iter (upsertIllustration transaction)
     catalog.Photos |> List.iter (upsertPhoto transaction)
     catalog.Cards |> List.iter (upsertCard transaction)
     catalog.Cards |> List.iter (replaceBranches transaction)
+
+    if catalog.Complete then
+        retireMissing transaction catalog

@@ -6,6 +6,7 @@ open Npgsql
 open Xunit
 open Namastay.Data
 open Namastay.Data.Import
+open Namastay.Data.Journey
 open Namastay.Domain.Catalog
 open Namastay.IntegrationTests
 open Namastay.IntegrationTests.Support
@@ -207,6 +208,44 @@ type ImporterTests(postgres: PostgresFixture) =
                 scalar db "select retired_at is not null from transport_links where slug = 'kasol-manali'"
 
             Assert.Equal(box true, retired)
+        }
+
+    [<Fact>]
+    member _.``removed card is retired and leaves the journey``() =
+        task {
+            let! db = database ()
+
+            let card: Card = {
+                Slug = "river-walk"
+                PlaceSlug = Some Sample.catalog.Places.Head.Slug
+                Title = "River walk"
+                Line = "A walk by the river."
+                PhotoSlug = None
+                IllustrationSlug = None
+                IsStart = true
+                Branches = []
+                Signals = []
+            }
+
+            Run.run db Run.Apply "one" { Sample.catalog with Cards = [ card ] }
+            |> expectOk
+            |> ignore
+
+            Run.run db Run.Apply "two" {
+                Sample.catalog with
+                    Complete = true
+                    Cards = []
+            }
+            |> expectOk
+            |> ignore
+
+            let! retired =
+                scalar db $"select retired_at is not null from cards where slug = '{card.Slug}'"
+
+            use source = NpgsqlDataSource.Create db
+            let! graph = Graph.load source
+            Assert.Equal(box true, retired)
+            Assert.DoesNotContain(graph.Cards, (fun item -> item.Slug = card.Slug))
         }
 
     [<Fact>]
