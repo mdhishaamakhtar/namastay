@@ -66,7 +66,13 @@ let private showFresh segments =
     let model, command = show segments
     model, Cmd.batch [ Cmd.ofEffect (fun _ -> Theme.reset ()); command ]
 
-let init () = showFresh (Browser.currentPath ())
+/// The app is running now, so whatever the saved page held back can show.
+let private revealPage () =
+    Browser.Dom.document.documentElement.removeAttribute "data-returning"
+
+let init () =
+    let model, command = showFresh (Browser.currentPath ())
+    model, Cmd.batch [ Cmd.ofEffect (fun _ -> revealPage ()); command ]
 
 let update msg model =
     match msg, model.Screen with

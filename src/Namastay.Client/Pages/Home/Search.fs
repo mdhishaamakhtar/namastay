@@ -57,7 +57,7 @@ let searchBox (model: Model) dispatch =
                     Html.input [
                         prop.className "search-input"
                         prop.type' "search"
-                        prop.placeholder "Try Goa, Varanasi or Ladakh"
+                        prop.placeholder "Try Goa, Jaipur or Ladakh"
                         prop.autoComplete "off"
                         prop.value model.Query
                         prop.onChange (QueryChanged >> dispatch)
@@ -80,7 +80,7 @@ let box (model: Model) dispatch =
                 prop.className "search-input"
                 prop.type' "search"
                 prop.ariaLabel "Find a place"
-                prop.placeholder "Find a place: Goa, Varanasi, Ladakh"
+                prop.placeholder "Find a place: Goa, Jaipur, Ladakh"
                 prop.autoComplete "off"
                 prop.value model.Query
                 prop.onChange (QueryChanged >> dispatch)

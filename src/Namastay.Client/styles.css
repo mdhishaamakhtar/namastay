@@ -175,7 +175,7 @@ button:focus-visible {
 
 .moods {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -216,10 +216,6 @@ button:focus-visible {
 }
 
 @media (min-width: 1024px) {
-  .moods {
-    grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
-  }
-
   .mood {
     min-height: 140px;
   }
@@ -1363,6 +1359,7 @@ button:focus-visible {
 
 .account-google {
   display: flex;
+  gap: 12px;
   align-items: center;
   justify-content: center;
   height: 54px;
@@ -2735,7 +2732,6 @@ button:focus-visible {
   }
 
   .region-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 16px;
   }
 
@@ -2782,8 +2778,21 @@ button:focus-visible {
 }
 
 /* Region cards keep to a width where names fit on one line. */
+/* Column counts that divide the eight regions evenly, so no row is left short. */
 .region-grid {
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr));
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 600px) {
+  .region-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1200px) {
+  .region-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .region-card li a {
@@ -2791,11 +2800,18 @@ button:focus-visible {
 }
 
 .home-food-grid {
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr));
+  grid-template-columns: minmax(0, 1fr);
 }
 
-@media (min-width: 1024px) {
-  .region-grid {
-    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+@media (min-width: 768px) {
+  .home-food-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Nine cards fill three columns. In two, the last one would sit alone. */
+@media (max-width: 1023px) {
+  .home-wall-grid > :nth-child(9) {
+    display: none;
   }
 }

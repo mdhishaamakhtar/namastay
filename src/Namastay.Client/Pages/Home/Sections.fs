@@ -68,7 +68,7 @@ let private cardsOf (model: Model) (keep: LandingCard -> bool) (loaded: LandingC
     | Remote.Loaded page -> loaded (page.Cards |> List.filter keep)
     | Remote.Loading ->
         Html.div [
-            prop.className "label-grid"
+            prop.className "label-grid home-wall-grid"
             prop.children [
                 for index in 1..slots -> Html.div [ prop.key (string index); prop.className "label bone" ]
             ]
@@ -96,7 +96,7 @@ let wall (model: Model) dispatch =
                 (fun card -> not card.Food)
                 (fun cards ->
                     Html.div [
-                        prop.className "label-grid"
+                        prop.className "label-grid home-wall-grid"
                         prop.children (cards |> List.map (labelLink _.Place _.Title))
                     ])
                 9

@@ -34,10 +34,9 @@ let private fan (model: Model) =
         ]
     ]
 
-let private visitorNote visitor =
-    match visitor with
-    | Visitor.SignedOut -> "Free, and no sign-up needed. Sign in only to keep your trips."
-    | _ -> "Free, and no sign-up needed."
+/// Only signed-out visitors see this page, so it says the same thing from the first paint.
+let private visitorNote =
+    "Free, and no sign-up needed. Sign in only to keep your trips."
 
 let view (model: Model) (navigate: string -> unit) =
     Html.section [
@@ -47,14 +46,11 @@ let view (model: Model) (navigate: string -> unit) =
                 prop.className "home-top"
                 prop.children [
                     Menu.brand
-                    match model.Visitor with
-                    | Visitor.SignedOut ->
-                        Html.a [
-                            prop.className "home-account"
-                            prop.href Routes.signInPage.Template
-                            prop.text "Sign in"
-                        ]
-                    | _ -> Html.none
+                    Html.a [
+                        prop.className "home-account"
+                        prop.href Routes.signInPage.Template
+                        prop.text "Sign in"
+                    ]
                 ]
             ]
             Html.h1 "India is a lot. Find yours."
@@ -71,7 +67,7 @@ let view (model: Model) (navigate: string -> unit) =
                                 prop.text "Plan my trip"
                                 prop.onClick (fun _ -> navigate Routes.journey.Template)
                             ]
-                            Html.span (visitorNote model.Visitor)
+                            Html.span visitorNote
                         ]
                     ]
                 ]

@@ -15,6 +15,17 @@
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Namastay: swipe through India, get your trip." />
     <meta name="twitter:card" content="summary_large_image" />
+    <style>
+      html { background: #fff8e6; }
+      [data-returning] #app { visibility: hidden; }
+    </style>
+    <script>
+      // A signed-in visitor has their own home, so the public one never shows for them.
+      try {
+        if (location.pathname === "/" && localStorage.getItem("namastay-signed-in") === "yes")
+          document.documentElement.setAttribute("data-returning", "");
+      } catch {}
+    </script>
     <link rel="icon" type="image/svg+xml" href="/logo.svg" />
     <link rel="preload" href="/fonts/yatra-one-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/mukta-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
