@@ -84,6 +84,9 @@ let isUsableIn (month: int option) (place: Place) =
         | Rating.Ok
         | Rating.Unknown -> true
 
+let isClosedIn (month: int option) (place: Place) =
+    month |> Option.exists (fun month -> monthRating month place = Rating.Closed)
+
 let private seasonScore (month: int option) (place: Place) =
     match month with
     | None -> 0

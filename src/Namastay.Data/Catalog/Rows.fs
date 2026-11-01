@@ -36,6 +36,7 @@ type MonthRow = {
     PlaceSlug: string
     Month: int
     Rating: string
+    Note: string option
     Status: string
     LastChecked: DateTime
 }

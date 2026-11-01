@@ -65,7 +65,7 @@ let private loadPlaces source =
                     |> List.map (fun row -> {
                         Month = row.Month
                         Rating = Decode.rating row.Rating
-                        Note = None
+                        Note = row.Note
                         Evidence = evidence row.Status row.LastChecked
                     })
                 TravellerFit =

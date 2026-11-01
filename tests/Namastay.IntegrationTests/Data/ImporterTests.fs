@@ -55,6 +55,35 @@ type ImporterTests(postgres: PostgresFixture) =
         Assert.Contains("couldn't reach the database", errors.Head)
 
     [<Fact>]
+    member _.``the catalog keeps why a month is hard``() =
+        task {
+            let! db = database ()
+
+            let place = {
+                Sample.place with
+                    Months = [
+                        {
+                            Sample.place.Months.Head with
+                                Note = Some "Very hot by day."
+                        }
+                    ]
+            }
+
+            let catalog = {
+                Sample.catalog with
+                    Places =
+                        place
+                        :: (Sample.catalog.Places |> List.filter (fun other -> other.Slug <> place.Slug))
+            }
+
+            Run.run db Run.Apply "note" catalog |> expectOk |> ignore
+            use source = NpgsqlDataSource.Create db
+            let! read = Catalog.Read.load source
+            let saved = read.Places |> List.find (fun other -> other.Slug = place.Slug)
+            Assert.Equal(Some "Very hot by day.", saved.Months.Head.Note)
+        }
+
+    [<Fact>]
     member _.``dry run writes nothing``() =
         task {
             let! db = database ()

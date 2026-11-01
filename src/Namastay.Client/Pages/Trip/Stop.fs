@@ -191,8 +191,17 @@ let private row (key: string) (label: string) (content: ReactElement) =
         prop.children [ Html.strong label; content ]
     ]
 
-let private dayRow firstDay (day: TripDay) =
-    row (string day.Day) $"Day {firstDay + day.Day - 1}" (Html.span day.Plan)
+let private dayRow firstDay (first, last, plan: string) =
+    let start = firstDay + first - 1
+    let finish = firstDay + last - 1
+
+    let label =
+        if first = last then
+            $"Day {start}"
+        else
+            $"Days {start} to {finish}"
+
+    row (string first) label (Html.span plan)
 
 let private details token (trip: Trip) firstDay (stop: TripStop) =
     Html.div [
@@ -207,7 +216,7 @@ let private details token (trip: Trip) firstDay (stop: TripStop) =
             Html.div [
                 prop.className "stop-text"
                 prop.children [
-                    yield! stop.Plans |> List.map (dayRow firstDay)
+                    yield! stop.Plans |> PlanDays.group |> List.map (dayRow firstDay)
                     match stop.StayArea with
                     | Some area -> row "stay" "Stay" (Html.span area)
                     | None -> Html.none

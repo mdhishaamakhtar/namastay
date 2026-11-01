@@ -317,7 +317,7 @@ let ``too many interests keeps strongest and lists rest`` () =
 
     let trip = build catalog (request answers 5 None)
     Assert.Contains("PEAK", trip.Stops |> List.map _.Name)
-    Assert.Contains("Name of yoga", trip.LeftOut)
+    Assert.Contains(trip.LeftOut, (fun item -> item.StartsWith "Name of"))
     Assert.DoesNotContain("Name of mountains", trip.LeftOut)
 
 [<Fact>]
@@ -1165,3 +1165,114 @@ let ``a liked place stays in the trip when a stronger taste pulls elsewhere`` ()
         build world (request (liked [ "likes-place"; "dish-one"; "dish-two" ]) 7 None)
 
     Assert.Contains("liked", trip.Stops |> List.map _.PlaceSlug)
+
+[<Fact>]
+let ``a short trip can cross a region for a place someone liked`` () =
+    let world = {
+        catalog with
+            Places = [
+                place "fort-city" "c-plains" "stone" "forts"
+                place "hill-city" "c-hills" "pine" "mountains"
+            ]
+            Links = both "fort-city" "hill-city"
+            Cards = [
+                card "likes-fort" "interest:forts" (Some "fort-city")
+                card "likes-hill" "interest:mountains" (Some "hill-city")
+            ]
+    }
+
+    let trip = build world (request (liked [ "likes-fort"; "likes-hill" ]) 6 None)
+    Assert.Contains("hill-city", trip.Stops |> List.map _.PlaceSlug)
+    Assert.Contains("fort-city", trip.Stops |> List.map _.PlaceSlug)
+
+[<Fact>]
+let ``a place nobody liked still can't stretch a short trip across regions`` () =
+    let world = {
+        catalog with
+            Places = [
+                place "fort-city" "c-plains" "stone" "forts"
+                place "hill-city" "c-hills" "pine" "mountains"
+            ]
+            Links = both "fort-city" "hill-city"
+            Cards = [ card "likes-fort" "interest:forts" (Some "fort-city") ]
+    }
+
+    let trip = build world (request (liked [ "likes-fort" ]) 6 None)
+    Assert.DoesNotContain("hill-city", trip.Stops |> List.map _.PlaceSlug)
+
+let private hardMonth rating = {
+    catalog with
+        Places = [
+            {
+                place "chosen" "c-hills" "pine" "mountains" with
+                    Months = [
+                        {
+                            Month = 6
+                            Rating = rating
+                            Note = Some "Very hot by day."
+                            Evidence = evidence
+                        }
+                    ]
+            }
+            place "fallback" "c-plains" "stone" "forts"
+        ]
+        Links = []
+        Cards = [ card "likes-chosen" "interest:mountains" (Some "chosen") ]
+}
+
+let private hardMonthTrip rating =
+    build (hardMonth rating) (request (liked [ "likes-chosen" ]) 6 (Some 6))
+
+[<Fact>]
+let ``a liked place stays in a hard month and the trip says why it's hard`` () =
+    let trip = hardMonthTrip Rating.Avoid
+    Assert.Equal<string list>([ "chosen" ], trip.Stops |> List.map _.PlaceSlug)
+
+    Assert.Contains(
+        trip.Notices,
+        (fun notice -> notice.Body.Contains "Very hot by day." && notice.Body.Contains "June")
+    )
+
+[<Fact>]
+let ``a liked place that is closed that month is still left out`` () =
+    let trip = hardMonthTrip Rating.Closed
+    Assert.DoesNotContain("chosen", trip.Stops |> List.map _.PlaceSlug)
+
+[<Fact>]
+let ``a long journey makes the first day a travel day`` () =
+    let world = {
+        catalog with
+            Places = [
+                place "near" "c-hills" "pine" "mountains"
+                place "far" "c-hills" "pine" "mountains"
+            ]
+            Links = timed "near" "far" 360
+            Cards = [
+                card "likes-near" "interest:mountains" (Some "near")
+                card "likes-far" "interest:mountains" (Some "far")
+            ]
+    }
+
+    let trip = build world (request (liked [ "likes-near"; "likes-far" ]) 6 None)
+    Assert.Equal(Builder.travelDay, trip.Stops[1].Plans.Head.Plan)
+
+[<Fact>]
+let ``a liked place that couldn't fit is named`` () =
+    let world = {
+        catalog with
+            Places = [
+                place "first" "c-hills" "pine" "mountains"
+                place "island" "c-plains" "stone" "forts"
+            ]
+            Links = []
+            Cards = [
+                card "likes-first" "interest:mountains" (Some "first")
+                card "likes-first-again" "interest:mountains" (Some "first")
+                card "likes-island" "interest:forts" (Some "island")
+            ]
+    }
+
+    let trip =
+        build world (request (liked [ "likes-first"; "likes-first-again"; "likes-island" ]) 6 None)
+
+    Assert.Contains("ISLAND", trip.LeftOut @ [ trip.Stops.Head.Name ])

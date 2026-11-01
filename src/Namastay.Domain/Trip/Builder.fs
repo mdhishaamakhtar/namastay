@@ -1,5 +1,6 @@
 module Namastay.Domain.Trip.Builder
 
+open System
 open System.Globalization
 open Namastay.Domain.Catalog
 open Namastay.Domain.Trip
@@ -20,7 +21,11 @@ type FamilyDays = {
     Family: string
 }
 
-let spareDay = "A free day to rest or explore at your own pace."
+let spareDay = "Free time to rest or explore at your own pace."
+let travelDay = "A travel day. Arrive, settle in and take the evening slowly."
+
+/// A journey this long takes up the day, so the plans start the day after.
+let private fullDayJourney = 300
 
 /// The family with the most days leads. Ties go to the first one collected.
 let baseFamily (collected: string list) (stops: FamilyDays list) =
@@ -58,7 +63,7 @@ let private rank profile request (places: Place list) =
     |> List.map (fun place -> place, Scoring.total profile request place)
     |> List.sortBy (fun (place, score) -> -score, place.Slug)
 
-let private plansFor (place: Place) days =
+let private plansFor (place: Place) days (arrival: TransportLink option) =
     let variants = place.DayPlans |> List.groupBy _.Variant |> List.sortBy fst
 
     let chosen =
@@ -69,15 +74,17 @@ let private plansFor (place: Place) days =
         |> Option.defaultValue []
         |> List.sortBy _.Day
 
+    let travels =
+        days > 1
+        && arrival |> Option.exists (fun link -> link.MinutesMin >= fullDayJourney)
+
+    let plans = (if travels then [ travelDay ] else []) @ (chosen |> List.map _.Plan)
+
     [
         for day in 1..days ->
             {
                 Day = day
-                Plan =
-                    chosen
-                    |> List.tryItem (day - 1)
-                    |> Option.map _.Plan
-                    |> Option.defaultValue spareDay
+                Plan = plans |> List.tryItem (day - 1) |> Option.defaultValue spareDay
             }
     ]
 
@@ -117,11 +124,11 @@ let private hubPreference = 150
 let private airports (catalog: Catalog) =
     catalog.Places |> List.filter _.Airport.IsSome
 
-/// A place can be named for two cities, but you land in the first.
-let private airportCity (place: Place) = place.Name.Split(" with ")[0]
+/// A place can be named for two cities, but a trip goes to the first.
+let private plainName (place: Place) = place.Name.Split(" with ")[0]
 
 let private atAirport (place: Place) = {
-    City = airportCity place
+    City = plainName place
     Airport = place.Airport |> Option.defaultValue ""
     Via = None
     Leg = None
@@ -146,7 +153,7 @@ let private wayTo (catalog: Catalog) (hop: string -> string -> TransportLink opt
                 first.MinutesMin + second.MinutesMin,
                 {
                     atAirport airport with
-                        Via = Some(airportCity middle)
+                        Via = Some(plainName middle)
                         Leg = Some(toLeg second)
                 }
             )
@@ -201,7 +208,7 @@ let toStop (catalog: Catalog) budget (stop: RoutedStop) : TripStop =
 
     {
         PlaceSlug = stop.Place.Slug
-        Name = stop.Place.Name
+        Name = plainName stop.Place
         Days = stop.Days
         FamilySlug = family.Slug
         Colours = {
@@ -213,7 +220,7 @@ let toStop (catalog: Catalog) budget (stop: RoutedStop) : TripStop =
         Access = ContractMapping.access stop.Place.Gate
         StayArea = stayArea budget stop.Place
         Photo = leadPhoto catalog stop.Place
-        Plans = plansFor stop.Place stop.Days
+        Plans = plansFor stop.Place stop.Days stop.Arrival
         Arrival = stop.Arrival |> Option.map toLeg
         Retired = false
         Custom = false
@@ -257,17 +264,31 @@ let private mix (catalog: Catalog) profile =
             Share = score * 100 / strongest
         })
 
+let private mostLeftOut = 3
+
 let private leftOut (catalog: Catalog) profile (stops: RoutedStop list) =
     let covered =
         stops |> List.collect _.Place.Interests |> List.map _.InterestSlug |> Set.ofList
 
     let kept = profile.Interests |> List.map fst
 
-    kept
-    |> List.filter (fun slug -> not (covered.Contains slug))
-    |> List.map (interestName catalog)
+    let chosen = stops |> List.map _.Place.Slug
 
-let notices (catalog: Catalog) (stops: RoutedStop list) =
+    let places =
+        catalog.Places
+        |> List.filter (fun place ->
+            List.contains place.Slug profile.Collected
+            && not (List.contains place.Slug chosen))
+        |> List.map plainName
+
+    let interests =
+        kept
+        |> List.filter (fun slug -> not (covered.Contains slug))
+        |> List.map (interestName catalog)
+
+    List.truncate mostLeftOut places @ List.truncate mostLeftOut interests
+
+let notices (catalog: Catalog) (month: int option) (stops: RoutedStop list) =
     let forPlace (place: Place) =
         catalog.Notices
         |> List.filter (fun notice ->
@@ -294,7 +315,23 @@ let notices (catalog: Catalog) (stops: RoutedStop list) =
         else
             []
 
-    stops |> List.collect (fun stop -> forPlace stop.Place @ permit stop.Place)
+    let hardMonth (place: Place) =
+        month
+        |> Option.bind (fun month ->
+            place.Months
+            |> List.tryFind (fun item -> item.Month = month && item.Rating = Rating.Avoid)
+            |> Option.map (fun item -> {
+                TripNotice.PlaceSlug = Some place.Slug
+                Kind = GuideNoticeKind.Safety
+                Severity = NoticeSeverity.Warning
+                Body =
+                    $"{place.Name} is hard going in {monthName month}. {item.Note |> Option.defaultValue String.Empty}"
+                        .Trim()
+            }))
+        |> Option.toList
+
+    stops
+    |> List.collect (fun stop -> hardMonth stop.Place @ forPlace stop.Place @ permit stop.Place)
 
 let bestMonths (stops: RoutedStop list) = [
     for month in 1..12 do
@@ -317,7 +354,11 @@ let private title (catalog: Catalog) (request: TripRequest) (stops: RoutedStop l
             |> Option.defaultValue stop.Place.State)
         |> List.distinct
 
-    let joined = System.String.Join(" and ", names)
+    let joined =
+        match List.rev names with
+        | last :: (_ :: _ as earlier) -> String.Join(", ", List.rev earlier) + " and " + last
+        | _ -> String.Join("", names)
+
     $"{request.Days} days in {joined}"
 
 let private assemble catalog profile (request: TripRequest) places stops : Trip = {
@@ -337,7 +378,7 @@ let private assemble catalog profile (request: TripRequest) places stops : Trip 
     Swaps = swaps profile request places stops
     Mix = mix catalog profile
     LeftOut = leftOut catalog profile stops
-    Notices = notices catalog stops
+    Notices = notices catalog request.Month stops
     Month = request.Month
     BestMonths = bestMonths stops
     Budget = request.Budget
@@ -351,12 +392,18 @@ let build (catalog: Catalog) (request: TripRequest) : Result<Trip, TripError> =
     else
         let profile = Profile.from catalog.Cards request
         let places = candidates catalog profile request
-        let usable = places |> List.filter (Scoring.isUsableIn request.Month)
+        // Someone who liked a place in a hard month gets it with a warning. Closed is closed.
+        let usable =
+            places
+            |> List.filter (fun place ->
+                Scoring.isUsableIn request.Month place
+                || (List.contains place.Slug profile.Collected
+                    && not (Scoring.isClosedIn request.Month place)))
 
         match usable with
         | [] -> Error TripError.NoPlaces
         | _ ->
             let stops =
-                Routing.route catalog request (profile.Depth > 0) (rank profile request usable)
+                Routing.route catalog request (profile.Depth > 0) profile.Collected (rank profile request usable)
 
             Ok(assemble catalog profile request places stops)

@@ -87,7 +87,7 @@ let private rebuild (catalog: Catalog) (original: Trip) (edit: TripEdit) (review
             Depart = Builder.depart catalog routed
             Stops = stops
             Swaps = []
-            Notices = Builder.notices catalog routed
+            Notices = Builder.notices catalog edit.Month routed
             BestMonths = if routed.IsEmpty then [] else Builder.bestMonths routed
     }
 

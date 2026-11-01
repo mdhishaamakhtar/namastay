@@ -62,7 +62,15 @@ let private start catalog stopDays ((place: Place), score) = {
     Capacity = place.DaysMax
 }
 
-let private extend catalog (links: Map<string * string, TransportLink>) stopDays limit days scored (path: Path) =
+let private extend
+    catalog
+    (links: Map<string * string, TransportLink>)
+    stopDays
+    allowsRegions
+    days
+    scored
+    (path: Path)
+    =
     let last = path.Stops.Head.Place
 
     if path.Planned >= days then
@@ -74,7 +82,7 @@ let private extend catalog (links: Map<string * string, TransportLink>) stopDays
             let used = path.Stops |> List.exists (fun stop -> stop.Place.Slug = place.Slug)
 
             match links.TryFind(last.Slug, place.Slug) with
-            | Some link when not used && regions.Count <= limit && path.Minimum + place.DaysMin <= days ->
+            | Some link when not used && allowsRegions regions && path.Minimum + place.DaysMin <= days ->
                 Some {
                     Stops =
                         {
@@ -181,8 +189,20 @@ let rec private trim excess (stops: RoutedStop list) =
 
 let private planned (stops: RoutedStop list) = stops |> List.sumBy _.Days
 
+/// Regions holding a place someone liked are always open. The limit stops sprawl into the others.
+let private allowsRegions (catalog: Catalog) (request: TripRequest) liked (scored: (Place * int) list) =
+    let likedRegions =
+        scored
+        |> List.map fst
+        |> List.filter (fun place -> List.contains place.Slug liked)
+        |> List.map (regionOf catalog)
+        |> Set.ofList
+
+    let spare = max 0 (regionLimit request.Days - likedRegions.Count)
+    fun (regions: Set<string>) -> (regions - likedRegions).Count <= spare
+
 /// Chooses connected stops within the allowed regions, with days adding up exactly.
-let route (catalog: Catalog) (request: TripRequest) prefersDepth (scored: (Place * int) list) : RoutedStop list =
+let route (catalog: Catalog) (request: TripRequest) prefersDepth liked (scored: (Place * int) list) : RoutedStop list =
     let stopDays (place: Place) =
         if prefersDepth then
             place.DaysMax
@@ -198,7 +218,7 @@ let route (catalog: Catalog) (request: TripRequest) prefersDepth (scored: (Place
         |> Map.ofList
 
     let grow =
-        extend catalog links stopDays (regionLimit request.Days) request.Days scored
+        extend catalog links stopDays (allowsRegions catalog request liked scored) request.Days scored
 
     let starts = scored |> List.map (start catalog stopDays)
 

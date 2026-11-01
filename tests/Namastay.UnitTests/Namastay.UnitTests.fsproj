@@ -3,6 +3,7 @@
   <ItemGroup>
     <Compile Include="RoutingTests.fs" />
     <Compile Include="DurationTests.fs" />
+    <Compile Include="PlanDaysTests.fs" />
     <Compile Include="NoticeOrderTests.fs" />
     <Compile Include="JourneyPathTests.fs" />
     <Compile Include="Catalog/ValidationTests.fs" />
