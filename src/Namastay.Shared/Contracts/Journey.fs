@@ -18,6 +18,8 @@ type JourneyCard = {
     Interest: string option
     Colours: PlaceColours option
     Branches: JourneyBranch list
+    Place: string option
+    Region: string option
 }
 
 /// The whole graph, so swiping never waits on the network.

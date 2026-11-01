@@ -116,14 +116,9 @@ let private apply choice (plan: Plan) =
 let private decide (graph: JourneyGraph) liked (model: Model) =
     let slug = List.head model.Queue
     let answers = model.Answers @ [ { Card = slug; Liked = liked } ]
-    let seen = answers |> List.map _.Card
-    let queue = JourneyPath.advance graph (List.tail model.Queue) slug liked seen
+    let queue = JourneyPath.next graph answers |> Option.toList
 
-    let step =
-        if JourneyPath.isFinished queue answers.Length then
-            Step.Asking 0
-        else
-            Step.Swiping
+    let step = if queue.IsEmpty then Step.Asking 0 else Step.Swiping
 
     {
         model with
@@ -131,16 +126,13 @@ let private decide (graph: JourneyGraph) liked (model: Model) =
             Queue = queue
             Step = step
     },
-    Cmd.batch [
-        settleStage graph answers
-        preload graph (List.truncate 1 (List.skip (min 1 queue.Length) queue))
-    ]
+    Cmd.batch [ settleStage graph answers; preload graph queue ]
 
 let update msg (model: Model) =
     match msg, model.Graph, model.Step with
     | LoadGraph, _, _ -> { model with Graph = Remote.Loading }, loadGraph ()
     | GraphLoaded(Ok graph), _, _ ->
-        let queue = JourneyPath.start graph
+        let queue = JourneyPath.next graph [] |> Option.toList
 
         {
             model with

@@ -22,6 +22,10 @@ type JourneyTests(browser: BrowserFixture) =
     let title (page: IPage) =
         page.Locator(".card-text h1").TextContentAsync()
 
+    /// The progress line moves on once a card has been answered, whichever card comes next.
+    let waitForCard (page: IPage) (number: int) =
+        page.GetByText($"Card {number} of about").WaitForAsync()
+
     let waitForTitle (page: IPage) (text: string) =
         page.Locator(".card-text h1", PageLocatorOptions(HasText = text)).WaitForAsync()
 
@@ -68,17 +72,18 @@ type JourneyTests(browser: BrowserFixture) =
         task {
             let! page = openJourney ()
             do! drag page 160.0f
-            do! waitForTitle page "High trails"
+            do! waitForCard page 2
         }
 
     [<Fact>]
     member _.``small drag springs back``() =
         task {
             let! page = openJourney ()
+            let! first = title page
             do! drag page 40.0f
             do! page.WaitForTimeoutAsync(500.0f)
             let! current = title page
-            Assert.Equal("Green valleys", current)
+            Assert.Equal(first, current)
         }
 
     [<Fact>]
@@ -86,7 +91,7 @@ type JourneyTests(browser: BrowserFixture) =
         task {
             let! page = openJourney ()
             do! (button page "Love it").ClickAsync()
-            do! waitForTitle page "High trails"
+            do! waitForCard page 2
         }
 
     [<Fact>]
@@ -94,17 +99,17 @@ type JourneyTests(browser: BrowserFixture) =
         task {
             let! page = openJourney ()
             do! page.Keyboard.PressAsync "ArrowRight"
-            do! waitForTitle page "High trails"
+            do! waitForCard page 2
         }
 
     [<Fact>]
-    member _.``branch card appears after collecting``() =
+    member _.``each answer brings the next card``() =
         task {
             let! page = openJourney ()
             do! (button page "Love it").ClickAsync()
-            do! waitForTitle page "High trails"
+            do! waitForCard page 2
             do! (button page "Love it").ClickAsync()
-            do! waitForTitle page "Quiet villages"
+            do! waitForCard page 3
         }
 
     [<Fact>]
@@ -112,7 +117,7 @@ type JourneyTests(browser: BrowserFixture) =
         task {
             let! page = openJourney ()
             do! (button page "Not for me").ClickAsync()
-            do! waitForTitle page "Palm bays"
+            do! waitForCard page 2
         }
 
     [<Fact>]
@@ -120,7 +125,7 @@ type JourneyTests(browser: BrowserFixture) =
         task {
             let! page = openJourney ()
             do! (button page "Love it").DblClickAsync()
-            do! waitForTitle page "High trails"
+            do! waitForCard page 2
         }
 
     [<Fact>]
@@ -133,11 +138,16 @@ type JourneyTests(browser: BrowserFixture) =
 
             let! first = stage ()
 
-            for next in [ "High trails"; "Quiet villages" ] do
-                do! (button page "Love it").ClickAsync()
-                do! waitForTitle page next
+            let! count = page.Locator(".card-text h1").CountAsync()
+            Assert.Equal(1, count)
 
-            do! (button page "Love it").ClickAsync()
+            for number in 2..6 do
+                let! current = title page
+                let beach = current = "Palm bays" || current = "Surf towns"
+                do! (button page (if beach then "Not for me" else "Love it")).ClickAsync()
+
+                if number < 6 then
+                    do! waitForCard page number
 
             let! _ =
                 page.WaitForFunctionAsync(
@@ -154,7 +164,7 @@ type JourneyTests(browser: BrowserFixture) =
             let! page = openJourney ()
             do! page.Context.SetOfflineAsync true
             do! (button page "Love it").ClickAsync()
-            do! waitForTitle page "High trails"
+            do! waitForCard page 2
         }
 
     [<Fact>]

@@ -18,6 +18,8 @@ type private CardRow = {
     MarkPath: string option
     MarkAlt: string option
     Interest: string option
+    PlaceSlug: string option
+    Region: string option
     Deep: string option
     Mid: string option
     Pale: string option
@@ -40,11 +42,13 @@ let private cardsSql =
              join interests i on signal.signal = 'interest:' || i.slug
              where signal.card_slug = c.slug
              order by signal.weight desc, i.name limit 1) as interest,
-            f.deep, f.mid, f.pale, f.text_on_deep
+            c.place_slug, region.slug as region, f.deep, f.mid, f.pale, f.text_on_deep
      from cards c
      left join photos photo on photo.slug = c.photo_slug
      left join illustrations mark on mark.slug = c.illustration_slug
      left join places p on p.slug = c.place_slug
+     left join clusters cluster on cluster.slug = p.cluster_slug
+     left join regions region on region.slug = cluster.region_slug
      left join colour_families f on f.slug = p.family_slug
      where c.retired_at is null
      order by c.slug"
@@ -80,6 +84,8 @@ let private toCard (branches: BranchRow list) (row: CardRow) : JourneyCard =
                 None
         Interest = row.Interest
         Colours = colours row
+        Place = row.PlaceSlug
+        Region = row.Region
         Branches =
             branches
             |> List.filter (fun branch -> branch.FromCard = row.Slug)

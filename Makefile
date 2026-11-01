@@ -40,10 +40,10 @@ test-all:
 	@$(MAKE) -j3 test-unit test-integration test-e2e
 
 test-unit:
-	dotnet test tests/Namastay.UnitTests
+	dotnet test tests/Namastay.UnitTests -- xUnit.StopOnFail=true
 
 test-integration:
-	dotnet test tests/Namastay.IntegrationTests
+	dotnet test tests/Namastay.IntegrationTests -- xUnit.StopOnFail=true
 
 # Uses its own sample database and servers, so it works whatever `make dev` has loaded. Needs `make up`.
 test-e2e:

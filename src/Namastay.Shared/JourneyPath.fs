@@ -13,35 +13,94 @@ let private mixSize = 3
 let private find (graph: JourneyGraph) (slug: string) =
     graph.Cards |> List.tryFind (fun card -> card.Slug = slug)
 
-let start (graph: JourneyGraph) =
-    graph.Cards |> List.filter _.IsStart |> List.map _.Slug
-
-/// The cards still to come after answering one. Branches go first, so the journey follows the answer.
-let advance (graph: JourneyGraph) (queue: string list) (slug: string) (liked: bool) (seen: string list) =
-    let branches =
-        find graph slug
-        |> Option.map _.Branches
-        |> Option.defaultValue []
-        |> List.filter (fun branch -> branch.OnAnswer = liked)
-        |> List.sortBy (fun branch -> -branch.Priority)
-        |> List.map _.ToCard
-        |> List.filter (fun target -> (find graph target).IsSome && not (List.contains target seen))
-
-    (branches @ queue)
-    |> List.filter (fun target -> not (List.contains target seen))
-    |> List.distinct
-
-let isFinished (queue: string list) (answered: int) = queue.IsEmpty || answered >= maxCards
-
-let private likedCards (graph: JourneyGraph) (answers: CardAnswer list) =
+let private likedOf (graph: JourneyGraph) (answers: CardAnswer list) =
     answers
     |> List.filter _.Liked
     |> List.choose (fun answer -> find graph answer.Card)
 
+let private openingCards = 6
+let private wildcardEvery = 4
+let private mostOfOnePlace = 2
+
+let private shownCards (graph: JourneyGraph) (answers: CardAnswer list) =
+    answers |> List.choose (fun answer -> find graph answer.Card)
+
+let private countOf (value: string option) (selector: JourneyCard -> string option) (cards: JourneyCard list) =
+    cards
+    |> List.filter (fun card -> value.IsSome && selector card = value)
+    |> List.length
+
+/// A small steady nudge from the slug, so near ties don't always fall in the same order.
+let private nudge (slug: string) = (slug |> Seq.sumBy int) % 5
+
+/// Rewards whatever the visitor hasn't seen yet.
+let private freshness (shown: JourneyCard list) (card: JourneyCard) =
+    let start = if card.IsStart then 2 else 0
+
+    start
+    - 20 * countOf card.Region _.Region shown
+    - 10 * countOf card.Interest _.Interest shown
+    - 30 * countOf card.Place _.Place shown
+
+/// Rewards what they've liked, without letting one thing take over.
+let private leaning (graph: JourneyGraph) (answers: CardAnswer list) (shown: JourneyCard list) (card: JourneyCard) =
+    let liked = likedOf graph answers
+    let passed = shown |> List.except liked
+    let recent = shown |> List.rev |> List.truncate 2
+
+    let followsLike =
+        liked
+        |> List.exists (fun item ->
+            item.Branches
+            |> List.exists (fun branch -> branch.OnAnswer && branch.ToCard = card.Slug))
+
+    (if followsLike then 12 else 0)
+    + 6 * countOf card.Interest _.Interest liked
+    + 3 * countOf card.Region _.Region liked
+    - 4 * countOf card.Interest _.Interest passed
+    - 2 * countOf card.Interest _.Interest recent
+    - 8 * countOf card.Place _.Place shown
+
+let private isWildcard (answered: int) =
+    answered % wildcardEvery = wildcardEvery - 1
+
+/// The next card. The first few show how varied India is, then the deck leans towards
+/// what the visitor likes, and every so often it offers something different.
+let next (graph: JourneyGraph) (answers: CardAnswer list) =
+    let shown = shownCards graph answers
+    let seen = answers |> List.map _.Card
+    let last = shown |> List.tryLast |> Option.bind _.Place
+
+    let unseen =
+        graph.Cards |> List.filter (fun card -> not (List.contains card.Slug seen))
+
+    let allowed =
+        unseen
+        |> List.filter (fun card ->
+            (last.IsNone || card.Place <> last)
+            && countOf card.Place _.Place shown < mostOfOnePlace)
+
+    let pool = if allowed.IsEmpty then unseen else allowed
+
+    let score card =
+        if answers.Length < openingCards || isWildcard answers.Length then
+            freshness shown card + nudge card.Slug
+        else
+            leaning graph answers shown card + nudge card.Slug
+
+    if answers.Length >= maxCards then
+        None
+    else
+        pool
+        |> List.sortBy (fun card -> -(score card), card.Slug)
+        |> List.tryHead
+        |> Option.map _.Slug
+
+
 /// The colours the stage should take, or None to stay on brand.
 let leadingColours (graph: JourneyGraph) (answers: CardAnswer list) =
     let ranked =
-        likedCards graph answers
+        likedOf graph answers
         |> List.choose _.Colours
         |> List.countBy id
         |> List.sortBy (fun (_, likes) -> -likes)
@@ -54,7 +113,7 @@ let leadingColours (graph: JourneyGraph) (answers: CardAnswer list) =
 /// The strongest interests so far, each as a percentage of the strongest.
 let mix (graph: JourneyGraph) (answers: CardAnswer list) =
     let ranked =
-        likedCards graph answers
+        likedOf graph answers
         |> List.choose _.Interest
         |> List.countBy id
         |> List.sortBy (fun (_, likes) -> -likes)

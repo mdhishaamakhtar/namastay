@@ -43,4 +43,4 @@ ASPNETCORE_ENVIRONMENT=Development ConnectionStrings__Namastay="$connection" \
 wait_for "http://localhost:$api_port/health"
 wait_for "http://localhost:$client_port"
 
-NAMASTAY_URL="http://localhost:$client_port" dotnet test tests/Namastay.E2ETests --verbosity quiet
+NAMASTAY_URL="http://localhost:$client_port" dotnet test tests/Namastay.E2ETests --verbosity quiet -- xUnit.StopOnFail=true

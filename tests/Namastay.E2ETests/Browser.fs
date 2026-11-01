@@ -10,6 +10,13 @@ type BrowserFixture() =
     let mutable playwright: IPlaywright = null
     let mutable browser: IBrowser = null
 
+    /// A failing step should fail in seconds, not hold the whole run for half a minute.
+    let newPage (context: IBrowserContext) =
+        task {
+            context.SetDefaultTimeout 8000.0f
+            return! context.NewPageAsync()
+        }
+
     member _.BaseUrl =
         match Environment.GetEnvironmentVariable "NAMASTAY_URL" with
         | null
@@ -21,7 +28,7 @@ type BrowserFixture() =
             let! context =
                 browser.NewContextAsync(BrowserNewContextOptions(ReducedMotion = ReducedMotion.Reduce))
 
-            return! context.NewPageAsync()
+            return! newPage context
         }
 
     member _.NewPage() =
@@ -31,7 +38,7 @@ type BrowserFixture() =
                     BrowserNewContextOptions(ViewportSize = ViewportSize(Width = 390, Height = 844), HasTouch = true)
                 )
 
-            return! context.NewPageAsync()
+            return! newPage context
         }
 
     interface IAsyncLifetime with
