@@ -30,7 +30,7 @@ type SavedTripsTests(postgres: PostgresFixture) =
         TestApp.start scope Sample.catalog (fun app data ->
             AuthApi.map app data.Source
             TripsApi.map app data
-            SavedTripsApi.map app data.Source)
+            SavedTripsApi.map app data)
 
     /// Signs up and returns the cookie that proves who is asking.
     let signUp (http: HttpClient) (email: string) =
@@ -74,6 +74,36 @@ type SavedTripsTests(postgres: PostgresFixture) =
 
             return! response.Content.ReadFromJsonAsync<SavedTripSummary list>(Json.options)
         }
+
+    /// Signs up, saves a new trip and returns the cookie, share token and saved id.
+    let savedTrip (http: HttpClient) =
+        task {
+            let! cookie = signUp http "asha@example.org"
+            let! token = createTrip http
+            let! _ = save http cookie token
+            let! trips = list http cookie
+            return cookie, token, trips.Head.Id
+        }
+
+    let mine (http: HttpClient) cookie (id: string) =
+        http.SendAsync(as' cookie HttpMethod.Get (Route.url [ "id", id ] [] Routes.getMine))
+
+    let put (http: HttpClient) cookie (id: string) (edit: TripEdit) =
+        let message = as' cookie HttpMethod.Put (Route.url [ "id", id ] [] Routes.editMine)
+        message.Content <- JsonContent.Create(edit, options = Json.options)
+        http.SendAsync message
+
+    let ownStop = {
+        PlaceSlug = None
+        CustomName = Some "My cousin's house"
+        Days = 5
+    }
+
+    let renamed = {
+        Title = "Renamed"
+        Month = None
+        Stops = [ ownStop ]
+    }
 
     [<Fact>]
     member _.``saving requires sign in``() =
@@ -179,6 +209,78 @@ type SavedTripsTests(postgres: PostgresFixture) =
             let! cookie = signUp http "asha@example.org"
             let! response = http.SendAsync(as' cookie HttpMethod.Delete (deleteUrl "not-a-guid"))
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode)
+        }
+
+    [<Fact>]
+    member _.``a saved trip opens for its owner``() =
+        task {
+            let! http, _ = start ()
+            let! cookie, _, id = savedTrip http
+            let! response = mine http cookie id
+            let! trip = response.Content.ReadFromJsonAsync<Trip>(Json.options)
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode)
+            Assert.NotEmpty trip.Stops
+        }
+
+    [<Fact>]
+    member _.``editing changes my copy and not the shared link``() =
+        task {
+            let! http, _ = start ()
+            let! cookie, token, id = savedTrip http
+            let! response = put http cookie id renamed
+            let! edited = response.Content.ReadFromJsonAsync<EditedTrip>(Json.options)
+            let! trips = list http cookie
+            let! shared = http.GetAsync(Route.url [ "shareToken", token ] [] Routes.getItinerary)
+            let! original = shared.Content.ReadFromJsonAsync<SavedTrip>(Json.options)
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode)
+            Assert.Equal("Renamed", trips.Head.Title)
+            Assert.NotEqual<string>("Renamed", original.Trip.Title)
+            Assert.NotEmpty edited.Warnings
+        }
+
+    [<Fact>]
+    member _.``an edit that breaks the rules is refused and saves nothing``() =
+        task {
+            let! http, _ = start ()
+            let! cookie, _, id = savedTrip http
+
+            let broken = {
+                renamed with
+                    Stops = [
+                        {
+                            ownStop with
+                                PlaceSlug = Some "atlantis"
+                        }
+                    ]
+            }
+
+            let! response = put http cookie id broken
+            let! error = response.Content.ReadFromJsonAsync<ApiError>(Json.options)
+            let! trips = list http cookie
+            Assert.Equal(HttpStatusCode.Conflict, response.StatusCode)
+            Assert.Contains("atlantis", error.Fields.Head.Message)
+            Assert.NotEqual<string>("Renamed", trips.Head.Title)
+        }
+
+    [<Fact>]
+    member _.``editing requires sign in``() =
+        task {
+            let! http, _ = start ()
+            let! _, _, id = savedTrip http
+            let! response = put http "namastay=none" id renamed
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode)
+        }
+
+    [<Fact>]
+    member _.``users cannot edit each others trips``() =
+        task {
+            let! http, _ = start ()
+            let! _, _, id = savedTrip http
+            let! stranger = signUp http "ben@example.org"
+            let! response = put http stranger id renamed
+            let! opened = mine http stranger id
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode)
+            Assert.Equal(HttpStatusCode.NotFound, opened.StatusCode)
         }
 
     interface IDisposable with

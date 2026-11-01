@@ -1,12 +1,15 @@
 module Namastay.Web.Trips.SavedTripsApi
 
 open System
+open System.Text.Json
 open System.Threading.Tasks
+open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Routing
-open Npgsql
 open Namastay.Data.Accounts
+open Namastay.Data.Catalog
 open Namastay.Data.Trips
+open Namastay.Domain.Trip
 open Namastay.Shared
 open Namastay.Shared.Contracts
 open Namastay.Web.Auth
@@ -79,7 +82,59 @@ let private delete source (context: HttpContext) =
                 return if removed then Ok() else Error notFound
         })
 
-let map (app: IEndpointRouteBuilder) (source: NpgsqlDataSource) =
+let private cantOpen =
+    ApiError.create ErrorCode.Conflict "We can't open this saved trip. Please plan a new one."
+
+/// Runs `action` on the signed-in user's own copy of the trip in the address.
+let private withMine source (context: HttpContext) action =
+    requireUser source context (fun user ->
+        task {
+            match tryParseId context with
+            | None -> return Error notFound
+            | Some id ->
+                match! SavedTrips.tryFind source user.Id id with
+                | None -> return Error notFound
+                | Some row ->
+                    match TripSnapshot.read row.Trip with
+                    | None -> return Error cantOpen
+                    | Some trip -> return! action user id trip
+        })
+
+let private fetch source (context: HttpContext) =
+    withMine source context (fun _ _ trip ->
+        task {
+            let! marked = TripsApi.markRetired source trip
+            return Ok marked
+        })
+
+let private blocked (reasons: string list) =
+    let fields =
+        reasons |> List.map (fun reason -> { Field = "stops"; Message = reason })
+
+    {
+        ApiError.create ErrorCode.Conflict "We can't save those changes." with
+            Fields = fields
+    }
+
+let private edit (data: DataCache) (context: HttpContext) (changes: TripEdit) =
+    withMine data.Source context (fun user id trip ->
+        task {
+            let! catalog = DataCache.getOrLoad data "catalog" (fun () -> Read.load data.Source)
+
+            match Editing.apply catalog trip changes with
+            | Error reasons -> return Error(blocked reasons)
+            | Ok edited ->
+                let text = JsonSerializer.Serialize(edited.Trip, Json.options)
+                let! saved = SavedTrips.tryUpdate data.Source user.Id id edited.Trip.Title text
+                return if saved then Ok edited else Error notFound
+        })
+
+let map (app: IEndpointRouteBuilder) (data: DataCache) =
+    let source = data.Source
     Endpoint.mapAction app Routes.saveItinerary (save source)
     Endpoint.mapGet app Routes.myItineraries (list source)
+    Endpoint.mapGet app Routes.getMine (fetch source)
     Endpoint.mapAction app Routes.deleteMine (delete source)
+
+    (Endpoint.mapBody app Routes.editMine (edit data)).RequireRateLimiting Limits.tripsPolicy
+    |> ignore

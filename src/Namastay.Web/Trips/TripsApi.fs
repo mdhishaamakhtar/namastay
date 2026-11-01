@@ -59,7 +59,7 @@ let private create data (_: HttpContext) (request: TripRequest) : Task<Result<Sa
     | [] -> buildAndSave data request
     | fields -> Task.FromResult(Error(ApiError.validation fields))
 
-let private markRetired source (trip: Trip) =
+let markRetired source (trip: Trip) =
     task {
         let! retired = Itineraries.retiredAmong source (trip.Stops |> List.map _.PlaceSlug)
 
@@ -96,7 +96,7 @@ let private fetch (data: DataCache) (context: HttpContext) : Task<Result<SavedTr
     }
 
 let map (app: IEndpointRouteBuilder) (data: DataCache) =
-    (Endpoint.mapPost app Routes.createItinerary (create data)).RequireRateLimiting Limits.tripsPolicy
+    (Endpoint.mapBody app Routes.createItinerary (create data)).RequireRateLimiting Limits.tripsPolicy
     |> ignore
 
     Endpoint.mapGet app Routes.getItinerary (fetch data)

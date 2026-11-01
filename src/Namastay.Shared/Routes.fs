@@ -34,6 +34,13 @@ let saveItinerary: Route<NoBody, SavedTripSummary> =
 let myItineraries: Route<NoBody, SavedTripSummary list> =
     Route.get "/api/my/itineraries"
 
+let getMine: Route<NoBody, Trip> = Route.get "/api/my/itineraries/{id}"
+
+let editMine: Route<TripEdit, EditedTrip> = {
+    Method = "PUT"
+    Template = "/api/my/itineraries/{id}"
+}
+
 let deleteMine: Route<NoBody, NoBody> = {
     Method = "DELETE"
     Template = "/api/my/itineraries/{id}"

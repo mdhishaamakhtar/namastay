@@ -8,7 +8,7 @@ type EditedStop =
     | Known of Place * days: int
     | Unchecked of name: string * days: int
 
-/// Blocked reasons stop a save. Warnings are saved with the trip for the traveller to weigh.
+/// Blocked reasons stop a save. Warnings go back to the traveller, who decides.
 type Review = {
     Stops: EditedStop list
     Blocked: string list

@@ -81,7 +81,7 @@ let private tryRead<'Request> (context: HttpContext) =
     }
 
 /// A body that can't be read becomes a validation error, never a crash.
-let mapPost
+let mapBody
     (app: IEndpointRouteBuilder)
     (route: Route<'Request, 'Response>)
     (handler: HttpContext -> 'Request -> Task<Result<'Response, ApiError>>)
@@ -95,7 +95,7 @@ let mapPost
                 do! respond context result
         }
 
-    app.MapPost(route.Template, RequestDelegate run)
+    app.MapMethods(route.Template, [ route.Method ], RequestDelegate run)
 
 let private publicLifetime = "public, max-age=300"
 

@@ -48,6 +48,24 @@ let tryFind (source: NpgsqlDataSource) (userId: Guid) (id: Guid) : Task<SavedRow
         return List.tryHead rows
     }
 
+/// Changes only this user's copy. The shared itinerary is untouched.
+let tryUpdate (source: NpgsqlDataSource) (userId: Guid) (id: Guid) (title: string) (trip: string) : Task<bool> =
+    task {
+        let! rows =
+            query<int>
+                source
+                "update saved_trips set title = @title, trip = @trip::jsonb
+                 where id = @id and user_id = @userId returning 1"
+                {|
+                    id = id
+                    userId = userId
+                    title = title
+                    trip = trip
+                |}
+
+        return not rows.IsEmpty
+    }
+
 /// True when a trip of this user's was removed. The shared itinerary is untouched.
 let delete (source: NpgsqlDataSource) (userId: Guid) (id: Guid) : Task<bool> =
     task {

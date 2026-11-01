@@ -128,10 +128,10 @@ let private me source (context: HttpContext) : Task<Result<Account, ApiError>> =
     }
 
 let map (app: IEndpointRouteBuilder) (source: NpgsqlDataSource) =
-    (Endpoint.mapPost app Routes.signUp (signUp source)).RequireRateLimiting Limits.signInPolicy
+    (Endpoint.mapBody app Routes.signUp (signUp source)).RequireRateLimiting Limits.signInPolicy
     |> ignore
 
-    (Endpoint.mapPost app Routes.signIn (signIn source)).RequireRateLimiting Limits.signInPolicy
+    (Endpoint.mapBody app Routes.signIn (signIn source)).RequireRateLimiting Limits.signInPolicy
     |> ignore
 
     app.MapPost(Routes.signOut.Template, RequestDelegate signOut) |> ignore
