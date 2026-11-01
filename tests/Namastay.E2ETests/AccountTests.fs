@@ -5,7 +5,6 @@ open System.Text.Json
 open Microsoft.Playwright
 open Xunit
 
-[<Collection("browser")>]
 type AccountTests(browser: BrowserFixture) =
     let password = "correct horse battery"
 
@@ -169,3 +168,5 @@ type AccountTests(browser: BrowserFixture) =
 
             Assert.False overflow
         }
+
+    interface IClassFixture<BrowserFixture>

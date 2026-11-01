@@ -7,7 +7,6 @@ open System.Threading.Tasks
 open Microsoft.Playwright
 open Xunit
 
-[<Collection("browser")>]
 type TripTests(browser: BrowserFixture) =
     let firstStop (json: JsonNode) : JsonNode =
         json["trip"].Item("stops").AsArray().Item 0
@@ -229,3 +228,5 @@ type TripTests(browser: BrowserFixture) =
 
             Assert.False wide
         }
+
+    interface IClassFixture<BrowserFixture>

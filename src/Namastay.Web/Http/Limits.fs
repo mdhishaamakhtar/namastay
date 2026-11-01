@@ -2,15 +2,16 @@ module Namastay.Web.Http.Limits
 
 open System
 
-/// One machine runs the whole browser suite against a local server, so limits there are far higher.
-let private scale =
+/// Rate limits are off on a local server, where one machine sends every request.
+/// A limit there would make the browser tests pass or fail by how fast they ran.
+let private perMinute limit =
     if Environment.GetEnvironmentVariable "ASPNETCORE_ENVIRONMENT" = "Development" then
-        100
+        Int32.MaxValue
     else
-        1
+        limit
 
 let tripsPolicy = "trips"
-let tripsPerMinute = 30 * scale
+let tripsPerMinute = perMinute 30
 let maxBodyBytes = 64L * 1024L
 let signInPolicy = "sign-in"
-let signInsPerMinute = 10 * scale
+let signInsPerMinute = perMinute 10

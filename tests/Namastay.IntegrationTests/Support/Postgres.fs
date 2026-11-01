@@ -9,12 +9,20 @@ open Namastay.Data.Media
 open Testcontainers.PostgreSql
 open Xunit
 
-/// One Postgres container for the whole test run. Each test gets its own database.
+/// One Postgres container for the whole test run, shared by classes running in parallel.
+/// Each test gets its own database. Testcontainers removes the container when the run ends.
 type PostgresFixture() =
-    let container = PostgreSqlBuilder("postgres:17").Build()
+    static let shared =
+        lazy
+            (task {
+                let container = PostgreSqlBuilder("postgres:17").Build()
+                do! container.StartAsync()
+                return container
+            })
 
     member _.NewDatabase() =
         task {
+            let! container = shared.Value
             let name = "t" + Guid.NewGuid().ToString("N")
             use admin = new NpgsqlConnection(container.GetConnectionString())
             do! admin.OpenAsync()
@@ -24,10 +32,6 @@ type PostgresFixture() =
             builder.Database <- name
             return builder.ConnectionString
         }
-
-    interface IAsyncLifetime with
-        member _.InitializeAsync() = container.StartAsync()
-        member _.DisposeAsync() = container.DisposeAsync().AsTask()
 
 /// Runs only where the private data folder exists, and shows as skipped elsewhere.
 type PrivateDataFactAttribute() as this =
@@ -111,7 +115,3 @@ type MediaFixture() =
 [<CollectionDefinition("media")>]
 type MediaCollection() =
     interface ICollectionFixture<MediaFixture>
-
-[<CollectionDefinition("postgres")>]
-type PostgresCollection() =
-    interface ICollectionFixture<PostgresFixture>

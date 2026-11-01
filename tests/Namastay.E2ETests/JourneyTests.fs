@@ -5,7 +5,6 @@ open System.Threading.Tasks
 open Microsoft.Playwright
 open Xunit
 
-[<Collection("browser")>]
 type JourneyTests(browser: BrowserFixture) =
     let goToJourney (page: IPage) =
         task {
@@ -224,3 +223,5 @@ type JourneyTests(browser: BrowserFixture) =
 
             Assert.False wide
         }
+
+    interface IClassFixture<BrowserFixture>

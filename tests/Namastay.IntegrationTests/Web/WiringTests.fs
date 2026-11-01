@@ -20,7 +20,6 @@ open Namastay.Web
 open Namastay.Web.Http
 
 /// Runs the real Program.fs, so a route that was never wired up fails here.
-[<Collection("postgres")>]
 type WiringTests(postgres: PostgresFixture) =
     let scope = DatabaseScope.For postgres
 
@@ -158,3 +157,5 @@ type WiringTests(postgres: PostgresFixture) =
 
     interface IDisposable with
         member _.Dispose() = (scope :> IDisposable).Dispose()
+
+    interface IClassFixture<PostgresFixture>

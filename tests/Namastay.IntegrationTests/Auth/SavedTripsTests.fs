@@ -13,7 +13,6 @@ open Namastay.Web.Auth
 open Namastay.Web.Http
 open Namastay.Web.Trips
 
-[<Collection("postgres")>]
 type SavedTripsTests(postgres: PostgresFixture) =
     let scope = DatabaseScope.For postgres
 
@@ -285,3 +284,5 @@ type SavedTripsTests(postgres: PostgresFixture) =
 
     interface IDisposable with
         member _.Dispose() = (scope :> IDisposable).Dispose()
+
+    interface IClassFixture<PostgresFixture>

@@ -22,7 +22,6 @@ open Namastay.Web.Http
 open Namastay.Web.Journey
 open Namastay.Web.Trips
 
-[<Collection("postgres")>]
 type JourneyApiTests(postgres: PostgresFixture) =
     let scope = DatabaseScope.For postgres
 
@@ -422,3 +421,5 @@ type JourneyApiTests(postgres: PostgresFixture) =
 
     interface IDisposable with
         member _.Dispose() = (scope :> IDisposable).Dispose()
+
+    interface IClassFixture<PostgresFixture>

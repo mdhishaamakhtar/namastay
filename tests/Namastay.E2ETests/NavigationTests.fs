@@ -6,7 +6,6 @@ open System.Threading.Tasks
 open Microsoft.Playwright
 open Xunit
 
-[<Collection("browser")>]
 type NavigationTests(browser: BrowserFixture) =
     let heading (page: IPage) =
         page.Locator("h1").First.TextContentAsync()
@@ -93,3 +92,5 @@ type NavigationTests(browser: BrowserFixture) =
             Assert.Contains("can't reach Namastay", message)
             do! page.GetByRole(AriaRole.Button, PageGetByRoleOptions(Name = "Try again")).WaitForAsync()
         }
+
+    interface IClassFixture<BrowserFixture>

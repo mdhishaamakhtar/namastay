@@ -17,7 +17,6 @@ open Namastay.Web
 open Namastay.Web.Guides
 open Namastay.Web.Http
 
-[<Collection("postgres")>]
 type GuidePageTests(postgres: PostgresFixture) =
     let scope = DatabaseScope.For postgres
 
@@ -350,3 +349,5 @@ type GuidePageTests(postgres: PostgresFixture) =
 
     interface IDisposable with
         member _.Dispose() = (scope :> IDisposable).Dispose()
+
+    interface IClassFixture<PostgresFixture>

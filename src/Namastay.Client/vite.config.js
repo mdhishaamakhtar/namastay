@@ -1,6 +1,6 @@
 import { defineConfig } from "vite";
 
-const backend = "http://localhost:5080";
+const backend = process.env.NAMASTAY_API ?? "http://localhost:5080";
 
 export default defineConfig({
   server: {

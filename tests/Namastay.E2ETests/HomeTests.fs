@@ -3,7 +3,6 @@ namespace Namastay.E2ETests
 open Microsoft.Playwright
 open Xunit
 
-[<Collection("browser")>]
 type HomeTests(browser: BrowserFixture) =
     let openHome () =
         task {
@@ -109,3 +108,5 @@ type HomeTests(browser: BrowserFixture) =
 
             Assert.False wide
         }
+
+    interface IClassFixture<BrowserFixture>

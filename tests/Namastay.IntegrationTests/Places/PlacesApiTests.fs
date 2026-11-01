@@ -20,7 +20,6 @@ open Namastay.Web
 open Namastay.Web.Http
 open Namastay.Web.Places
 
-[<Collection("postgres")>]
 type PlacesApiTests(postgres: PostgresFixture) =
     let scope = DatabaseScope.For postgres
 
@@ -363,3 +362,5 @@ type PlacesApiTests(postgres: PostgresFixture) =
 
     interface IDisposable with
         member _.Dispose() = (scope :> IDisposable).Dispose()
+
+    interface IClassFixture<PostgresFixture>

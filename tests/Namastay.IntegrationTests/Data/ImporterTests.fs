@@ -10,7 +10,6 @@ open Namastay.Domain.Catalog
 open Namastay.IntegrationTests
 open Namastay.IntegrationTests.Support
 
-[<Collection("postgres")>]
 type ImporterTests(postgres: PostgresFixture) =
     let scope = DatabaseScope.For postgres
 
@@ -357,3 +356,5 @@ type ImporterTests(postgres: PostgresFixture) =
 
     interface IDisposable with
         member _.Dispose() = (scope :> IDisposable).Dispose()
+
+    interface IClassFixture<PostgresFixture>

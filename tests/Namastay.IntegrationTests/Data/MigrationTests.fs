@@ -5,7 +5,6 @@ open Npgsql
 open Xunit
 open Namastay.Data
 
-[<Collection("postgres")>]
 type MigrationTests(postgres: PostgresFixture) =
     let scope = DatabaseScope.For postgres
 
@@ -87,3 +86,5 @@ type MigrationTests(postgres: PostgresFixture) =
 
     interface IDisposable with
         member _.Dispose() = (scope :> IDisposable).Dispose()
+
+    interface IClassFixture<PostgresFixture>

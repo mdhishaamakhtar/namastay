@@ -5,7 +5,7 @@ open System.Threading.Tasks
 open Microsoft.Playwright
 open Xunit
 
-/// One Chromium for the run, sized like a phone. Needs `make up`, `make sample`, `make dev` and `make client`.
+/// One Chromium per test class, so classes run in parallel. Sized like a phone. Run with `make test-e2e`.
 type BrowserFixture() =
     let mutable playwright: IPlaywright = null
     let mutable browser: IBrowser = null
@@ -48,7 +48,3 @@ type BrowserFixture() =
                 do! browser.CloseAsync()
                 playwright.Dispose()
             }
-
-[<CollectionDefinition("browser")>]
-type BrowserCollection() =
-    interface ICollectionFixture<BrowserFixture>

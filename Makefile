@@ -1,4 +1,4 @@
-.PHONY: setup up down dev client test-e2e import import-check media-sync sample test test-unit test-integration coverage format lint lint-all check check-all
+.PHONY: setup up down dev client test-all test-e2e import import-check media-sync sample test test-unit test-integration coverage format lint lint-all check check-all
 
 LINT = dotnet dotnet-fsharplint lint --lint-config fsharplint.json
 
@@ -31,7 +31,13 @@ sample:
 	dotnet run --project src/Namastay.Importer -- samples/data
 	dotnet run --project src/Namastay.Importer -- --media samples/media
 
-test: test-unit test-integration
+# Unit and integration tests, side by side.
+test:
+	@$(MAKE) -j2 test-unit test-integration
+
+# Every test there is, side by side. Needs `make up`.
+test-all:
+	@$(MAKE) -j3 test-unit test-integration test-e2e
 
 test-unit:
 	dotnet test tests/Namastay.UnitTests
@@ -39,9 +45,9 @@ test-unit:
 test-integration:
 	dotnet test tests/Namastay.IntegrationTests
 
-# Needs `make up`, `make sample`, `make dev` and `make client` running.
+# Uses its own sample database and servers, so it works whatever `make dev` has loaded. Needs `make up`.
 test-e2e:
-	dotnet test tests/Namastay.E2ETests
+	./scripts/test-e2e.sh
 
 coverage:
 	dotnet test tests/Namastay.UnitTests /p:CollectCoverage=true /p:Include="[Namastay.Domain]*" \
@@ -65,5 +71,5 @@ check:
 	$(MAKE) test-integration
 	$(MAKE) coverage
 
-# Everything, including the browser tests. Needs the app running.
+# Everything, including the browser tests. Needs `make up`.
 check-all: check test-e2e
