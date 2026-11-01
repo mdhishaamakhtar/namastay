@@ -111,13 +111,13 @@ let private monthCell (month: GuideMonth) =
     let name = monthNames[month.Month - 1]
     let rating = ratingName month.Rating
 
-    li [ _class rating; attr "aria-label" $"{name}: {rating}" ] [ str (name.Substring(0, 1)) ]
+    li [ _class rating; attr "aria-label" $"{name}: {rating}" ] [ str (name.Substring(0, 3)) ]
 
 let private months (place: PlaceGuide) =
     section [] [
         h2 [] [ str "When to go" ]
         ul [ _class "months" ] (place.Months |> List.map monthCell)
-        p [ _class "note" ] [ str "Coloured months are best, and black months are ones to avoid." ]
+        p [ _class "note" ] [ str "Go in the coloured months. The black ones are best avoided." ]
     ]
 
 let private intro (place: PlaceGuide) =

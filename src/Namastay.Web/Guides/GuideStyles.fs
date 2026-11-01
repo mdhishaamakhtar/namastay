@@ -43,10 +43,11 @@ section{display:flex;flex-direction:column;gap:8px;min-width:0}
 .facts div{padding:12px;background:var(--pale);border-radius:2px;color:#2B2108}
 .facts strong{display:block;font-family:"Yatra One",Mukta,serif;font-size:21px;font-weight:400;line-height:1.2;color:var(--deep)}
 .facts span{font-size:15px}
-.months{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:2px;margin:0;padding:0;list-style:none}
-.months li{display:flex;align-items:center;justify-content:center;height:44px;background:var(--pale);color:#2B2108;font-size:14px;font-weight:600}
-.months .best{background:var(--deep);color:var(--on-deep)}
-.months .avoid,.months .closed{background:#1C1B1A;color:#FFFFFF}
+.months{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;margin:0;padding:0;list-style:none}
+.months li{display:flex;align-items:center;justify-content:center;height:52px;background:var(--pale);color:#2B2108;font-size:15px}
+.months .best{background:var(--deep);color:var(--on-deep);font-family:"Yatra One",Mukta,serif;font-size:19px}
+.months .avoid,.months .closed{background:#1C1B1A;color:#FFFFFF;font-size:13px}
+.months .unknown{background:none;border:1px dashed color-mix(in srgb,var(--deep) 45%,transparent);color:color-mix(in srgb,#2B2108 70%,transparent);font-size:13px}
 .note{font-size:15px;line-height:1.4}
 .spots{display:grid;gap:8px}
 .spot{display:flex;flex-direction:column;gap:6px;padding:14px 16px;background:#FFFFFF;border:1px solid var(--deep)}

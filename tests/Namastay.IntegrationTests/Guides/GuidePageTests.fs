@@ -341,11 +341,12 @@ type GuidePageTests(postgres: PostgresFixture) =
         }
 
     [<Fact>]
-    member _.``months use one letter each with a full name for readers``() =
+    member _.``months use three letters with a full name for readers``() =
         task {
             let! http, _ = start ()
             let! html = page http "/places/kasol"
             Assert.Contains("aria-label=\"May: best\"", html)
+            Assert.Contains(">May</li>", html)
         }
 
     [<Fact>]
