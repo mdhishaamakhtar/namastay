@@ -12,6 +12,7 @@ open Microsoft.AspNetCore.Identity
 open Microsoft.AspNetCore.Routing
 open Npgsql
 open Namastay.Data.Accounts
+open Namastay.Data.Places
 open Namastay.Shared
 open Namastay.Shared.Contracts
 open Namastay.Web.Http
@@ -128,8 +129,12 @@ let private me source (context: HttpContext) : Task<Result<Account, ApiError>> =
     }
 
 /// Tells the sign-in page which ways of signing in this server offers.
-let mapOptions (app: IEndpointRouteBuilder) (google: bool) =
-    Endpoint.mapGet app Routes.signInOptions (fun _ -> Task.FromResult(Ok { Google = google }))
+let mapOptions (app: IEndpointRouteBuilder) source (google: bool) =
+    Endpoint.mapGet app Routes.signInOptions (fun _ ->
+        task {
+            let! photo = LeadPhoto.tryFind source
+            return Ok { Google = google; Photo = photo }
+        })
 
 let map (app: IEndpointRouteBuilder) (source: NpgsqlDataSource) =
     (Endpoint.mapBody app Routes.signUp (signUp source)).RequireRateLimiting Limits.signInPolicy

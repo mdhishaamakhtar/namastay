@@ -4,18 +4,27 @@ open Elmish
 open Namastay.Client.Api
 open Namastay.Client.Components
 open Namastay.Client.Routing
+open Namastay.Client.Theme
 open Namastay.Shared
 open Namastay.Shared.Contracts
 
 module Search = Namastay.Client.Pages.Home.State
 
 let private firstStopDays = 2
+let private ownStopColour = "#5A5446"
 
 type Row = {
     Key: int
     PlaceSlug: string option
     Name: string
     Days: int
+    Deep: string
+    TextOnDeep: string
+    Tint: string
+    Photo: string option
+    /// The journey here, which only holds while the same stop comes before it.
+    Arrival: TravelLeg option
+    ComesAfter: int option
 }
 
 type Model = {
@@ -27,6 +36,8 @@ type Model = {
     NextKey: int
     Search: Search.Model
     OwnStop: string
+    /// The stop new places go after. None means the end of the trip.
+    AddAfter: int option
     Saving: bool
     Problems: string list
     Warnings: string list
@@ -45,6 +56,7 @@ type Msg =
     | AddPlace of PlaceSummary
     | OwnStopChanged of string
     | AddOwnStop
+    | AddHere of int
     | Save
     | Saved of Result<EditedTrip, Client.ClientError>
 
@@ -66,17 +78,24 @@ let init id =
         NextKey = 0
         Search = search
         OwnStop = ""
+        AddAfter = None
         Saving = false
         Problems = []
         Warnings = []
     },
-    load id
+    Cmd.batch [ Cmd.ofEffect (fun _ -> Theme.neutral ()); load id ]
 
 let private toRow index (stop: TripStop) = {
     Key = index
     PlaceSlug = if stop.Custom then None else Some stop.PlaceSlug
     Name = stop.Name
     Days = stop.Days
+    Deep = stop.Colours.Deep
+    TextOnDeep = stop.Colours.TextOnDeep
+    Tint = stop.Colours.Mid
+    Photo = stop.Photo |> Option.map _.Url
+    Arrival = stop.Arrival
+    ComesAfter = if index = 0 then None else Some(index - 1)
 }
 
 let private swap first second (rows: Row list) =
@@ -109,20 +128,32 @@ let private save (model: Model) =
         (toEdit model)
         Saved
 
-let private addRow slug name (model: Model) = {
-    model with
-        NextKey = model.NextKey + 1
-        Rows =
-            model.Rows
-            @ [
-                {
-                    Key = model.NextKey
-                    PlaceSlug = slug
-                    Name = name
-                    Days = firstStopDays
-                }
-            ]
-}
+let private addRow slug name deep (model: Model) =
+    let row = {
+        Key = model.NextKey
+        PlaceSlug = slug
+        Name = name
+        Days = firstStopDays
+        Deep = deep
+        TextOnDeep = "#FFFFFF"
+        Tint = deep
+        Photo = None
+        Arrival = None
+        ComesAfter = None
+    }
+
+    let position =
+        model.AddAfter
+        |> Option.bind (fun key -> model.Rows |> List.tryFindIndex (fun item -> item.Key = key))
+        |> Option.map ((+) 1)
+        |> Option.defaultValue model.Rows.Length
+
+    {
+        model with
+            NextKey = model.NextKey + 1
+            AddAfter = None
+            Rows = List.insertAt position row model.Rows
+    }
 
 let private showTrip id =
     Cmd.ofEffect (fun _ -> Browser.navigate (Route.url [ "id", id ] [] Routes.myTripPage))
@@ -140,7 +171,7 @@ let update msg (model: Model) =
                 Rows = saved.Trip.Stops |> List.mapi toRow
                 NextKey = saved.Trip.Stops.Length
         },
-        Cmd.none
+        Cmd.ofEffect (fun _ -> Theme.ofTrip saved.Trip |> Option.iter Theme.apply)
     | Loaded(Error error) when Client.isSignedOut error -> model, Cmd.ofEffect (fun _ -> Browser.signInThenReturn ())
     | Loaded(Error error) ->
         {
@@ -188,10 +219,16 @@ let update msg (model: Model) =
         { model with Search = search }, Cmd.map SearchMsg command
     | AddPlace place ->
         let search, _ = Search.init ()
-        addRow (Some place.Slug) place.Name { model with Search = search }, Cmd.none
+        addRow (Some place.Slug) place.Name place.FamilyDeep { model with Search = search }, Cmd.none
     | OwnStopChanged text -> { model with OwnStop = text }, Cmd.none
     | AddOwnStop when model.OwnStop.Trim() = "" -> model, Cmd.none
-    | AddOwnStop -> addRow None (model.OwnStop.Trim()) { model with OwnStop = "" }, Cmd.none
+    | AddOwnStop -> addRow None (model.OwnStop.Trim()) ownStopColour { model with OwnStop = "" }, Cmd.none
+    | AddHere key ->
+        {
+            model with
+                AddAfter = if model.AddAfter = Some key then None else Some key
+        },
+        Cmd.none
     | Save when model.Saving -> model, Cmd.none
     | Save ->
         {

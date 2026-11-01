@@ -47,7 +47,7 @@ type AccountTests(browser: BrowserFixture) =
             do! openNewTrip page
             do! (button page "Save and change this trip").ClickAsync()
             do! page.WaitForURLAsync "**/sign-in**"
-            do! (button page "I'm new here").ClickAsync()
+            do! (button page "Create an account").ClickAsync()
             do! fillAccount page (email ())
             do! (button page "Create account").ClickAsync()
             do! page.WaitForURLAsync "**/trip/**"
@@ -83,7 +83,7 @@ type AccountTests(browser: BrowserFixture) =
         task {
             let! page = browser.NewPage()
             let! _ = page.GotoAsync $"{browser.BaseUrl}/sign-in"
-            do! (button page "I'm new here").ClickAsync()
+            do! (button page "Create an account").ClickAsync()
             do! page.GetByLabel("Email").FillAsync(email ())
             do! page.GetByLabel("Password").FillAsync "short"
             do! (button page "Create account").ClickAsync()
@@ -123,7 +123,7 @@ type AccountTests(browser: BrowserFixture) =
         task {
             let! page = saveNewTrip ()
             do! (link page "Change this trip").ClickAsync()
-            do! page.GetByLabel("Or add your own stop").FillAsync "Asha's house"
+            do! page.GetByLabel("Or somewhere of your own").FillAsync "Asha's house"
             do! (button page "Add this stop").ClickAsync()
             do! (button page "Save changes").ClickAsync()
             do! page.Locator(".stop-warning").WaitForAsync()

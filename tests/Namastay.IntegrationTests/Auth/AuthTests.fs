@@ -255,7 +255,7 @@ type AuthTests(postgres: PostgresFixture) =
     member _.``sign-in options say whether google is offered``() =
         task {
             let! http, _ =
-                TestApp.start scope Sample.catalog (fun app _ -> AuthApi.mapOptions app true)
+                TestApp.start scope Sample.catalog (fun app data -> AuthApi.mapOptions app data.Source true)
 
             let! options =
                 http.GetFromJsonAsync<SignInOptions>(Routes.signInOptions.Template, Json.options)

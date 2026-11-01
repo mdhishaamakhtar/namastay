@@ -743,7 +743,6 @@ button:focus-visible {
 .trip-stops {
   display: flex;
   flex-direction: column;
-  gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -752,13 +751,88 @@ button:focus-visible {
 .stop {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+}
+
+.stop:not(:first-child):not(:has(.stop-leg)) {
+  margin-top: 8px;
 }
 
 .stop-leg {
-  margin: 0;
-  padding: 0 16px;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  column-gap: 16px;
+  padding-left: 16px;
+}
+
+.stop-leg-line {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stop-leg-line::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  margin-left: -1px;
+  background: color-mix(in srgb, var(--ink) 28%, transparent);
+  content: "";
+}
+
+.stop-leg-mark {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.stop-leg-more,
+.stop-leg-plain {
+  min-width: 0;
+  padding: 16px 0;
+}
+
+.stop-leg-more summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  list-style: none;
+  cursor: pointer;
+}
+
+.stop-leg-more summary::-webkit-details-marker {
+  display: none;
+}
+
+.stop-leg-more[open] summary svg {
+  transform: rotate(180deg);
+}
+
+.stop-leg-more p {
+  max-width: 56ch;
+  margin: 8px 0 0;
   font-size: 15px;
+}
+
+.stop-leg-text {
+  display: flex;
+  flex-direction: column;
+  font-size: 15px;
+}
+
+.stop-leg-text strong {
+  font-size: 18px;
+  font-weight: 600;
 }
 
 .stop-head {
@@ -1433,5 +1507,431 @@ button:focus-visible {
   .stop-photo img {
     max-height: 240px;
     object-fit: cover;
+  }
+}
+
+.account-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.account-stage {
+  position: relative;
+  flex: none;
+  height: 232px;
+  padding: 16px 24px;
+  overflow: hidden;
+  background: var(--brand);
+  color: var(--ink);
+}
+
+.account-label {
+  position: absolute;
+  bottom: -44px;
+  left: 50%;
+  width: 236px;
+  margin-left: -118px;
+  padding: 7px;
+  border-radius: 4px;
+  background: #fbfaf2;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.22);
+  transform: rotate(-2deg);
+}
+
+.account-label-frame {
+  padding: 6px;
+  border: 2px solid var(--ink);
+}
+
+.account-label img,
+.account-label-blank {
+  display: block;
+  width: 100%;
+  aspect-ratio: 5 / 4;
+  object-fit: cover;
+  background: var(--paper);
+}
+
+.account-label-text {
+  display: none;
+}
+
+.account-main {
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  padding: 24px;
+}
+
+.account-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.account-column h1 {
+  font-size: 34px;
+}
+
+.account-column > p {
+  margin: 0;
+}
+
+.account-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 54px;
+  border: 1px solid var(--ink);
+  background: #fff;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.account-divider {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+  font-size: 15px;
+}
+
+.account-divider::before,
+.account-divider::after {
+  height: 1px;
+  background: color-mix(in srgb, var(--ink) 20%, transparent);
+  content: "";
+}
+
+.account-submit {
+  height: 56px;
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.account-switcher {
+  text-align: center;
+}
+
+.account-switcher .account-switch {
+  padding: 0;
+}
+
+@media (min-width: 1024px) {
+  .account-page {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .account-stage {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    padding: 32px 56px 48px;
+  }
+
+  .account-label {
+    position: static;
+    width: 340px;
+    margin: auto;
+    padding: 10px;
+  }
+
+  .account-label-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 4px 4px;
+    font-size: 15px;
+  }
+
+  .account-label-text strong {
+    font-family: "Yatra One", Mukta, serif;
+    font-size: 28px;
+    font-weight: 400;
+    line-height: 1.1;
+  }
+
+  .account-main {
+    align-items: center;
+    padding: 48px 56px;
+  }
+
+  .account-column {
+    gap: 16px;
+  }
+
+  .account-column h1 {
+    font-size: 44px;
+  }
+}
+
+.edit-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 15px;
+}
+
+.edit-title input {
+  width: 100%;
+  padding: 2px 0 6px;
+  border: 0;
+  border-bottom: 2px solid color-mix(in srgb, currentColor 50%, transparent);
+  background: none;
+  color: inherit;
+  font: 400 27px/1.15 "Yatra One", Mukta, serif;
+}
+
+.edit-meter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.edit-meter-text {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font-size: 15px;
+}
+
+.edit-meter-text strong {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.edit-meter-bar {
+  display: flex;
+  gap: 2px;
+  height: 10px;
+}
+
+.edit-meter-bar span {
+  background: color-mix(in srgb, #fff 18%, transparent);
+}
+
+.edit-month {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 15px;
+}
+
+.edit-month select {
+  height: 50px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 2px;
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 17px Mukta, system-ui, sans-serif;
+}
+
+.edit-discard {
+  color: inherit;
+  font-weight: 500;
+  text-align: center;
+}
+
+.edit-panel-save {
+  display: none;
+}
+
+.edit-savebar {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  padding: 12px 16px;
+  background: var(--paper);
+  box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.edit-savebar .button {
+  width: 100%;
+  background: var(--deep);
+  color: var(--on-deep);
+}
+
+.edit-ticket {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  padding: 8px 8px 8px 12px;
+}
+
+.edit-ticket img {
+  display: none;
+}
+
+.edit-ticket-name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.edit-ticket-name small {
+  font-size: 14px;
+}
+
+.edit-ticket-name strong {
+  font-family: "Yatra One", Mukta, serif;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.edit-ticket-controls {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.edit-days,
+.edit-moves {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.edit-days span {
+  min-width: 60px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.edit-days button {
+  width: 44px;
+  height: 44px;
+  border: 1px solid color-mix(in srgb, currentColor 60%, transparent);
+  border-radius: 2px;
+  background: none;
+  color: inherit;
+  font: 500 20px Mukta, system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.edit-moves button {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.edit-days button:disabled,
+.edit-moves button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.edit-leg {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  column-gap: 12px;
+  padding-left: 12px;
+}
+
+.edit-leg .stop-leg-mark {
+  width: 32px;
+  height: 32px;
+}
+
+.edit-leg .stop-leg-mark svg {
+  width: 18px;
+  height: 18px;
+}
+
+.edit-leg-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  padding: 10px 0;
+  font-size: 15px;
+}
+
+.edit-leg-text button {
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: 600 15px Mukta, system-ui, sans-serif;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.edit-add {
+  margin: 8px 0 16px;
+}
+
+.edit-end {
+  margin-top: 24px;
+}
+
+@media (min-width: 720px) {
+  .edit-ticket {
+    grid-template-columns: 96px minmax(0, 1fr) auto;
+    padding: 0 8px 0 0;
+  }
+
+  .edit-ticket img,
+  .edit-ticket-blank {
+    display: block;
+    width: 96px;
+    height: 76px;
+    object-fit: cover;
+  }
+
+  .edit-ticket-name {
+    padding: 8px 16px;
+  }
+
+  .edit-ticket-controls {
+    grid-column: auto;
+    gap: 8px;
+  }
+
+  .edit-leg {
+    grid-template-columns: 48px minmax(0, 1fr);
+    padding-left: 24px;
+  }
+
+  .edit-leg-text {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 68px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .edit-title input {
+    font-size: 38px;
+  }
+
+  .edit-panel-save {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: auto;
+  }
+
+  .edit-panel-save .button {
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  .edit-savebar {
+    display: none;
   }
 }

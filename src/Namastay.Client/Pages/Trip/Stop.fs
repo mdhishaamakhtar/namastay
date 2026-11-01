@@ -6,21 +6,46 @@ open Namastay.Client.Pages.Trip.State
 open Namastay.Shared
 open Namastay.Shared.Contracts
 
-let private modeName =
-    function
-    | TravelMode.Flight -> "Flight"
-    | TravelMode.Train -> "Train"
-    | TravelMode.Road -> "Road"
-    | TravelMode.Ferry -> "Ferry"
-    | TravelMode.CableCar -> "Cable car"
+let private legTitle (stop: TripStop) (leg: TravelLeg) =
+    match leg.Mode with
+    | TravelMode.Flight -> $"Fly to {stop.Name}"
+    | TravelMode.Train -> $"Train to {stop.Name}"
+    | TravelMode.Road -> $"Drive to {stop.Name}"
+    | TravelMode.Ferry -> $"Ferry to {stop.Name}"
+    | TravelMode.CableCar -> $"Cable car to {stop.Name}"
 
-let private legText (leg: TravelLeg) =
-    let time = Duration.describe leg.MinutesMin leg.MinutesMax
+let private capitalised (text: string) =
+    text.Substring(0, 1).ToUpperInvariant() + text.Substring 1
 
-    let note =
-        leg.ComfortNote |> Option.map (fun text -> " " + text) |> Option.defaultValue ""
+let private legHeadline (stop: TripStop) (leg: TravelLeg) =
+    Html.span [
+        prop.className "stop-leg-text"
+        prop.children [
+            Html.strong (legTitle stop leg)
+            Html.span (capitalised (Duration.describe leg.MinutesMin leg.MinutesMax))
+        ]
+    ]
 
-    $"{modeName leg.Mode}, {time}.{note}"
+/// The line that joins two stops. The useful detail opens from it.
+let private travelLeg (stop: TripStop) (leg: TravelLeg) =
+    Html.div [
+        prop.className "stop-leg"
+        prop.children [
+            Html.div [
+                prop.className "stop-leg-line"
+                prop.children [
+                    Html.span [ prop.className "stop-leg-mark"; prop.children [ Icons.travel leg.Mode ] ]
+                ]
+            ]
+            match leg.ComfortNote with
+            | Some note ->
+                Html.details [
+                    prop.className "stop-leg-more"
+                    prop.children [ Html.summary [ legHeadline stop leg; Icons.chevron false ]; Html.p note ]
+                ]
+            | None -> Html.div [ prop.className "stop-leg-plain"; prop.children [ legHeadline stop leg ] ]
+        ]
+    ]
 
 let private dayRange first days =
     if days = 1 then
@@ -139,7 +164,7 @@ let view token (trip: Trip) (openSlug: string option) dispatch firstDay (stop: T
         prop.className "stop"
         prop.children [
             match stop.Arrival with
-            | Some leg -> Html.p [ prop.className "stop-leg"; prop.text (legText leg) ]
+            | Some leg -> travelLeg stop leg
             | None -> Html.none
             Html.div [
                 prop.className "stop-card"

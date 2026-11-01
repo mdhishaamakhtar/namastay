@@ -17,6 +17,7 @@ type Model = {
     Password: string
     Working: bool
     Google: bool
+    Photo: GuidePhoto option
     Error: string option
     Fields: FieldError list
 }
@@ -36,6 +37,7 @@ let init () =
         Password = ""
         Working = false
         Google = false
+        Photo = None
         Error = None
         Fields = []
     },
@@ -56,7 +58,13 @@ let private submit (model: Model) =
 
 let update msg (model: Model) =
     match msg with
-    | OptionsLoaded(Ok options) -> { model with Google = options.Google }, Cmd.none
+    | OptionsLoaded(Ok options) ->
+        {
+            model with
+                Google = options.Google
+                Photo = options.Photo
+        },
+        Cmd.none
     | OptionsLoaded(Error _) -> model, Cmd.none
     | SwitchMode ->
         {

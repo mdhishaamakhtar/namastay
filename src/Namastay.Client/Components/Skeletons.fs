@@ -88,22 +88,17 @@ let private savedTrip index =
 let myTrips (label: string) =
     waiting label "my-trips" [ for index in 1..2 -> savedTrip index ]
 
-let private field index =
-    Html.div [
-        prop.key (string index)
-        prop.className "form-field"
-        prop.children [ bone "bone-short"; bone "bone-input" ]
-    ]
-
-/// The form for changing a trip.
+/// The page for changing a trip.
 let editor (label: string) =
-    waiting label "edit-form" [
-        field 1
-        field 2
-        bone "bone-title"
-        bone "bone-stop"
-        bone "bone-stop"
-        bone "bone-stop"
+    waiting label "trip" [
+        Html.aside [
+            prop.className "trip-panel"
+            prop.children [ bone "bone-short"; bone "bone-heading"; bone "bone-track"; bone "bone-input" ]
+        ]
+        Html.div [
+            prop.className "trip-content"
+            prop.children [ bone "bone-stop"; bone "bone-stop"; bone "bone-stop" ]
+        ]
     ]
 
 /// The swipe card and its buttons.

@@ -12,7 +12,10 @@ type Account = {
     Provider: SignInProvider
 }
 
-type SignInOptions = { Google: bool }
+type SignInOptions = {
+    Google: bool
+    Photo: GuidePhoto option
+}
 
 type SavedTripSummary = {
     Id: string
