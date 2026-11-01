@@ -4,6 +4,7 @@ open System
 open System.IO
 open System.Net
 open System.Security.Cryptography
+open System.Threading
 open System.Threading.Tasks
 open Amazon.Runtime
 open Amazon.S3
@@ -15,6 +16,8 @@ type MediaSettings = {
     Bucket: string
     AccessKey: string
     SecretKey: string
+    /// Local RustFS needs the bucket in the path. Railway Buckets take it in the host name.
+    PathStyle: bool
 }
 
 type MediaStore = {
@@ -45,7 +48,7 @@ module MediaStore =
         let config =
             AmazonS3Config(
                 ServiceURL = settings.Endpoint,
-                ForcePathStyle = true,
+                ForcePathStyle = settings.PathStyle,
                 AuthenticationRegion = "auto",
                 RequestChecksumCalculation = RequestChecksumCalculation.WHEN_REQUIRED,
                 ResponseChecksumValidation = ResponseChecksumValidation.WHEN_REQUIRED
@@ -110,32 +113,61 @@ module MediaStore =
     let private md5 (path: string) =
         Convert.ToHexString(MD5.HashData(File.ReadAllBytes path)).ToLowerInvariant()
 
+    /// Removes what the bucket holds and `folder` doesn't, keeping a copy in `backup` first.
+    let prune (store: MediaStore) (folder: string) (backup: string) : Task<int> =
+        task {
+            let! tags = existingTags store
+            let isLocal (key: string) = File.Exists(Path.Combine(folder, key))
+            let stale = tags.Keys |> Seq.filter (isLocal >> not) |> Seq.toList
+
+            for key in stale do
+                use! response = store.Client.GetObjectAsync(store.Bucket, key)
+                let target = Path.Combine(backup, key)
+                Directory.CreateDirectory(Path.GetDirectoryName target) |> ignore
+                use output = File.Create target
+                do! response.ResponseStream.CopyToAsync output
+                let! _ = store.Client.DeleteObjectAsync(store.Bucket, key)
+                ()
+
+            return stale.Length
+        }
+
+    let private uploadsAtOnce = 16
+
     /// Uploads files that are new or changed, and returns how many it sent.
     let sync (store: MediaStore) (folder: string) : Task<int> =
         task {
             do! ensureBucket store
             let! tags = existingTags store
             let mutable sent = 0
+            let files = Directory.GetFiles(folder, "*", SearchOption.AllDirectories)
+            let options = ParallelOptions(MaxDegreeOfParallelism = uploadsAtOnce)
 
-            for path in Directory.GetFiles(folder, "*", SearchOption.AllDirectories) do
-                let key = Path.GetRelativePath(folder, path).Replace('\\', '/')
+            let upload (path: string) (cancel: CancellationToken) =
+                ValueTask(
+                    task {
+                        let key = Path.GetRelativePath(folder, path).Replace('\\', '/')
 
-                let unchanged =
-                    match tags.TryGetValue key with
-                    | true, tag -> tag = md5 path
-                    | _ -> false
+                        let unchanged =
+                            match tags.TryGetValue key with
+                            | true, tag -> tag = md5 path
+                            | _ -> false
 
-                if not unchanged then
-                    let request =
-                        PutObjectRequest(
-                            BucketName = store.Bucket,
-                            Key = key,
-                            FilePath = path,
-                            ContentType = contentType key
-                        )
+                        if not unchanged then
+                            let request =
+                                PutObjectRequest(
+                                    BucketName = store.Bucket,
+                                    Key = key,
+                                    FilePath = path,
+                                    ContentType = contentType key
+                                )
 
-                    let! _ = store.Client.PutObjectAsync request
-                    sent <- sent + 1
+                            let! _ = store.Client.PutObjectAsync(request, cancel)
+                            Interlocked.Increment &sent |> ignore
+                    }
+                    :> Task
+                )
 
+            do! Parallel.ForEachAsync(files, options, Func<_, _, _> upload)
             return sent
         }

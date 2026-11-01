@@ -96,6 +96,7 @@ type MediaFixture() =
             Bucket = bucket
             AccessKey = "namastay"
             SecretKey = "namastay-local"
+            PathStyle = true
         }
 
     interface IAsyncLifetime with

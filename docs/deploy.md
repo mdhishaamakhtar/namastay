@@ -31,18 +31,26 @@ Keep the defaults: **HTML Caching** on Auto and **Purge Cache on Deploy** on HTM
 
 To check it, request a page or photo twice. The second answer should say `x-cache: HIT`, and `/.railway/cdn-trace` shows which edge location answered. Hits don't reach the service, so its logs will undercount visitors.
 
-## First deploy
+## Loading data
 
-The website saves its pages from the live API while building, so the API and its data come first.
+Importing row by row over a tunnel takes far too long, so production gets a copy of a clean local database.
 
-1. Deploy the API.
-2. Load the data from a machine that has `data/`:
-   `NAMASTAY_DB=<production connection string> make import`, then `make media-sync` with the `MEDIA_*` variables set.
-3. Deploy the website.
+1. Rebuild local: drop the `namastay` database, create it again, then `make import`.
+2. Open a tunnel to Postgres: `railway ssh config --service Postgres --alias nst-pg --path <file>`, then `ssh -F <file> -N -L 15432:127.0.0.1:5432 nst-pg`.
+3. Reset production, which also deletes user accounts and saved trips, so only do this before launch: `psql -c "drop schema public cascade" -c "create schema public"`.
+4. Stream it: `pg_dump --no-owner --no-privileges | psql --single-transaction`, pointing `psql` at the tunnel.
+
+Keep the database off the public internet. Don't add a TCP proxy.
+
+Once there are real users, a full reset would delete them, so run `make import` through the tunnel instead. It keeps users and trips, but it's slow until the importer batches its writes.
+
+## Photos
+
+`make media-sync` uploads what's new or changed, 16 at a time. Set `MEDIA_ENDPOINT`, `MEDIA_BUCKET`, `MEDIA_ACCESS_KEY` and `MEDIA_SECRET_KEY`, and `MEDIA_PATH_STYLE=false` for Railway. `make media-prune` removes bucket files gone from `data/media`, keeping copies in `MEDIA_BACKUP`.
 
 ## After changing travel data
 
-1. Import as above.
+1. Load the data as above.
 2. Wait 5 minutes, so cached API data expires. If you replaced a photo at the same path, run `railway cdn purge all` on the API, because photos cache for a year.
 3. Change the website's `CONTENT_STAMP` variable to anything new. That rebuilds its pages, and the deploy clears the cached ones.
 

@@ -1,4 +1,4 @@
-.PHONY: setup up down dev client test-all test-e2e import import-check media-sync sample test test-unit test-integration coverage format lint lint-all check check-all
+.PHONY: setup up down dev client test-all test-e2e import import-check media-sync media-prune sample test test-unit test-integration coverage format lint lint-all check check-all
 
 LINT = dotnet dotnet-fsharplint lint --lint-config fsharplint.json
 
@@ -26,6 +26,10 @@ import:
 
 media-sync:
 	dotnet run --project src/Namastay.Importer -- --media data/media
+
+# Removes photos from the bucket that are gone from data/media, keeping a copy in MEDIA_BACKUP.
+media-prune:
+	dotnet run --project src/Namastay.Importer -- --media-prune data/media $(MEDIA_BACKUP)
 
 sample:
 	dotnet run --project src/Namastay.Importer -- samples/data

@@ -93,6 +93,24 @@ type MediaTests(media: MediaFixture) =
         }
 
     [<Fact>]
+    member _.``prune removes only what is gone from the folder and keeps a copy``() =
+        task {
+            let! store = store ()
+            let folder = tempFolder [ "photos/kept.svg", "<svg/>"; "photos/old.svg", "<g/>" ]
+            let! _ = MediaStore.sync store folder
+            File.Delete(Path.Combine(folder, "photos/old.svg"))
+            let backup = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString "N")
+            let! removed = MediaStore.prune store folder backup
+            Assert.Equal(1, removed)
+            Assert.Equal("<g/>", File.ReadAllText(Path.Combine(backup, "photos/old.svg")))
+            let! gone = MediaStore.tryGet store "photos/old.svg"
+            let! kept = MediaStore.tryGet store "photos/kept.svg"
+            Assert.True gone.IsNone
+            Assert.True kept.IsSome
+            kept.Value.Content.Dispose()
+        }
+
+    [<Fact>]
     member _.``store outage fails rather than looking like a missing file``() =
         task {
             let store =
@@ -101,6 +119,7 @@ type MediaTests(media: MediaFixture) =
                     Bucket = "none"
                     AccessKey = "local"
                     SecretKey = "local"
+                    PathStyle = true
                 }
 
             let! error =

@@ -56,17 +56,25 @@ let private setting (name: string) (fallback: string) =
     | "" -> fallback
     | value -> value
 
-let private syncMedia (folder: string) =
-    let store =
-        MediaStore.create {
-            Endpoint = setting "MEDIA_ENDPOINT" "http://localhost:9000"
-            Bucket = setting "MEDIA_BUCKET" "namastay-media"
-            AccessKey = setting "MEDIA_ACCESS_KEY" "namastay"
-            SecretKey = setting "MEDIA_SECRET_KEY" "namastay-local"
-        }
+let private mediaStore () =
+    MediaStore.create {
+        Endpoint = setting "MEDIA_ENDPOINT" "http://localhost:9000"
+        Bucket = setting "MEDIA_BUCKET" "namastay-media"
+        AccessKey = setting "MEDIA_ACCESS_KEY" "namastay"
+        SecretKey = setting "MEDIA_SECRET_KEY" "namastay-local"
+        PathStyle = setting "MEDIA_PATH_STYLE" "true" = "true"
+    }
 
-    let sent = (MediaStore.sync store folder).GetAwaiter().GetResult()
+let private syncMedia (folder: string) =
+    let sent = (MediaStore.sync (mediaStore ()) folder).GetAwaiter().GetResult()
     printfn "Uploaded %d file(s)." sent
+    0
+
+let private pruneMedia (folder: string) (backup: string) =
+    let removed =
+        (MediaStore.prune (mediaStore ()) folder backup).GetAwaiter().GetResult()
+
+    printfn "Removed %d file(s), with copies in %s." removed backup
     0
 
 [<EntryPoint>]
@@ -74,7 +82,8 @@ let main args =
     match List.ofArray args with
     | [ "--dry-run"; folder ] -> import Run.DryRun folder
     | [ "--media"; folder ] -> syncMedia folder
+    | [ "--media-prune"; folder; backup ] -> pruneMedia folder backup
     | [ folder ] -> import Run.Apply folder
     | _ ->
-        eprintfn "Usage: Namastay.Importer [--dry-run | --media] <folder>"
+        eprintfn "Usage: Namastay.Importer [--dry-run | --media | --media-prune] <folder> [backup]"
         2

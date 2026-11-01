@@ -41,6 +41,7 @@ module Settings =
                     Bucket = configuration["Media:Bucket"]
                     AccessKey = configuration["Media:AccessKey"]
                     SecretKey = configuration["Media:SecretKey"]
+                    PathStyle = configuration["Media:PathStyle"] = "true"
                 }
                 Site = {
                     TokenKey = configuration["Auth:TokenKey"]

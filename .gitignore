@@ -45,3 +45,4 @@ dist-e2e/
 
 # The share image is our own artwork, not a travel photo.
 !src/Namastay.Client/public/og.png
+!.github/assets/namastay-preview.png
