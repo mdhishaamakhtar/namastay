@@ -164,9 +164,24 @@ type HomeTests(browser: BrowserFixture) =
         task {
             let! page = browser.NewPage()
             let! _ = page.GotoAsync(browser.BaseUrl + "/food")
-            do! page.Locator(".food-lines a").First.ClickAsync()
+            do! page.Locator(".region-card li a").First.ClickAsync()
             do! page.WaitForURLAsync "**/dishes/**"
             do! page.Locator(".listing").First.WaitForAsync()
+        }
+
+    [<Fact>]
+    member _.``food search finds a dish and says when it can't``() =
+        task {
+            let! page = browser.NewPage()
+            let! _ = page.GotoAsync(browser.BaseUrl + "/food")
+
+            let search =
+                page.GetByRole(AriaRole.Searchbox, PageGetByRoleOptions(Name = "Find a dish"))
+
+            do! search.FillAsync "soup"
+            do! page.Locator(".region-card li a", PageLocatorOptions(HasText = "Example soup")).WaitForAsync()
+            do! search.FillAsync "nothing like this"
+            do! page.GetByText("We don't have that dish yet.").WaitForAsync()
         }
 
     [<Fact>]

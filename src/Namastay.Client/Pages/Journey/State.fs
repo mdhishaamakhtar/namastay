@@ -48,6 +48,7 @@ type Msg =
     | GraphLoaded of Result<JourneyGraph, Client.ClientError>
     | Decided of liked: bool
     | Chose of Choice
+    | FinishEarly
     | BuildTrip
     | TripBuilt of Result<SavedTrip, Client.ClientError>
 
@@ -166,6 +167,7 @@ let update msg (model: Model) =
         },
         Cmd.none
     | Decided liked, Remote.Loaded graph, Step.Swiping when not model.Queue.IsEmpty -> decide graph liked model
+    | FinishEarly, _, Step.Swiping when not model.Answers.IsEmpty -> { model with Step = Step.Asking 0 }, Cmd.none
     | Chose choice, _, Step.Asking index ->
         let chosen = {
             model with
@@ -185,4 +187,5 @@ let update msg (model: Model) =
         model, Cmd.ofEffect (fun _ -> Browser.navigate (Route.url [ "shareToken", saved.ShareToken ] [] Routes.trip))
     | TripBuilt(Error error), _, _ -> { model with Step = Step.Failed error }, Cmd.none
     | Decided _, _, _
+    | FinishEarly, _, _
     | Chose _, _, _ -> model, Cmd.none

@@ -278,6 +278,31 @@ button:focus-visible {
   display: none;
 }
 
+.journey-finish {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.journey-finish p {
+  margin: 0;
+  font-size: 17px;
+}
+
+.journey-build {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .card-label {
   flex: 1;
   display: flex;
@@ -2537,6 +2562,8 @@ button:focus-visible {
 }
 
 .region-card {
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   border-radius: 2px;
   background: #ffffff;
@@ -2569,6 +2596,7 @@ button:focus-visible {
 }
 
 .region-card ul {
+  flex: 1;
   display: flex;
   flex-direction: column;
   margin: 0;
@@ -2583,6 +2611,12 @@ button:focus-visible {
   min-height: 34px;
   color: var(--ink);
   text-decoration: none;
+}
+
+.region-all {
+  padding: 0 14px 14px;
+  color: var(--ink);
+  font-weight: 600;
 }
 
 .signed-main {
@@ -2736,7 +2770,6 @@ button:focus-visible {
 
   .region-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    align-items: start;
     gap: 16px;
   }
 
@@ -2781,14 +2814,6 @@ button:focus-visible {
 
 .region-card li a {
   line-height: 1.2;
-}
-
-.food-lines li + li {
-  border-top: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
-}
-
-.food-lines a {
-  font-weight: 500;
 }
 
 .home-food-grid {

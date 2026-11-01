@@ -56,6 +56,22 @@ let private mix (graph: JourneyGraph) (model: Model) =
         ]
     ]
 
+let private finish (answered: int) dispatch =
+    Html.div [
+        prop.className "journey-finish"
+        prop.children [
+            match JourneyPath.cheer answered with
+            | Some line -> Html.p [ prop.key line; prop.className "reveal"; prop.text line ]
+            | None -> Html.none
+            if answered > 0 then
+                Html.button [
+                    prop.className "journey-build press"
+                    prop.onClick (fun _ -> dispatch FinishEarly)
+                    prop.text "Build my trip now"
+                ]
+        ]
+    ]
+
 let private swiping graph (model: Model) dispatch =
     let current =
         model.Queue
@@ -77,6 +93,7 @@ let private swiping graph (model: Model) dispatch =
                 )
                 prop.children [ mix graph model; SwipeCard.SwipeCard(card, Decided >> dispatch) ]
             ]
+            finish model.Answers.Length dispatch
         ]
     | None ->
         shell "" [

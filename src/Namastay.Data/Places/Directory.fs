@@ -6,7 +6,6 @@ open Namastay.Data
 open Namastay.Shared
 open Namastay.Shared.Contracts
 
-let private mostDishes = 6
 let private plainColour = "#3A2C0A"
 
 [<CLIMutable>]
@@ -82,7 +81,6 @@ let private toFoodRegion (rows: DishRow list) = {
     Dishes =
         rows
         |> List.distinctBy _.Dish
-        |> List.truncate mostDishes
         |> List.map (fun row -> {
             Slug = PlaceName.slug row.Dish
             Name = row.Dish

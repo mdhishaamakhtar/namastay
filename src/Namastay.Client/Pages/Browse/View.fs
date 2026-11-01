@@ -10,7 +10,6 @@ open Namastay.Shared.Contracts
 
 type private Plan = {
     Label: string
-    Note: string
     Scope: string option
     Slug: string
     Name: string
@@ -22,6 +21,9 @@ let private encode (text: string) : string = jsNative
 /// Region names read mid-sentence, like "the Himalaya", so a heading capitalises them.
 let private heading (text: string) =
     text.Substring(0, 1).ToUpperInvariant() + text.Substring 1
+
+/// Cards stay the same height, and the link leads to the rest.
+let private shownInCard = 5
 
 let private planUrl (plan: Plan) =
     match plan.Scope with
@@ -37,13 +39,11 @@ let private planButton (plan: Plan) =
                 prop.href (planUrl plan)
                 prop.text plan.Label
             ]
-            Html.span plan.Note
         ]
     ]
 
 let private anywhere = {
     Label = "Plan a trip"
-    Note = "Cards from all of India."
     Scope = None
     Slug = ""
     Name = ""
@@ -134,7 +134,22 @@ let private placeLine (place: PlaceSummary) =
         ]
     ]
 
-let private regionCard (region: DirectoryRegion) =
+let private seeAll (label: string) (href: string) =
+    Html.a [ prop.className "region-all"; prop.href href; prop.text label ]
+
+let private counted (count: int) (noun: string) =
+    if count = 1 then $"1 {noun}" else $"{count} {noun}s"
+
+/// Searching shows every match. Browsing shows a few and links to the rest.
+let private regionCard (searching: bool) (region: DirectoryRegion) =
+    let href = Route.url [ "slug", region.Slug ] [] Routes.regionPage
+
+    let lines =
+        if searching then
+            region.Places
+        else
+            region.Places |> List.truncate shownInCard
+
     Html.section [
         prop.key region.Slug
         prop.className "region-card"
@@ -142,7 +157,7 @@ let private regionCard (region: DirectoryRegion) =
             Html.a [
                 prop.className "region-top"
                 prop.style [ style.backgroundColor region.Colour ]
-                prop.href (Route.url [ "slug", region.Slug ] [] Routes.regionPage)
+                prop.href href
                 prop.children [
                     Html.img [ prop.src $"/regions/{region.Slug}.svg"; prop.alt "" ]
                     Html.span [
@@ -151,19 +166,30 @@ let private regionCard (region: DirectoryRegion) =
                     ]
                 ]
             ]
-            Html.ul [ prop.children (region.Places |> List.map placeLine) ]
+            Html.ul [ prop.children (lines |> List.map placeLine) ]
+            if not searching then
+                seeAll ("All " + counted region.Places.Length "place") href
         ]
     ]
 
-let private matching (query: string) (region: DirectoryRegion) =
-    let wanted = query.Trim().ToLowerInvariant()
+let private matches (query: string) (name: string) =
+    name.ToLowerInvariant().Contains(query.Trim().ToLowerInvariant())
 
-    {
-        region with
-            Places =
-                region.Places
-                |> List.filter (fun place -> place.Name.ToLowerInvariant().Contains wanted)
-    }
+let private matching (query: string) (region: DirectoryRegion) = {
+    region with
+        Places = region.Places |> List.filter (fun place -> matches query place.Name)
+}
+
+let private searchBox (label: string) (hint: string) (model: Model) dispatch =
+    Html.input [
+        prop.className "search-input"
+        prop.type' "search"
+        prop.ariaLabel label
+        prop.placeholder hint
+        prop.autoComplete "off"
+        prop.value model.Query
+        prop.onChange (QueryChanged >> dispatch)
+    ]
 
 let private placesBody (model: Model) dispatch (regions: DirectoryRegion list) =
     let shown =
@@ -174,15 +200,7 @@ let private placesBody (model: Model) dispatch (regions: DirectoryRegion list) =
     Html.section [
         prop.className "browse-body"
         prop.children [
-            Html.input [
-                prop.className "search-input"
-                prop.type' "search"
-                prop.ariaLabel "Find a place"
-                prop.placeholder "Find a place: Goa, Varanasi, Ladakh"
-                prop.autoComplete "off"
-                prop.value model.Query
-                prop.onChange (QueryChanged >> dispatch)
-            ]
+            searchBox "Find a place" "Find a place: Goa, Varanasi, Ladakh" model dispatch
             if shown.IsEmpty then
                 Html.p [
                     prop.className "no-results"
@@ -191,7 +209,7 @@ let private placesBody (model: Model) dispatch (regions: DirectoryRegion list) =
             else
                 Html.div [
                     prop.className "region-grid reveal"
-                    prop.children (shown |> List.map regionCard)
+                    prop.children (shown |> List.map (regionCard (model.Query.Trim() <> "")))
                 ]
         ]
     ]
@@ -224,7 +242,15 @@ let private dishLine (dish: FoodDish) =
         ]
     ]
 
-let private foodRegion (region: FoodRegion) =
+let private foodRegion (searching: bool) (region: FoodRegion) =
+    let lines =
+        if searching then
+            region.Dishes
+        else
+            region.Dishes |> List.truncate shownInCard
+
+    let href = Route.url [ "slug", region.Slug ] [] Routes.foodRegionPage
+
     Html.section [
         prop.key region.Slug
         prop.className "region-card"
@@ -232,7 +258,7 @@ let private foodRegion (region: FoodRegion) =
             Html.a [
                 prop.className "region-top"
                 prop.style [ style.backgroundColor region.Colour ]
-                prop.href (Route.url [ "slug", region.Slug ] [] Routes.foodRegionPage)
+                prop.href href
                 prop.children [
                     Html.img [ prop.src $"/regions/food-{region.Slug}.svg"; prop.alt "" ]
                     Html.span [
@@ -241,10 +267,9 @@ let private foodRegion (region: FoodRegion) =
                     ]
                 ]
             ]
-            Html.ul [
-                prop.className "food-lines"
-                prop.children (region.Dishes |> List.map dishLine)
-            ]
+            Html.ul [ prop.children (lines |> List.map dishLine) ]
+            if not searching then
+                seeAll "All dishes" href
         ]
     ]
 
@@ -256,7 +281,41 @@ let private foodCard (card: LandingCard) =
         prop.children [ Label.view card.Colour (Some card.Photo) card.Title [ heading card.Place ] ]
     ]
 
-let private foodPage (page: FoodPage) =
+/// One card per region would bury the regions, so only the first few lead.
+let private leadingFood = 3
+
+let private matchingDishes (query: string) (region: FoodRegion) = {
+    region with
+        Dishes = region.Dishes |> List.filter (fun dish -> matches query dish.Name)
+}
+
+let private foodResults (model: Model) (page: FoodPage) =
+    let shown =
+        page.Regions
+        |> List.map (matchingDishes model.Query)
+        |> List.filter (fun region -> not region.Dishes.IsEmpty)
+
+    if shown.IsEmpty then
+        Html.p [ prop.className "no-results"; prop.text "We don't have that dish yet." ]
+    else
+        Html.div [
+            prop.className "region-grid reveal"
+            prop.children (shown |> List.map (foodRegion true))
+        ]
+
+let private foodBrowsing (page: FoodPage) = [
+    Html.div [
+        prop.className "label-grid home-food-grid reveal"
+        prop.children (page.Cards |> List.truncate leadingFood |> List.map foodCard)
+    ]
+    Html.h2 "By region"
+    Html.div [
+        prop.className "region-grid reveal"
+        prop.children (page.Regions |> List.map (foodRegion false))
+    ]
+]
+
+let private foodPage (model: Model) dispatch (page: FoodPage) =
     Html.div [
         prop.className "browse"
         prop.children [
@@ -272,20 +331,11 @@ let private foodPage (page: FoodPage) =
                     Html.section [
                         prop.className "browse-body"
                         prop.children [
-                            Html.div [
-                                prop.className "label-grid home-food-grid reveal"
-                                prop.children (page.Cards |> List.map foodCard)
-                            ]
-                        ]
-                    ]
-                    Html.section [
-                        prop.className "browse-body"
-                        prop.children [
-                            Html.h2 "By region"
-                            Html.div [
-                                prop.className "region-grid reveal"
-                                prop.children (page.Regions |> List.map foodRegion)
-                            ]
+                            searchBox "Find a dish" "Find a dish: thukpa, dosa, kachori" model dispatch
+                            if model.Query.Trim() = "" then
+                                yield! foodBrowsing page
+                            else
+                                foodResults model page
                         ]
                     ]
                 ]
@@ -294,9 +344,8 @@ let private foodPage (page: FoodPage) =
     ]
 
 let private listedPage (target: Browse) (page: BrowsePage) =
-    let plan label note scope = {
+    let plan label scope = {
         Label = label
-        Note = note
         Scope = Some scope
         Slug = page.Slug
         Name = page.Name
@@ -323,7 +372,7 @@ let private listedPage (target: Browse) (page: BrowsePage) =
             ("All food", Routes.foodPage.Template)
             $"Food of {page.Name}"
             $"{page.Items.Length} dishes worth finding."
-            (plan $"Plan a food trip in {page.Name}" $"Food cards from {page.Name} only. Your trip stays here." "food")
+            (plan $"Plan a food trip in {page.Name}" "food")
             "/feelings/food.svg"
             "Dishes here"
             dishUrl
@@ -333,7 +382,7 @@ let private listedPage (target: Browse) (page: BrowsePage) =
             allPlaces
             page.Name
             $"{page.Items.Length} places that suit it."
-            (plan $"Plan a {page.Name.ToLowerInvariant()} trip" "Cards about this, from anywhere in India." "feeling")
+            (plan $"Plan a {page.Name.ToLowerInvariant()} trip" "feeling")
             $"/feelings/{slug}.svg"
             "Places for this"
             guideUrl
@@ -343,7 +392,7 @@ let private listedPage (target: Browse) (page: BrowsePage) =
             allPlaces
             page.Name
             $"{page.Items.Length} places."
-            (plan $"Plan a trip in {page.Name}" $"Cards from {page.Name} only. Your trip stays here." "region")
+            (plan $"Plan a trip in {page.Name}" "region")
             $"/regions/{page.Slug}.svg"
             "Places here"
             guideUrl
@@ -351,7 +400,6 @@ let private listedPage (target: Browse) (page: BrowsePage) =
 let private dishPage (page: DishPage) =
     let plan = {
         Label = $"Plan a trip around {page.Name.ToLowerInvariant()}"
-        Note = "Takes you to the places below."
         Scope = Some "dish"
         Slug = page.Slug
         Name = page.Name
@@ -389,6 +437,6 @@ let view (model: Model) dispatch =
             ]
         ]
     | Remote.Loaded(Content.Places regions) -> placesPage model dispatch regions
-    | Remote.Loaded(Content.Food page) -> foodPage page
+    | Remote.Loaded(Content.Food page) -> foodPage model dispatch page
     | Remote.Loaded(Content.Listed page) -> listedPage model.Target page
     | Remote.Loaded(Content.Dish page) -> dishPage page

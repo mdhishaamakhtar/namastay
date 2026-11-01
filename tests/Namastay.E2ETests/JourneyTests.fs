@@ -73,6 +73,8 @@ type JourneyTests(browser: BrowserFixture) =
                 left <- remaining > 0
         }
 
+    let buildNow (page: IPage) = button page "Build my trip now"
+
     let answerQuestions (page: IPage) =
         task {
             for choice in [ "Oct"; "About a week"; "Just me"; "Some comfort"; "Whatever is best" ] do
@@ -200,6 +202,19 @@ type JourneyTests(browser: BrowserFixture) =
             do! answerQuestions page
             do! page.WaitForURLAsync "**/trip/**"
             do! page.GetByRole(AriaRole.Listitem).First.WaitForAsync()
+        }
+
+    [<Fact>]
+    member _.``a swipe or two is enough to stop and build``() =
+        task {
+            let! page = openJourney ()
+            let! before = (buildNow page).CountAsync()
+            Assert.Equal(0, before)
+            do! (button page "Not for me").ClickAsync()
+            do! waitForCard page 2
+            do! (buildNow page).ClickAsync()
+            do! answerQuestions page
+            do! page.WaitForURLAsync "**/trip/**"
         }
 
     [<Fact>]

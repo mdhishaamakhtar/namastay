@@ -218,3 +218,22 @@ let ``journey ends when cards run out`` () =
             100)
             .Length
     )
+
+[<Theory>]
+[<InlineData(0)>]
+[<InlineData(3)>]
+let ``the first few cards go uncheered`` (answered: int) =
+    Assert.Equal(None, JourneyPath.cheer answered)
+
+[<Fact>]
+let ``cheering starts once a few cards are done`` () =
+    Assert.True((JourneyPath.cheer 4).IsSome)
+
+[<Fact>]
+let ``the cheer holds between milestones`` () =
+    Assert.Equal(JourneyPath.cheer 8, JourneyPath.cheer 11)
+    Assert.NotEqual(JourneyPath.cheer 8, JourneyPath.cheer 12)
+
+[<Fact>]
+let ``the last cards say how close the end is`` () =
+    Assert.Equal(Some "Just a few to go.", JourneyPath.cheer (JourneyPath.maxCards - 3))

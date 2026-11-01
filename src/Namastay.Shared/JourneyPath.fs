@@ -10,6 +10,21 @@ let private likesToLead = 3
 let private leadToChange = 2
 let private mixSize = 3
 
+let private cheerEvery = 4
+let private nearTheEnd = 4
+
+/// Something to say once a few cards are done. It holds until the next milestone.
+let cheer (answered: int) =
+    if maxCards - answered <= nearTheEnd then
+        Some "Just a few to go."
+    else
+        match answered / cheerEvery with
+        | 0 -> None
+        | 1 -> Some "Nice. Every swipe sharpens your trip."
+        | 2 -> Some "The more you swipe, the better we can build it."
+        | 3 -> Some "Halfway there. Your India is taking shape."
+        | _ -> Some "Good picks. Keep going, or build it now."
+
 let private find (graph: JourneyGraph) (slug: string) =
     graph.Cards |> List.tryFind (fun card -> card.Slug = slug)
 
