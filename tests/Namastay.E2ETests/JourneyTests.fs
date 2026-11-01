@@ -138,9 +138,14 @@ type JourneyTests(browser: BrowserFixture) =
                 do! waitForTitle page next
 
             do! (button page "Love it").ClickAsync()
-            do! page.WaitForTimeoutAsync(700.0f)
-            let! after = stage ()
-            Assert.NotEqual<string>(first, after)
+
+            let! _ =
+                page.WaitForFunctionAsync(
+                    "before => getComputedStyle(document.querySelector('.journey')).backgroundColor !== before",
+                    first
+                )
+
+            ()
         }
 
     [<Fact>]

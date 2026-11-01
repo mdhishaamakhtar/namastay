@@ -87,10 +87,10 @@ type TripTests(browser: BrowserFixture) =
             let! _ = page.GotoAsync $"{browser.BaseUrl}/trip/{token}"
             do! page.Locator(".trip .bone").First.WaitForAsync()
 
-            let! colour =
-                page.EvaluateAsync<string> "getComputedStyle(document.querySelector('.trip-panel')).backgroundColor"
-
-            Assert.Equal("rgb(239, 230, 208)", colour)
+            do!
+                Assertions
+                    .Expect(page.Locator(".trip-panel").First)
+                    .ToHaveCSSAsync("background-color", "rgb(239, 230, 208)")
         }
 
     [<Fact>]
@@ -148,10 +148,10 @@ type TripTests(browser: BrowserFixture) =
         task {
             let! page, _ = openTrip ()
 
-            let! colour =
-                page.EvaluateAsync<string> "getComputedStyle(document.querySelector('.stop-head')).backgroundColor"
-
-            Assert.Equal("rgb(47, 93, 58)", colour)
+            do!
+                Assertions
+                    .Expect(page.Locator(".stop-head").First)
+                    .ToHaveCSSAsync("background-color", "rgb(47, 93, 58)")
         }
 
     [<Fact>]
@@ -159,10 +159,10 @@ type TripTests(browser: BrowserFixture) =
         task {
             let! page, _ = openTrip ()
 
-            let! colour =
-                page.EvaluateAsync<string> "getComputedStyle(document.querySelector('.trip-panel')).backgroundColor"
-
-            Assert.Equal("rgb(47, 93, 58)", colour)
+            do!
+                Assertions
+                    .Expect(page.Locator(".trip-panel").First)
+                    .ToHaveCSSAsync("background-color", "rgb(47, 93, 58)")
         }
 
     [<Fact>]
@@ -171,10 +171,10 @@ type TripTests(browser: BrowserFixture) =
             let! page, _ = openTrip ()
             do! page.GetByRole(AriaRole.Link, PageGetByRoleOptions(Name = "Namastay")).ClickAsync()
 
-            let! colour =
-                page.EvaluateAsync<string> "document.documentElement.style.getPropertyValue('--deep')"
+            let! _ =
+                page.WaitForFunctionAsync "document.documentElement.style.getPropertyValue('--deep') === ''"
 
-            Assert.Equal("", colour)
+            ()
         }
 
     [<Fact>]
