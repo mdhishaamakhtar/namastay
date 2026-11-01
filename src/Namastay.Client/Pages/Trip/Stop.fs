@@ -48,38 +48,64 @@ let private noticeRow (notice: TripNotice) =
         prop.children [ Html.strong (NoticeOrder.kindName notice.Kind); Html.p notice.Body ]
     ]
 
-let private moreNotices (rest: TripNotice list) =
-    Html.details [
-        prop.className "stop-notices-more"
-        prop.children [
-            Html.summary $"{rest.Length} more to know"
-            yield! rest |> List.map noticeRow
-        ]
-    ]
+/// One calm line. It still says so when something could stop the trip.
+let private noticesLabel (notices: TripNotice list) =
+    let has severity =
+        notices |> List.exists (fun notice -> notice.Severity = severity)
 
-/// Only what could stop the trip stays open, so the days stay easy to read.
+    if has NoticeSeverity.Danger then
+        "Read this before you go"
+    elif has NoticeSeverity.Permit then
+        "You need a permit, and a few things to know"
+    elif notices.Length = 1 then
+        "One thing to know"
+    else
+        "A few things to know"
+
 let private notices (trip: Trip) (stop: TripStop) =
-    let shown, rest =
+    match
         trip.Notices
         |> List.filter (fun notice -> notice.PlaceSlug = Some stop.PlaceSlug)
-        |> NoticeOrder.split _.Severity 0
+    with
+    | [] -> Html.none
+    | found ->
+        let ordered, _ = NoticeOrder.split _.Severity found.Length found
 
-    [
-        yield! shown |> List.map noticeRow
-        if not rest.IsEmpty then
-            moreNotices rest
-    ]
+        Html.details [
+            prop.className "stop-notices"
+            prop.children [
+                Html.summary [ Html.span (noticesLabel found); Icons.chevron false ]
+                yield! ordered |> List.map noticeRow
+            ]
+        ]
 
 let private guideLink token (stop: TripStop) =
     let url = Route.url [ "slug", stop.PlaceSlug ] [ "trip", token ] Routes.guidePage
 
     if stop.Custom then
-        Html.p "This is your own stop, so we haven't checked it."
+        Html.p [
+            prop.className "stop-note"
+            prop.text "This is your own stop, so we haven't checked it."
+        ]
     elif stop.Retired then
-        Html.p "This place is no longer in our guide."
+        Html.p [
+            prop.className "stop-note"
+            prop.text "This place is no longer in our guide."
+        ]
     else
         // A guide is a server page, so this is a normal link.
         Html.a [ prop.className "stop-guide"; prop.href url; prop.text "Read the full guide" ]
+
+/// Days, the stay and the notes share one label column, so every line starts in the same place.
+let private row (key: string) (label: string) (content: ReactElement) =
+    Html.div [
+        prop.key key
+        prop.className "stop-row"
+        prop.children [ Html.strong label; content ]
+    ]
+
+let private dayRow firstDay (day: TripDay) =
+    row (string day.Day) $"Day {firstDay + day.Day - 1}" (Html.span day.Plan)
 
 let private details token (trip: Trip) firstDay (stop: TripStop) =
     Html.div [
@@ -94,20 +120,11 @@ let private details token (trip: Trip) firstDay (stop: TripStop) =
             Html.div [
                 prop.className "stop-text"
                 prop.children [
-                    Html.ul [
-                        prop.className "stop-days"
-                        prop.children [
-                            for day in stop.Plans ->
-                                Html.li [
-                                    prop.key day.Day
-                                    prop.children [ Html.strong $"Day {firstDay + day.Day - 1}"; Html.span day.Plan ]
-                                ]
-                        ]
-                    ]
+                    yield! stop.Plans |> List.map (dayRow firstDay)
                     match stop.StayArea with
-                    | Some area -> Html.p [ Html.strong "Stay: "; Html.span area ]
+                    | Some area -> row "stay" "Stay" (Html.span area)
                     | None -> Html.none
-                    yield! notices trip stop
+                    notices trip stop
                     guideLink token stop
                 ]
             ]

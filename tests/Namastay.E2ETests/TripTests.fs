@@ -225,7 +225,7 @@ type TripTests(browser: BrowserFixture) =
         }
 
     [<Fact>]
-    member _.``permits stay open on a stop``() =
+    member _.``notices fold into one line that names a permit``() =
         task {
             let! page =
                 openChangedTrip (fun (json: JsonNode) ->
@@ -239,6 +239,7 @@ type TripTests(browser: BrowserFixture) =
                             )
                         ))
 
+            do! page.GetByText("You need a permit, and a few things to know").ClickAsync()
             do! page.Locator(".stop-notice", PageLocatorOptions(HasText = "You need a permit.")).WaitForAsync()
         }
 

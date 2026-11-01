@@ -813,7 +813,7 @@ button:focus-visible {
 .stop-photo img {
   display: block;
   width: 100%;
-  aspect-ratio: 8 / 5;
+  aspect-ratio: 4 / 3;
   object-fit: cover;
 }
 
@@ -826,7 +826,6 @@ button:focus-visible {
 .stop-text {
   display: flex;
   flex-direction: column;
-  gap: 8px;
   min-width: 0;
 }
 
@@ -834,19 +833,22 @@ button:focus-visible {
   margin: 0;
 }
 
-.stop-days {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.stop-days li {
+.stop-row {
   display: grid;
   grid-template-columns: 64px minmax(0, 1fr);
-  gap: 8px;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid color-mix(in srgb, currentColor 16%, transparent);
+}
+
+.stop-row:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.stop-note {
+  padding: 12px 0;
+  border-top: 1px solid color-mix(in srgb, currentColor 16%, transparent);
 }
 
 .stop-warning {
@@ -872,25 +874,41 @@ button:focus-visible {
   margin: 0;
 }
 
-.stop-notices-more {
+.stop-notices {
   border-top: 1px solid color-mix(in srgb, currentColor 16%, transparent);
-  font-size: 15px;
 }
 
-.stop-notices-more summary {
-  padding: 10px 0;
+.stop-notices summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 8px 0;
   font-weight: 600;
+  list-style: none;
   cursor: pointer;
 }
 
+.stop-notices summary::-webkit-details-marker {
+  display: none;
+}
+
+.stop-notices[open] summary svg {
+  transform: rotate(180deg);
+}
+
 .stop-guide {
+  padding: 12px 0 0;
+  border-top: 1px solid color-mix(in srgb, currentColor 16%, transparent);
   color: inherit;
   font-weight: 600;
 }
 
 @media (min-width: 720px) {
   .stop-body-photo {
-    grid-template-columns: 240px minmax(0, 1fr);
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 24px;
   }
 }
 
@@ -1398,6 +1416,11 @@ button:focus-visible {
 
   .stop-closed {
     display: block;
+  }
+
+  .stop-notices::details-content {
+    content-visibility: visible;
+    height: auto;
   }
 
   .stop-card,
