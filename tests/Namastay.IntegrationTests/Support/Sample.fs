@@ -25,6 +25,7 @@ let place: Place = {
     Summary = "A valley town on the Parvati river."
     IsThisForYou = None
     GettingThere = None
+    Airport = None
     Published = true
     Interests = [
         {

@@ -48,6 +48,7 @@ let private loadPlaces source =
                 Summary = place.Summary
                 IsThisForYou = None
                 GettingThere = None
+                Airport = place.Airport
                 Published = place.Published
                 Interests =
                     matching place.Slug interests _.PlaceSlug

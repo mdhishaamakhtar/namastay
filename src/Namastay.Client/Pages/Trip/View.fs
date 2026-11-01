@@ -133,8 +133,17 @@ let private stops (model: Model) (saved: SavedTrip) dispatch =
     Html.ol [
         prop.className "trip-stops"
         prop.children (
-            List.zip (firstDays trip.Stops) trip.Stops
-            |> List.map (fun (day, stop) -> Stop.view saved.ShareToken trip model.Open dispatch day stop)
+            [
+                match trip.Arrive, List.tryHead trip.Stops with
+                | Some gateway, Some first -> yield! Stop.landing first gateway
+                | _ -> ()
+                yield!
+                    List.zip (firstDays trip.Stops) trip.Stops
+                    |> List.map (fun (day, stop) -> Stop.view saved.ShareToken trip model.Open dispatch day stop)
+                match trip.Depart with
+                | Some gateway -> yield! Stop.homeward gateway
+                | None -> ()
+            ]
         )
     ]
 

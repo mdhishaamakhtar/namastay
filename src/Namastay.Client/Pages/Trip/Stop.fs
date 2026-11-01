@@ -6,28 +6,28 @@ open Namastay.Client.Pages.Trip.State
 open Namastay.Shared
 open Namastay.Shared.Contracts
 
-let private legTitle (stop: TripStop) (leg: TravelLeg) =
+let private legTitle (name: string) (leg: TravelLeg) =
     match leg.Mode with
-    | TravelMode.Flight -> $"Fly to {stop.Name}"
-    | TravelMode.Train -> $"Train to {stop.Name}"
-    | TravelMode.Road -> $"Drive to {stop.Name}"
-    | TravelMode.Ferry -> $"Ferry to {stop.Name}"
-    | TravelMode.CableCar -> $"Cable car to {stop.Name}"
+    | TravelMode.Flight -> $"Fly to {name}"
+    | TravelMode.Train -> $"Train to {name}"
+    | TravelMode.Road -> $"Drive to {name}"
+    | TravelMode.Ferry -> $"Ferry to {name}"
+    | TravelMode.CableCar -> $"Cable car to {name}"
 
 let private capitalised (text: string) =
     text.Substring(0, 1).ToUpperInvariant() + text.Substring 1
 
-let private legHeadline (stop: TripStop) (leg: TravelLeg) =
+let private legHeadline (name: string) (leg: TravelLeg) =
     Html.span [
         prop.className "stop-leg-text"
         prop.children [
-            Html.strong (legTitle stop leg)
+            Html.strong (legTitle name leg)
             Html.span (capitalised (Duration.describe leg.MinutesMin leg.MinutesMax))
         ]
     ]
 
 /// The line that joins two stops. The useful detail opens from it.
-let private travelLeg (stop: TripStop) (leg: TravelLeg) =
+let private travelLeg (name: string) (leg: TravelLeg) =
     Html.div [
         prop.className "stop-leg"
         prop.children [
@@ -41,11 +41,73 @@ let private travelLeg (stop: TripStop) (leg: TravelLeg) =
             | Some note ->
                 Html.details [
                     prop.className "stop-leg-more"
-                    prop.children [ Html.summary [ legHeadline stop leg; Icons.chevron false ]; Html.p note ]
+                    prop.children [ Html.summary [ legHeadline name leg; Icons.chevron false ]; Html.p note ]
                 ]
-            | None -> Html.div [ prop.className "stop-leg-plain"; prop.children [ legHeadline stop leg ] ]
+            | None -> Html.div [ prop.className "stop-leg-plain"; prop.children [ legHeadline name leg ] ]
         ]
     ]
+
+let private airportRow (key: string) (title: string) (detail: string) =
+    Html.li [
+        prop.key key
+        prop.className "stop stop-airport"
+        prop.children [
+            Html.div [
+                prop.className "stop-leg"
+                prop.children [
+                    Html.div [
+                        prop.className "stop-leg-line"
+                        prop.children [
+                            Html.span [
+                                prop.className "stop-leg-mark"
+                                prop.children [ Icons.travel TravelMode.Flight ]
+                            ]
+                        ]
+                    ]
+                    Html.div [
+                        prop.className "stop-leg-plain"
+                        prop.children [
+                            Html.span [
+                                prop.className "stop-leg-text"
+                                prop.children [ Html.strong title; Html.span detail ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ]
+    ]
+
+let private via (gateway: TripGateway) =
+    gateway.Via
+    |> Option.map (fun city -> $" Go via {city}.")
+    |> Option.defaultValue ""
+
+/// Where the visitor lands, and how they reach the first stop from there.
+let landing (firstStop: TripStop) (gateway: TripGateway) = [
+    airportRow "land" $"Land in {gateway.City}" (gateway.Airport + via gateway)
+    match gateway.Leg with
+    | Some leg ->
+        Html.li [
+            prop.key "land-leg"
+            prop.className "stop stop-airport"
+            prop.children [ travelLeg firstStop.Name leg ]
+        ]
+    | None -> Html.none
+]
+
+/// How the visitor gets home at the end.
+let homeward (gateway: TripGateway) = [
+    match gateway.Leg with
+    | Some leg ->
+        Html.li [
+            prop.key "home-leg"
+            prop.className "stop stop-airport"
+            prop.children [ travelLeg gateway.City leg ]
+        ]
+    | None -> Html.none
+    airportRow "home" $"Fly home from {gateway.City}" (gateway.Airport + via gateway)
+]
 
 let private dayRange first days =
     if days = 1 then
@@ -164,7 +226,7 @@ let view token (trip: Trip) (openSlug: string option) dispatch firstDay (stop: T
         prop.className "stop"
         prop.children [
             match stop.Arrival with
-            | Some leg -> travelLeg stop leg
+            | Some leg -> travelLeg stop.Name leg
             | None -> Html.none
             Html.div [
                 prop.className "stop-card"

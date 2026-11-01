@@ -14,6 +14,8 @@ let private ensure (name: string) (fallback: unit -> JsonNode) (node: JsonObject
 let private upgrade (trip: JsonObject) =
     ensure "mix" (fun () -> JsonArray()) trip
     ensure "month" (fun () -> null) trip
+    ensure "arrive" (fun () -> null) trip
+    ensure "depart" (fun () -> null) trip
 
     match trip["stops"] with
     | :? JsonArray as stops ->

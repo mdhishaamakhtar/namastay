@@ -104,6 +104,80 @@ let private leadPhoto (catalog: Catalog) (place: Place) =
         SourceUrl = photo.SourceUrl
     })
 
+let private toLeg (link: TransportLink) = {
+    Mode = ContractMapping.travelMode link.Mode
+    MinutesMin = link.MinutesMin
+    MinutesMax = link.MinutesMax
+    ComfortNote = link.ComfortNote
+}
+
+let private airports (catalog: Catalog) =
+    catalog.Places |> List.filter _.Airport.IsSome
+
+let private atAirport (place: Place) = {
+    City = place.Name
+    Airport = place.Airport |> Option.defaultValue ""
+    Via = None
+    Leg = None
+}
+
+/// The way between a stop and one airport city: direct, or through one city between.
+/// `hop` takes the near end first, so it works for the journey in and the journey out.
+let private wayTo (catalog: Catalog) (hop: string -> string -> TransportLink option) (place: Place) (airport: Place) =
+    let direct =
+        hop place.Slug airport.Slug
+        |> Option.map (fun link ->
+            link.MinutesMin,
+            {
+                atAirport airport with
+                    Leg = Some(toLeg link)
+            })
+
+    let through (middle: Place) =
+        match hop place.Slug middle.Slug, hop middle.Slug airport.Slug with
+        | Some first, Some second ->
+            Some(
+                first.MinutesMin + second.MinutesMin,
+                {
+                    atAirport airport with
+                        Via = Some middle.Name
+                        Leg = Some(toLeg second)
+                }
+            )
+        | _ -> None
+
+    direct
+    |> Option.orElse (
+        catalog.Places
+        |> List.filter _.Published
+        |> List.choose through
+        |> List.sortBy fst
+        |> List.tryHead
+    )
+
+let private gateway (catalog: Catalog) hop (place: Place) =
+    if place.Airport.IsSome then
+        Some(atAirport place)
+    else
+        airports catalog
+        |> List.choose (wayTo catalog hop place)
+        |> List.sortBy fst
+        |> List.tryHead
+        |> Option.map snd
+
+/// Foreign visitors fly in, so a trip starts from where they land.
+let arrive (catalog: Catalog) (stops: RoutedStop list) =
+    let hop near far = linkBetween catalog.Links far near
+
+    stops
+    |> List.tryHead
+    |> Option.bind (fun first -> gateway catalog hop first.Place)
+
+let depart (catalog: Catalog) (stops: RoutedStop list) =
+    stops
+    |> List.tryLast
+    |> Option.bind (fun last -> gateway catalog (linkBetween catalog.Links) last.Place)
+
 let toStop (catalog: Catalog) budget (stop: RoutedStop) : TripStop =
     let family =
         catalog.Families |> List.find (fun item -> item.Slug = stop.Place.FamilySlug)
@@ -123,14 +197,7 @@ let toStop (catalog: Catalog) budget (stop: RoutedStop) : TripStop =
         StayArea = stayArea budget stop.Place
         Photo = leadPhoto catalog stop.Place
         Plans = plansFor stop.Place stop.Days
-        Arrival =
-            stop.Arrival
-            |> Option.map (fun link -> {
-                Mode = ContractMapping.travelMode link.Mode
-                MinutesMin = link.MinutesMin
-                MinutesMax = link.MinutesMax
-                ComfortNote = link.ComfortNote
-            })
+        Arrival = stop.Arrival |> Option.map toLeg
         Retired = false
         Custom = false
     }
@@ -247,6 +314,8 @@ let private assemble catalog profile (request: TripRequest) places stops : Trip 
             Family = stop.Place.FamilySlug
         })
         |> baseFamily profile.Collected
+    Arrive = arrive catalog stops
+    Depart = depart catalog stops
     Stops = stops |> List.map (toStop catalog request.Budget)
     Swaps = swaps profile request places stops
     Mix = mix catalog profile

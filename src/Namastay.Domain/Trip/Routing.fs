@@ -11,6 +11,8 @@ type RoutedStop = {
 
 let private beamWidth = 60
 let private unfilledDayPenalty = 10
+let private farStartPenalty = 70
+let private farEndPenalty = 60
 
 let private regionLimit days =
     if days <= 7 then 1
@@ -104,15 +106,32 @@ let rec private explore grow reached frontier =
 
         explore grow (next @ reached) next
 
-/// The route's taste, less a penalty for each day its stops can't honestly fill.
-let private worth days (path: Path) =
-    path.Score - unfilledDayPenalty * max 0 (days - path.Capacity)
+/// Where a route can begin and end: a city with an airport, or one link from it.
+/// With no airports in the data, every place counts.
+let private reachableFromAirport (catalog: Catalog) (links: Map<string * string, TransportLink>) =
+    let airports = catalog.Places |> List.filter _.Airport.IsSome |> List.map _.Slug
 
-let private bestPath days (paths: Path list) =
+    let near (slug: string) =
+        airports.IsEmpty
+        || airports
+           |> List.exists (fun airport -> airport = slug || links.ContainsKey(airport, slug))
+
+    near
+
+/// The route's taste, less penalties for days it can't honestly fill and for ends nobody can fly to.
+let private worth days near (path: Path) =
+    let penalty (slug: string) (cost: int) = if near slug then 0 else cost
+
+    path.Score
+    - unfilledDayPenalty * max 0 (days - path.Capacity)
+    - penalty (List.last path.Stops).Place.Slug farStartPenalty
+    - penalty path.Stops.Head.Place.Slug farEndPenalty
+
+let private bestPath days near (paths: Path list) =
     paths
     |> List.minBy (fun path ->
         let slugs = path.Stops |> List.map _.Place.Slug
-        -(worth days path), -path.FirstScore, slugs)
+        -(worth days near path), -path.FirstScore, slugs)
 
 /// Shares spare days around the stops, then past their usual maximum if it must.
 [<TailCall>]
@@ -185,7 +204,10 @@ let route (catalog: Catalog) (request: TripRequest) prefersDepth (scored: (Place
     let starts = scored |> List.map (start catalog stopDays)
 
     let stops =
-        explore grow starts starts |> bestPath request.Days |> _.Stops |> List.rev
+        explore grow starts starts
+        |> bestPath request.Days (reachableFromAirport catalog links)
+        |> _.Stops
+        |> List.rev
 
     let trimmed = trim (planned stops - request.Days) stops
     fill (request.Days - planned trimmed) 0 trimmed

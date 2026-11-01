@@ -27,6 +27,7 @@ let place: Place = {
     Summary = "A valley town."
     IsThisForYou = None
     GettingThere = None
+    Airport = None
     Published = true
     Interests = []
     Months = [

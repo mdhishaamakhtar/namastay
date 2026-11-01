@@ -41,6 +41,7 @@ let place slug cluster family interest : Place = {
     Summary = "Summary."
     IsThisForYou = None
     GettingThere = None
+    Airport = None
     Published = true
     Interests = [ { InterestSlug = interest; Weight = 5 } ]
     Months = months [ 10; 11 ] []
@@ -936,3 +937,54 @@ let ``a long fixed stay is not trimmed out of a short trip`` () =
 
     let trip = build world (request (liked [ "likes-far" ]) 7 None)
     Assert.Equal<string list>([ "far" ], trip.Stops |> List.map _.PlaceSlug)
+
+let private airport slug cluster family interest = {
+    place slug cluster family interest with
+        Airport = Some "Test International (TST)"
+}
+
+let private gatewayCatalog = {
+    catalog with
+        Places = [
+            airport "capital" "c-plains" "stone" "forts"
+            place "hub" "c-hills" "pine" "food"
+            place "remote" "c-hills" "pine" "mountains"
+        ]
+        Links = both "capital" "hub" @ both "hub" "remote"
+        Cards = [ card "likes-remote" "interest:mountains" (Some "remote") ]
+}
+
+let private gatewayTrip days =
+    build gatewayCatalog (request (liked [ "likes-remote" ]) days None)
+
+[<Fact>]
+let ``a place with no airport link is reached through the nearest city`` () =
+    let trip = gatewayTrip 6
+    Assert.Equal<string list>([ "hub"; "remote" ], trip.Stops |> List.map _.PlaceSlug)
+
+[<Fact>]
+let ``the trip says where you land and how you get to the first stop`` () =
+    let arrive = (gatewayTrip 6).Arrive.Value
+    Assert.Equal("CAPITAL", arrive.City)
+    Assert.Equal("Test International (TST)", arrive.Airport)
+    Assert.True arrive.Leg.IsSome
+
+[<Fact>]
+let ``starting in a gateway city needs no onward leg`` () =
+    let world = {
+        gatewayCatalog with
+            Cards = [ card "likes-capital" "interest:forts" (Some "capital") ]
+    }
+
+    let trip = build world (request (liked [ "likes-capital" ]) 5 None)
+    Assert.Equal("capital", trip.Stops.Head.PlaceSlug)
+    Assert.True(trip.Arrive.Value.Leg.IsNone)
+
+[<Fact>]
+let ``the trip says where you fly home from`` () =
+    let depart = (gatewayTrip 6).Depart.Value
+    Assert.Equal("CAPITAL", depart.City)
+    Assert.Equal(Some "HUB", depart.Via)
+
+[<Fact>]
+let ``no gateways in the data means no arrival is claimed`` () = Assert.True((hubTrip 7).Arrive.IsNone)

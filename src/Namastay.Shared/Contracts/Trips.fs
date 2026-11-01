@@ -63,9 +63,19 @@ type TripNotice = {
 
 type MixShare = { Name: string; Share: int }
 
+/// Where a visitor lands or leaves from, and the journey to or from their first or last stop.
+type TripGateway = {
+    City: string
+    Airport: string
+    Via: string option
+    Leg: TravelLeg option
+}
+
 type Trip = {
     Title: string
     BaseFamily: string
+    Arrive: TripGateway option
+    Depart: TripGateway option
     Stops: TripStop list
     Swaps: TripSwap list
     Mix: MixShare list

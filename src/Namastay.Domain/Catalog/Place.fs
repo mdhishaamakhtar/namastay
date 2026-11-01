@@ -82,6 +82,8 @@ type Place = {
     Summary: string
     IsThisForYou: string option
     GettingThere: string option
+    /// The international airport, for cities foreign visitors fly into.
+    Airport: string option
     Published: bool
     Interests: PlaceInterest list
     Months: PlaceMonth list
