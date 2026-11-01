@@ -30,6 +30,7 @@ let main args =
     |> Option.iter (GoogleSignIn.configure (builder.Services.AddAuthentication()))
 
     let app = builder.Build()
+    Server.useForwardedHeaders app
     Server.useCompression app
     Server.useErrorHandling app
     app.UseStaticFiles() |> ignore

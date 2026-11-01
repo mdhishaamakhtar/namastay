@@ -4,6 +4,9 @@ open Browser
 open Fable.Core.JsInterop
 open Namastay.Shared.Contracts
 
+/// The fallback for anything with no colour of its own.
+let ink = "#3A2C0A"
+
 let private setColour (name: string) (value: string) =
     document.documentElement?style?setProperty(name, value)
 

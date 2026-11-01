@@ -273,6 +273,22 @@ type JourneyApiTests(postgres: PostgresFixture) =
             Assert.Equal(ErrorCode.RateLimited, error.Code)
         }
 
+    [<Fact>]
+    member _.``visitors behind the host's proxy each get their own limit``() =
+        task {
+            let! http, _ = start ()
+            http.DefaultRequestHeaders.Add("X-Forwarded-For", "203.0.113.1")
+
+            for _ in 1 .. Server.tripsPerMinute do
+                let! _ = post http tripRequest
+                ()
+
+            http.DefaultRequestHeaders.Remove "X-Forwarded-For" |> ignore
+            http.DefaultRequestHeaders.Add("X-Forwarded-For", "203.0.113.2")
+            let! response = post http tripRequest
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode)
+        }
+
     [<Theory>]
     [<InlineData(0)>]
     [<InlineData(13)>]

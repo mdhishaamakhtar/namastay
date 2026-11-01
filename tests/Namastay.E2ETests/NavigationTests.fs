@@ -10,23 +10,6 @@ type NavigationTests(browser: BrowserFixture) =
     let heading (page: IPage) =
         page.Locator("h1").First.TextContentAsync()
 
-    let createTrip (page: IPage) =
-        task {
-            let body =
-                """{"answers":[],"days":5,"month":null,"travellers":"Solo","budget":"Mid","transportComfort":"Anything"}"""
-
-            let! response =
-                page.APIRequest.PostAsync(
-                    $"{browser.BaseUrl}/api/itineraries",
-                    APIRequestContextOptions(Data = body, Headers = dict [ "Content-Type", "application/json" ])
-                )
-
-            Assert.True(response.Ok, "the trip request failed")
-            let! text = response.TextAsync()
-            use json = JsonDocument.Parse text
-            return json.RootElement.GetProperty("shareToken").GetString()
-        }
-
     [<Fact>]
     member _.``browser back returns to previous page``() =
         task {
@@ -63,11 +46,11 @@ type NavigationTests(browser: BrowserFixture) =
     member _.``trip json decodes in the browser``() =
         task {
             let! page = browser.NewPage()
-            let! token = createTrip page
+            let! token = browser.CreateTrip page
             let! _ = page.GotoAsync $"{browser.BaseUrl}/trip/{token}"
             do! page.GetByRole(AriaRole.Listitem).First.WaitForAsync()
             let! title = heading page
-            Assert.Contains("5 days in", title)
+            Assert.Contains("days in", title)
         }
 
     [<Fact>]

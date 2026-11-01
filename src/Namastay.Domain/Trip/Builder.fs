@@ -66,17 +66,19 @@ let private rank profile request (places: Place list) =
 let private plansFor (place: Place) days (arrival: TransportLink option) =
     let variants = place.DayPlans |> List.groupBy _.Variant |> List.sortBy fst
 
-    let chosen =
-        variants
-        |> List.map snd
-        |> List.sortBy (fun plans -> abs (plans.Length - days))
-        |> List.tryHead
-        |> Option.defaultValue []
-        |> List.sortBy _.Day
-
     let travels =
         days > 1
         && arrival |> Option.exists (fun link -> link.MinutesMin >= fullDayJourney)
+
+    let daysToPlan = if travels then days - 1 else days
+
+    let chosen =
+        variants
+        |> List.map snd
+        |> List.sortBy (fun plans -> abs (plans.Length - daysToPlan))
+        |> List.tryHead
+        |> Option.defaultValue []
+        |> List.sortBy _.Day
 
     let plans = (if travels then [ travelDay ] else []) @ (chosen |> List.map _.Plan)
 
@@ -124,8 +126,7 @@ let private hubPreference = 150
 let private airports (catalog: Catalog) =
     catalog.Places |> List.filter _.Airport.IsSome
 
-/// A place can be named for two cities, but a trip goes to the first.
-let private plainName (place: Place) = place.Name.Split(" with ")[0]
+let private plainName (place: Place) = PlaceName.plain place.Name
 
 let private atAirport (place: Place) = {
     City = plainName place

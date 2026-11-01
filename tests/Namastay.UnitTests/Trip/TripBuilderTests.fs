@@ -1278,3 +1278,38 @@ let ``a liked place that couldn't fit is named`` () =
         build world (request (liked [ "likes-first"; "likes-first-again"; "likes-island" ]) 6 None)
 
     Assert.Contains("ISLAND", trip.LeftOut @ [ trip.Stops.Head.Name ])
+
+[<Fact>]
+let ``a travel day picks the plan that fits the days left`` () =
+    let plan variant day text : DayPlan = {
+        Variant = variant
+        Day = day
+        Plan = text
+        Evidence = evidence
+    }
+
+    let world = {
+        catalog with
+            Places = [
+                place "near" "c-hills" "pine" "mountains"
+                {
+                    place "far" "c-hills" "pine" "mountains" with
+                        DayPlans = [
+                            plan "short" 1 "short one"
+                            plan "short" 2 "short two"
+                            plan "long" 1 "long one"
+                            plan "long" 2 "long two"
+                            plan "long" 3 "long three"
+                        ]
+                }
+            ]
+            Links = timed "near" "far" 360
+            Cards = [
+                card "likes-near" "interest:mountains" (Some "near")
+                card "likes-far" "interest:mountains" (Some "far")
+            ]
+    }
+
+    let trip = build world (request (liked [ "likes-near"; "likes-far" ]) 6 None)
+    let stop = trip.Stops |> List.find (fun item -> item.PlaceSlug = "far")
+    Assert.Contains("short two", stop.Plans |> List.map _.Plan)

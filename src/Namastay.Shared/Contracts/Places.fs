@@ -130,6 +130,11 @@ type LandingCard = {
     Photo: GuidePhoto
 }
 
+type LandingPage = {
+    PlaceCount: int
+    Cards: LandingCard list
+}
+
 type PlaceGuide = {
     Slug: string
     Name: string

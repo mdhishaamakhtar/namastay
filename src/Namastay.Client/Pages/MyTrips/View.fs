@@ -3,48 +3,23 @@ module Namastay.Client.Pages.MyTrips.View
 open Feliz
 open Namastay.Client.Components
 open Namastay.Client.Pages.MyTrips.State
+open Namastay.Client.Theme
 open Namastay.Shared
 open Namastay.Shared.Contracts
 
 let private label (trip: SavedTripSummary) =
-    let colour = trip.Colours |> Option.map _.Deep |> Option.defaultValue "#3A2C0A"
+    let colour = trip.Colours |> Option.map _.Deep |> Option.defaultValue Theme.ink
+
+    let route =
+        if trip.Route.IsEmpty then
+            []
+        else
+            [ String.concat " → " trip.Route ]
 
     Html.a [
         prop.className "label-link my-trip-open"
         prop.href (Route.url [ "id", trip.Id ] [] Routes.myTripPage)
-        prop.children [
-            Html.div [
-                prop.className "label"
-                prop.children [
-                    Html.div [
-                        prop.className "label-frame"
-                        prop.style [ style.borderColor colour ]
-                        prop.children [
-                            match trip.Photo with
-                            | Some photo ->
-                                Html.img [ prop.src photo.Url; prop.alt photo.Alt; prop.custom ("loading", "lazy") ]
-                            | None ->
-                                Html.div [
-                                    prop.className "my-trip-no-photo"
-                                    prop.style [ style.backgroundColor colour ]
-                                ]
-                            Html.div [
-                                prop.className "label-text"
-                                prop.style [ style.backgroundColor colour ]
-                                prop.children [
-                                    Html.strong trip.Title
-                                    if not trip.Route.IsEmpty then
-                                        Html.span (String.concat " → " trip.Route)
-                                    match trip.Photo with
-                                    | Some photo -> Html.small $"{photo.Credit}, {photo.Licence}"
-                                    | None -> Html.none
-                                ]
-                            ]
-                        ]
-                    ]
-                ]
-            ]
-        ]
+        prop.children [ Label.view colour trip.Photo trip.Title route ]
     ]
 
 let private card (model: Model) dispatch (trip: SavedTripSummary) =

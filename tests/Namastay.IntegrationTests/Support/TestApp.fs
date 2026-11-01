@@ -28,6 +28,7 @@ module TestApp =
             builder.WebHost.UseTestServer() |> ignore
             Server.configureServices builder.Services
             let app = scope.Own(builder.Build())
+            Server.useForwardedHeaders app
             Server.useCompression app
             Server.useErrorHandling app
             Server.useRateLimits app

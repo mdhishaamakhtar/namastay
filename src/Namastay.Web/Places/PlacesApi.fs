@@ -65,8 +65,8 @@ let private feelings (data: DataCache) (_: HttpContext) =
 
 let private landing (data: DataCache) (_: HttpContext) =
     task {
-        let! cards = DataCache.getOrLoad data "landing" (fun () -> Landing.all data.Source)
-        return Ok cards
+        let! page = DataCache.getOrLoad data "landing" (fun () -> Landing.page data.Source)
+        return Ok page
     }
 
 let private feelingPlaces (data: DataCache) (context: HttpContext) =

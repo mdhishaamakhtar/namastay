@@ -21,7 +21,7 @@ let health: Route<NoBody, HealthStatus> = Route.get "/health"
 let searchPlaces: Route<NoBody, PlaceSummary list> = Route.get "/api/places"
 let placeGuide: Route<NoBody, PlaceGuide> = Route.get "/api/places/{slug}"
 let feelings: Route<NoBody, Feeling list> = Route.get "/api/feelings"
-let landing: Route<NoBody, LandingCard list> = Route.get "/api/landing"
+let landing: Route<NoBody, LandingPage> = Route.get "/api/landing"
 
 let feelingPlaces: Route<NoBody, PlaceSummary list> =
     Route.get "/api/feelings/{slug}/places"

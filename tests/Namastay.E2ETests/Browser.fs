@@ -1,6 +1,7 @@
 namespace Namastay.E2ETests
 
 open System
+open System.Text.Json
 open System.Threading.Tasks
 open Microsoft.Playwright
 open Xunit
@@ -32,6 +33,24 @@ type BrowserFixture() =
         | null
         | "" -> "http://localhost:5173"
         | value -> value
+
+    /// A trip made through the API, so tests that start on a trip don't swipe to get there.
+    member this.CreateTrip(page: IPage) =
+        task {
+            let body =
+                """{"answers":[{"card":"green-valleys","liked":true}],"days":7,"month":null,"travellers":"Solo","budget":"Mid","transportComfort":"Anything"}"""
+
+            let! response =
+                page.APIRequest.PostAsync(
+                    $"{this.BaseUrl}/api/itineraries",
+                    APIRequestContextOptions(Data = body, Headers = dict [ "Content-Type", "application/json" ])
+                )
+
+            Assert.True(response.Ok, "the trip request failed")
+            let! text = response.TextAsync()
+            use json = JsonDocument.Parse text
+            return json.RootElement.GetProperty("shareToken").GetString()
+        }
 
     member _.NewReducedMotionPage() =
         task {

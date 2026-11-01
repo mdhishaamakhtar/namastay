@@ -375,12 +375,11 @@ type PlacesApiTests(postgres: PostgresFixture) =
                         ]
                 }
 
-            let! cards =
-                http.GetFromJsonAsync<LandingCard list>(Routes.landing.Template, Json.options)
-
-            Assert.Equal<string list>([ "first"; "second" ], cards |> List.map _.Title)
-            Assert.Equal<bool list>([ false; true ], cards |> List.map _.Food)
-            Assert.Equal("/media/photos/kasol.webp", cards.Head.Photo.Url)
+            let! page = http.GetFromJsonAsync<LandingPage>(Routes.landing.Template, Json.options)
+            Assert.Equal<string list>([ "first"; "second" ], page.Cards |> List.map _.Title)
+            Assert.Equal<bool list>([ false; true ], page.Cards |> List.map _.Food)
+            Assert.Equal("/media/photos/kasol.webp", page.Cards.Head.Photo.Url)
+            Assert.Equal(catalog.Places |> List.filter _.Published |> List.length, page.PlaceCount)
         }
 
     [<Fact>]

@@ -2,6 +2,7 @@ module Namastay.Data.Places.Landing
 
 open System.Threading.Tasks
 open Npgsql
+open Namastay.Data
 open Namastay.Shared
 open Namastay.Shared.Contracts
 
@@ -33,7 +34,7 @@ let private sql =
 
 let private toCard (row: LandingRow) = {
     PlaceSlug = row.PlaceSlug
-    Place = row.Place.Split(" with ")[0]
+    Place = PlaceName.plain row.Place
     Title = row.Title
     Colour = row.Colour
     Food = row.Food
@@ -46,8 +47,15 @@ let private toCard (row: LandingRow) = {
     }
 }
 
-let all (source: NpgsqlDataSource) : Task<LandingCard list> =
+let page (source: NpgsqlDataSource) : Task<LandingPage> =
     task {
-        let! rows = Namastay.Data.Sql.query<LandingRow> source sql null
-        return rows |> List.map toCard
+        let! rows = Sql.query<LandingRow> source sql null
+
+        let! counts =
+            Sql.query<int64> source "select count(*) from places where published and retired_at is null" null
+
+        return {
+            PlaceCount = int counts.Head
+            Cards = rows |> List.map toCard
+        }
     }

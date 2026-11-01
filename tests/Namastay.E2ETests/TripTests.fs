@@ -11,26 +11,10 @@ type TripTests(browser: BrowserFixture) =
     let firstStop (json: JsonNode) : JsonNode =
         json["trip"].Item("stops").AsArray().Item 0
 
-    let createTrip (page: IPage) =
-        task {
-            let body =
-                """{"answers":[{"card":"green-valleys","liked":true}],"days":7,"month":null,"travellers":"Solo","budget":"Mid","transportComfort":"Anything"}"""
-
-            let! response =
-                page.APIRequest.PostAsync(
-                    $"{browser.BaseUrl}/api/itineraries",
-                    APIRequestContextOptions(Data = body, Headers = dict [ "Content-Type", "application/json" ])
-                )
-
-            let! text = response.TextAsync()
-            use json = JsonDocument.Parse text
-            return json.RootElement.GetProperty("shareToken").GetString()
-        }
-
     let openTrip () =
         task {
             let! page = browser.NewPage()
-            let! token = createTrip page
+            let! token = browser.CreateTrip page
             let! _ = page.GotoAsync $"{browser.BaseUrl}/trip/{token}"
             do! page.Locator(".stop-head").First.WaitForAsync()
             return page, token
@@ -40,7 +24,7 @@ type TripTests(browser: BrowserFixture) =
     let openChangedTrip (change: JsonNode -> unit) =
         task {
             let! page = browser.NewPage()
-            let! token = createTrip page
+            let! token = browser.CreateTrip page
 
             let! _ =
                 page.RouteAsync(
@@ -64,7 +48,7 @@ type TripTests(browser: BrowserFixture) =
     member _.``a slow trip shows the page skeleton``() =
         task {
             let! page = browser.NewPage()
-            let! token = createTrip page
+            let! token = browser.CreateTrip page
 
             let! _ =
                 page.RouteAsync("**/api/itineraries/*", Func<IRoute, Task>(fun _ -> Task.CompletedTask))
@@ -79,7 +63,7 @@ type TripTests(browser: BrowserFixture) =
     member _.``a loading trip waits in a neutral colour``() =
         task {
             let! page = browser.NewPage()
-            let! token = createTrip page
+            let! token = browser.CreateTrip page
 
             let! _ =
                 page.RouteAsync($"**/api/itineraries/{token}", Func<IRoute, Task>(fun _ -> Task.CompletedTask))

@@ -22,10 +22,10 @@ type Model = {
     /// Counts searches, so a slow old answer can't replace a newer one.
     Attempt: int
     Results: Remote<PlaceSummary list> option
-    /// Results sit beside whatever asked for them, the search box or the feelings.
-    FromFeeling: bool
+    /// The feeling behind the results, if any. They appear beside whatever asked for them.
+    Chosen: Feeling option
     Feelings: Remote<Feeling list>
-    Landing: Remote<LandingCard list>
+    Landing: Remote<LandingPage>
     Visitor: Visitor
 }
 
@@ -39,7 +39,7 @@ type Msg =
     | ChooseFeeling of Feeling
     | LoadLanding
     | VisitorKnown of Result<SavedTripSummary list, Client.ClientError>
-    | LandingLoaded of Result<LandingCard list, Client.ClientError>
+    | LandingLoaded of Result<LandingPage, Client.ClientError>
 
 let private loadFeelings () =
     Cmd.OfPromise.perform
@@ -48,10 +48,7 @@ let private loadFeelings () =
         FeelingsLoaded
 
 let private loadLanding () =
-    Cmd.OfPromise.perform
-        (fun url -> Client.held (Client.get<LandingCard list> url))
-        Routes.landing.Template
-        LandingLoaded
+    Cmd.OfPromise.perform (fun url -> Client.held (Client.get<LandingPage> url)) Routes.landing.Template LandingLoaded
 
 let private loadVisitor () =
     Cmd.OfPromise.perform Client.get<SavedTripSummary list> Routes.myItineraries.Template VisitorKnown
@@ -61,7 +58,7 @@ let init () =
         Query = ""
         Attempt = 0
         Results = None
-        FromFeeling = false
+        Chosen = None
         Feelings = Remote.Loading
         Landing = Remote.Loading
         Visitor = Visitor.Unknown
@@ -81,6 +78,20 @@ let private search (model: Model) =
     Cmd.OfPromise.perform (fun target -> Client.get<PlaceSummary list> target) url (fun result ->
         Answered(model.Attempt, result))
 
+let private chooseFeeling (feeling: Feeling) (model: Model) =
+    let attempt = model.Attempt + 1
+    let url = Route.url [ "slug", feeling.Slug ] [] Routes.feelingPlaces
+
+    {
+        model with
+            Query = ""
+            Attempt = attempt
+            Results = Some Remote.Loading
+            Chosen = Some feeling
+    },
+    Cmd.OfPromise.perform (fun target -> Client.get<PlaceSummary list> target) url (fun result ->
+        Answered(attempt, result))
+
 let update msg (model: Model) =
     match msg with
     | QueryChanged query when query.Trim() = "" ->
@@ -89,7 +100,7 @@ let update msg (model: Model) =
                 Query = query
                 Attempt = model.Attempt + 1
                 Results = None
-                FromFeeling = false
+                Chosen = None
         },
         Cmd.none
     | QueryChanged query ->
@@ -99,7 +110,7 @@ let update msg (model: Model) =
             model with
                 Query = query
                 Attempt = attempt
-                FromFeeling = false
+                Chosen = None
         },
         waitForPause attempt
     | PauseEnded attempt when attempt = model.Attempt -> search model
@@ -115,7 +126,10 @@ let update msg (model: Model) =
                 Results = Some(Remote.Failed error)
         },
         Cmd.none
-    | Retry -> search model
+    | Retry ->
+        match model.Chosen with
+        | Some feeling -> chooseFeeling feeling model
+        | None -> search model
     | LoadFeelings -> { model with Feelings = Remote.Loading }, loadFeelings ()
     | FeelingsLoaded(Ok feelings) ->
         {
@@ -135,17 +149,18 @@ let update msg (model: Model) =
                 Visitor = Visitor.SignedIn trips.Length
         },
         Cmd.none
-    | VisitorKnown(Error _) ->
+    | VisitorKnown(Error error) when Client.isSignedOut error ->
         {
             model with
                 Visitor = Visitor.SignedOut
         },
         Cmd.none
+    | VisitorKnown(Error _) -> model, Cmd.none
     | LoadLanding -> { model with Landing = Remote.Loading }, loadLanding ()
-    | LandingLoaded(Ok cards) ->
+    | LandingLoaded(Ok page) ->
         {
             model with
-                Landing = Remote.Loaded cards
+                Landing = Remote.Loaded page
         },
         Cmd.none
     | LandingLoaded(Error error) ->
@@ -154,18 +169,6 @@ let update msg (model: Model) =
                 Landing = Remote.Failed error
         },
         Cmd.none
-    | ChooseFeeling feeling ->
-        let attempt = model.Attempt + 1
-        let url = Route.url [ "slug", feeling.Slug ] [] Routes.feelingPlaces
-
-        {
-            model with
-                Query = ""
-                Attempt = attempt
-                Results = Some Remote.Loading
-                FromFeeling = true
-        },
-        Cmd.OfPromise.perform (fun target -> Client.get<PlaceSummary list> target) url (fun result ->
-            Answered(attempt, result))
+    | ChooseFeeling feeling -> chooseFeeling feeling model
     | PauseEnded _
     | Answered _ -> model, Cmd.none

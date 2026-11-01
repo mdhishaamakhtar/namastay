@@ -8,6 +8,7 @@ open Microsoft.AspNetCore.Authentication
 open Microsoft.AspNetCore.Authentication.Cookies
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
+open Microsoft.AspNetCore.HttpOverrides
 open Microsoft.AspNetCore.ResponseCompression
 open Microsoft.AspNetCore.RateLimiting
 open Microsoft.AspNetCore.Routing
@@ -54,6 +55,14 @@ let private configureSessions (services: IServiceCollection) =
     |> ignore
 
 let configureServices (services: IServiceCollection) =
+    // The host's proxy is the only way in, so its forwarded headers can be trusted.
+    // ForwardLimit stays at 1, so a visitor can't fake an address further back in the list.
+    services.Configure<ForwardedHeadersOptions>(fun (options: ForwardedHeadersOptions) ->
+        options.ForwardedHeaders <- ForwardedHeaders.XForwardedFor ||| ForwardedHeaders.XForwardedProto
+        options.KnownIPNetworks.Clear()
+        options.KnownProxies.Clear())
+    |> ignore
+
     services.AddLogging() |> ignore
     configureSessions services
 
@@ -77,6 +86,8 @@ let configureServices (services: IServiceCollection) =
     |> ignore
 
 let useCompression (app: WebApplication) = app.UseResponseCompression() |> ignore
+
+let useForwardedHeaders (app: WebApplication) = app.UseForwardedHeaders() |> ignore
 
 let useRateLimits (app: WebApplication) = app.UseRateLimiter() |> ignore
 

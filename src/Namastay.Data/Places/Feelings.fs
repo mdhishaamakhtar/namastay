@@ -3,6 +3,7 @@ module Namastay.Data.Places.Feelings
 open System.Threading.Tasks
 open Npgsql
 open Namastay.Data.Places.Rows
+open Namastay.Shared
 open Namastay.Shared.Contracts
 
 /// How strongly a place must suit an interest to be offered under it.
@@ -30,10 +31,7 @@ let private feelingsSql =
 let private toFeeling (rows: FeelingRow list) = {
     Slug = rows.Head.Slug
     Name = rows.Head.Name
-    Places =
-        rows
-        |> List.truncate namedPlaces
-        |> List.map (fun row -> row.Place.Split(" with ")[0])
+    Places = rows |> List.truncate namedPlaces |> List.map (_.Place >> PlaceName.plain)
     Colour =
         rows
         |> List.countBy _.Colour
