@@ -111,11 +111,17 @@ let private toLeg (link: TransportLink) = {
     ComfortNote = link.ComfortNote
 }
 
+/// How much further a traveller will go for a main hub, which has far more long-haul flights.
+let private hubPreference = 150
+
 let private airports (catalog: Catalog) =
     catalog.Places |> List.filter _.Airport.IsSome
 
+/// A place can be named for two cities, but you land in the first.
+let private airportCity (place: Place) = place.Name.Split(" with ")[0]
+
 let private atAirport (place: Place) = {
-    City = place.Name
+    City = airportCity place
     Airport = place.Airport |> Option.defaultValue ""
     Via = None
     Leg = None
@@ -140,7 +146,7 @@ let private wayTo (catalog: Catalog) (hop: string -> string -> TransportLink opt
                 first.MinutesMin + second.MinutesMin,
                 {
                     atAirport airport with
-                        Via = Some middle.Name
+                        Via = Some(airportCity middle)
                         Leg = Some(toLeg second)
                 }
             )
@@ -160,14 +166,25 @@ let private gateway (catalog: Catalog) hop (place: Place) =
         Some(atAirport place)
     else
         airports catalog
-        |> List.choose (wayTo catalog hop place)
+        |> List.choose (fun airport ->
+            wayTo catalog hop place airport
+            |> Option.map (fun (minutes, way) ->
+                let reach = if airport.Hub then minutes else minutes + hubPreference
+                (way.Via.IsSome, reach), way))
         |> List.sortBy fst
         |> List.tryHead
         |> Option.map snd
 
+/// Some routes are only recorded in one direction, but the same road or flight runs back.
+let private eitherWay (catalog: Catalog) from target =
+    [ linkBetween catalog.Links from target; linkBetween catalog.Links target from ]
+    |> List.choose id
+    |> List.sortBy _.MinutesMin
+    |> List.tryHead
+
 /// Foreign visitors fly in, so a trip starts from where they land.
 let arrive (catalog: Catalog) (stops: RoutedStop list) =
-    let hop near far = linkBetween catalog.Links far near
+    let hop near far = eitherWay catalog far near
 
     stops
     |> List.tryHead
@@ -176,7 +193,7 @@ let arrive (catalog: Catalog) (stops: RoutedStop list) =
 let depart (catalog: Catalog) (stops: RoutedStop list) =
     stops
     |> List.tryLast
-    |> Option.bind (fun last -> gateway catalog (linkBetween catalog.Links) last.Place)
+    |> Option.bind (fun last -> gateway catalog (eitherWay catalog) last.Place)
 
 let toStop (catalog: Catalog) budget (stop: RoutedStop) : TripStop =
     let family =

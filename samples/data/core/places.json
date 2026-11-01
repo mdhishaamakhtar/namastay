@@ -202,7 +202,8 @@
       "sourceIds": []
     },
     "dishes": [],
-    "eateries": []
+    "eateries": [],
+    "hub": false
   },
   {
     "slug": "example-bay",
@@ -407,7 +408,8 @@
       "sourceIds": []
     },
     "dishes": [],
-    "eateries": []
+    "eateries": [],
+    "hub": false
   },
   {
     "slug": "example-island",
@@ -599,6 +601,7 @@
       "sourceIds": []
     },
     "dishes": [],
-    "eateries": []
+    "eateries": [],
+    "hub": false
   }
 ]

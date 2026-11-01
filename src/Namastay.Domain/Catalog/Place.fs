@@ -100,6 +100,8 @@ type Place = {
     GettingThere: string option
     /// The international airport, for cities foreign visitors fly into.
     Airport: string option
+    /// One of the main international hubs, which most long-haul flights reach.
+    Hub: bool
     Published: bool
     Interests: PlaceInterest list
     Months: PlaceMonth list

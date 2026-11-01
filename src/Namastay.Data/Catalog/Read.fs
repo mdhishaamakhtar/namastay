@@ -49,6 +49,7 @@ let private loadPlaces source =
                 IsThisForYou = None
                 GettingThere = None
                 Airport = place.Airport
+                Hub = place.Hub
                 FoodIntro = None
                 Dishes = []
                 Eateries = []

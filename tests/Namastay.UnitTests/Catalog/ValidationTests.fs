@@ -28,6 +28,7 @@ let place: Place = {
     IsThisForYou = None
     GettingThere = None
     Airport = None
+    Hub = false
     FoodIntro = None
     Dishes = []
     Eateries = []

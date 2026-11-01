@@ -18,6 +18,7 @@ type PlaceRow = {
     CostHigh: int option
     Summary: string
     Airport: string option
+    Hub: bool
     Published: bool
     Status: string
     LastChecked: DateTime

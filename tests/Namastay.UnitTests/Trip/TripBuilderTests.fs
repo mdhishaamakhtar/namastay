@@ -42,6 +42,7 @@ let place slug cluster family interest : Place = {
     IsThisForYou = None
     GettingThere = None
     Airport = None
+    Hub = false
     FoodIntro = None
     Dishes = []
     Eateries = []
@@ -1006,3 +1007,161 @@ let ``a trip that includes the landing city starts there`` () =
 
     let trip = build world (request (liked [ "likes-side" ]) 6 None)
     Assert.Equal<string list>([ "capital"; "side" ], trip.Stops |> List.map _.PlaceSlug)
+
+let private hubAirport slug cluster family interest = {
+    airport slug cluster family interest with
+        Hub = true
+}
+
+let private landing places links =
+    let world = {
+        catalog with
+            Places = places
+            Links = links
+            Cards = [ card "likes-remote" "interest:mountains" (Some "remote") ]
+    }
+
+    (build world (request (liked [ "likes-remote" ]) 6 None)).Arrive.Value
+
+let private timed from target minutes =
+    both from target
+    |> List.map (fun link -> {
+        link with
+            MinutesMin = minutes
+            MinutesMax = minutes
+    })
+
+[<Fact>]
+let ``a main hub beats a slightly closer smaller airport`` () =
+    let arrive =
+        landing
+            [
+                hubAirport "main" "c-plains" "stone" "forts"
+                airport "minor" "c-plains" "stone" "forts"
+                place "remote" "c-hills" "pine" "mountains"
+            ]
+            (timed "main" "remote" 135 @ timed "minor" "remote" 80)
+
+    Assert.Equal("MAIN", arrive.City)
+
+[<Fact>]
+let ``a smaller airport wins when it alone reaches the place directly`` () =
+    let arrive =
+        landing
+            [
+                hubAirport "main" "c-plains" "stone" "forts"
+                airport "minor" "c-plains" "stone" "forts"
+                place "between" "c-plains" "stone" "forts"
+                place "remote" "c-hills" "pine" "mountains"
+            ]
+            (timed "main" "between" 60
+             @ timed "between" "remote" 60
+             @ timed "minor" "remote" 300)
+
+    Assert.Equal("MINOR", arrive.City)
+
+[<Fact>]
+let ``the nearest of two hubs wins`` () =
+    let arrive =
+        landing
+            [
+                hubAirport "far-hub" "c-plains" "stone" "forts"
+                hubAirport "near-hub" "c-plains" "stone" "forts"
+                place "remote" "c-hills" "pine" "mountains"
+            ]
+            (timed "far-hub" "remote" 145 @ timed "near-hub" "remote" 70)
+
+    Assert.Equal("NEAR-HUB", arrive.City)
+
+[<Fact>]
+let ``a link stored one way still brings you home`` () =
+    let world = {
+        catalog with
+            Places = [
+                hubAirport "main" "c-plains" "stone" "forts"
+                place "remote" "c-hills" "pine" "mountains"
+            ]
+            Links = [ road "main" "remote" ]
+            Cards = [ card "likes-remote" "interest:mountains" (Some "remote") ]
+    }
+
+    let trip = build world (request (liked [ "likes-remote" ]) 6 None)
+    Assert.Equal("MAIN", trip.Depart.Value.City)
+
+[<Fact>]
+let ``an airport city that isn't a stop can still be where you land`` () =
+    let arrive =
+        landing
+            [
+                {
+                    airport "gateway" "c-plains" "stone" "forts" with
+                        Published = false
+                }
+                place "remote" "c-hills" "pine" "mountains"
+            ]
+            (both "gateway" "remote")
+
+    Assert.Equal("GATEWAY", arrive.City)
+
+[<Fact>]
+let ``a gateway city goes by its plain name`` () =
+    let arrive =
+        landing
+            [
+                {
+                    hubAirport "main" "c-plains" "stone" "forts" with
+                        Name = "Delhi with Gurugram"
+                }
+                place "remote" "c-hills" "pine" "mountains"
+            ]
+            (both "main" "remote")
+
+    Assert.Equal("Delhi", arrive.City)
+
+[<Fact>]
+let ``the way home takes the quicker direction of a route`` () =
+    let world = {
+        catalog with
+            Places = [
+                hubAirport "main" "c-plains" "stone" "forts"
+                hubAirport "other" "c-plains" "stone" "forts"
+                place "remote" "c-hills" "pine" "mountains"
+            ]
+            Links =
+                timed "main" "remote" 100 @ timed "other" "remote" 150
+                |> List.filter (fun link -> not (link.FromSlug = "remote" && link.ToSlug = "main"))
+                |> List.append [
+                    {
+                        road "remote" "main" with
+                            MinutesMin = 1600
+                            MinutesMax = 1600
+                    }
+                ]
+            Cards = [ card "likes-remote" "interest:mountains" (Some "remote") ]
+    }
+
+    let trip = build world (request (liked [ "likes-remote" ]) 6 None)
+    Assert.Equal("MAIN", trip.Depart.Value.City)
+
+[<Fact>]
+let ``a liked place stays in the trip when a stronger taste pulls elsewhere`` () =
+    let world = {
+        catalog with
+            Places = [
+                place "liked" "c-hills" "pine" "mountains"
+                place "feast-one" "c-plains" "stone" "food"
+                place "feast-two" "c-plains" "stone" "food"
+                place "feast-three" "c-plains" "stone" "food"
+            ]
+            Links = both "feast-one" "feast-two" @ both "feast-two" "feast-three"
+            Cards = [
+                card "likes-place" "interest:mountains" (Some "liked")
+                card "dish-one" "interest:food" (Some "liked")
+                card "dish-two" "interest:food" (Some "liked")
+            ]
+    }
+
+    let trip =
+        build world (request (liked [ "likes-place"; "dish-one"; "dish-two" ]) 7 None)
+
+    Assert.Contains("liked", trip.Stops |> List.map _.PlaceSlug)

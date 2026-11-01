@@ -4,7 +4,8 @@ open Namastay.Domain.Catalog
 open Namastay.Domain.Trip.Profile
 open Namastay.Shared.Contracts
 
-let private collectedBonus = 100
+/// Far above any taste score, so a place someone liked always beats a place they only might like.
+let private collectedBonus = 1000
 let private bestSeason = 8
 let private unknownSeason = -2
 let private fitWeight = 2
