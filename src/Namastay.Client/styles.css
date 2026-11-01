@@ -175,14 +175,14 @@ button:focus-visible {
 
 .moods {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 8px;
 }
 
 .mood {
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: flex-start;
   min-height: 88px;
   padding: 0 12px 12px;
   overflow: hidden;
@@ -196,8 +196,10 @@ button:focus-visible {
 
 .mood img {
   display: block;
+  flex: none;
   width: calc(100% + 24px);
   max-width: none;
+  aspect-ratio: 200 / 122;
   margin: 0 -12px 8px;
 }
 
@@ -214,7 +216,7 @@ button:focus-visible {
 
 @media (min-width: 1024px) {
   .moods {
-    grid-template-columns: repeat(7, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
   }
 
   .mood {
@@ -1820,6 +1822,7 @@ button:focus-visible {
 }
 
 .label.bone {
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
   box-shadow: none;
 }
 
