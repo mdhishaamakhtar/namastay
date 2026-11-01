@@ -114,8 +114,8 @@ let foodRegion (source: NpgsqlDataSource) (slug: string) : Task<BrowsePage optio
                  join places p on p.slug = d.place_slug
                  join clusters c on c.slug = p.cluster_slug
                  join colour_families f on f.slug = p.family_slug
-                 where c.region_slug = @slug and p.published and p.retired_at is null
-                 order by p.name, d.name"
+                 where c.region_slug = @slug and p.published and p.retired_at is null and d.photo_slug is not null
+                 order by d.rank nulls last, p.name, d.name"
                 {| slug = slug |}
 
         let dishes =
@@ -138,7 +138,7 @@ let private dishRows (source: NpgsqlDataSource) =
          join places p on p.slug = d.place_slug
          join colour_families f on f.slug = p.family_slug
          left join photos ph on ph.slug = d.photo_slug
-         where p.published and p.retired_at is null
+         where p.published and p.retired_at is null and d.photo_slug is not null
          order by p.name"
         null
 

@@ -6,7 +6,7 @@ open Namastay.Data
 open Namastay.Shared
 open Namastay.Shared.Contracts
 
-let private mostDishes = 5
+let private mostDishes = 6
 let private plainColour = "#3A2C0A"
 
 [<CLIMutable>]
@@ -27,6 +27,11 @@ type DishRow = {
     Dish: string
     Place: string
     PlaceSlug: string
+    FilePath: string option
+    Alt: string option
+    Credit: string option
+    Licence: string option
+    SourceUrl: string option
 }
 
 let private placesSql =
@@ -39,13 +44,15 @@ let private placesSql =
      order by r.sort nulls last, r.name, p.name"
 
 let private dishesSql =
-    "select r.slug as region_slug, r.name as region, r.colour, d.name as dish, p.name as place, p.slug as place_slug
+    "select r.slug as region_slug, r.name as region, r.colour, d.name as dish, p.name as place, p.slug as place_slug,
+            ph.file_path, ph.alt, ph.credit, ph.licence, ph.source_url
      from dishes d
+     left join photos ph on ph.slug = d.photo_slug
      join places p on p.slug = d.place_slug
      join clusters c on c.slug = p.cluster_slug
      join regions r on r.slug = c.region_slug
-     where p.published and p.retired_at is null
-     order by r.sort nulls last, r.name, p.name, d.name"
+     where p.published and p.retired_at is null and d.photo_slug is not null
+     order by r.sort nulls last, r.name, d.rank nulls last, p.name, d.name"
 
 let private toRegion (rows: PlaceRow list) = {
     Slug = rows.Head.RegionSlug
@@ -84,13 +91,34 @@ let private toFoodRegion (rows: DishRow list) = {
         })
 }
 
+/// A region's best-known dish that has a photo, to lead the Food page.
+let private signature (rows: DishRow list) : LandingCard option =
+    rows
+    |> List.tryPick (fun row ->
+        match row.FilePath, row.Alt, row.Credit, row.Licence, row.SourceUrl with
+        | Some path, Some alt, Some credit, Some licence, Some source ->
+            Some {
+                PlaceSlug = row.PlaceSlug
+                Place = row.Region
+                Title = row.Dish
+                Colour = row.Colour |> Option.defaultValue plainColour
+                Food = true
+                Photo = {
+                    Url = Routes.mediaUrl path
+                    Alt = alt
+                    Credit = credit
+                    Licence = licence
+                    SourceUrl = source
+                }
+            }
+        | _ -> None)
+
 let food (source: NpgsqlDataSource) : Task<FoodPage> =
     task {
-        let! landing = Landing.page source
         let! rows = Sql.query<DishRow> source dishesSql null
 
         return {
-            Cards = landing.Cards |> List.filter _.Food
+            Cards = rows |> List.groupBy _.RegionSlug |> List.choose (snd >> signature)
             Regions = rows |> List.groupBy _.RegionSlug |> List.map (snd >> toFoodRegion)
         }
     }

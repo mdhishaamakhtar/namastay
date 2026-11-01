@@ -64,8 +64,9 @@ let private noticesSql =
              or (scope = 'place' and scope_ref = @slug))
       order by slug"
 
+/// Dish photos sort from 1000, so a guide's gallery stays about the place.
 let private photosSql =
-    "select file_path, alt, credit, licence, source_url from photos where place_slug = @slug order by sort, slug"
+    "select file_path, alt, credit, licence, source_url from photos where place_slug = @slug and sort < 1000 order by sort, slug"
 
 let private suitsSql =
     "select traveller from traveller_fit where place_slug = @slug and fit >= 2 order by fit desc, traveller"

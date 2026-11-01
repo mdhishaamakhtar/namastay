@@ -19,6 +19,10 @@ type private Plan = {
 [<Emit("encodeURIComponent($0)")>]
 let private encode (text: string) : string = jsNative
 
+/// Region names read mid-sentence, like "the Himalaya", so a heading capitalises them.
+let private heading (text: string) =
+    text.Substring(0, 1).ToUpperInvariant() + text.Substring 1
+
 let private planUrl (plan: Plan) =
     match plan.Scope with
     | Some scope -> $"{Routes.journey.Template}?scope={scope}&of={plan.Slug}&label={encode plan.Name}"
@@ -143,7 +147,7 @@ let private regionCard (region: DirectoryRegion) =
                     Html.img [ prop.src $"/regions/{region.Slug}.svg"; prop.alt "" ]
                     Html.span [
                         prop.className "region-name"
-                        prop.children [ Html.strong region.Name; Html.span (string region.Places.Length) ]
+                        prop.children [ Html.strong (heading region.Name); Html.span (string region.Places.Length) ]
                     ]
                 ]
             ]
@@ -214,9 +218,8 @@ let private dishLine (dish: FoodDish) =
         prop.key dish.Slug
         prop.children [
             Html.a [
-                prop.className "food-line"
                 prop.href (Route.url [ "slug", dish.Slug ] [] Routes.dishPage)
-                prop.children [ Html.strong dish.Name; Html.span dish.Place ]
+                prop.text dish.Name
             ]
         ]
     ]
@@ -227,12 +230,21 @@ let private foodRegion (region: FoodRegion) =
         prop.className "region-card"
         prop.children [
             Html.a [
-                prop.className "region-top region-name"
+                prop.className "region-top"
                 prop.style [ style.backgroundColor region.Colour ]
                 prop.href (Route.url [ "slug", region.Slug ] [] Routes.foodRegionPage)
-                prop.children [ Html.strong region.Name ]
+                prop.children [
+                    Html.img [ prop.src $"/regions/food-{region.Slug}.svg"; prop.alt "" ]
+                    Html.span [
+                        prop.className "region-name"
+                        prop.children [ Html.strong (heading region.Name) ]
+                    ]
+                ]
             ]
-            Html.ul [ prop.children (region.Dishes |> List.map dishLine) ]
+            Html.ul [
+                prop.className "food-lines"
+                prop.children (region.Dishes |> List.map dishLine)
+            ]
         ]
     ]
 
@@ -240,8 +252,8 @@ let private foodCard (card: LandingCard) =
     Html.a [
         prop.key card.Title
         prop.className "label-link"
-        prop.href (Route.url [ "slug", card.PlaceSlug ] [] Routes.guidePage)
-        prop.children [ Label.view card.Colour (Some card.Photo) card.Title [ card.Place ] ]
+        prop.href (Route.url [ "slug", PlaceName.slug card.Title ] [] Routes.dishPage)
+        prop.children [ Label.view card.Colour (Some card.Photo) card.Title [ heading card.Place ] ]
     ]
 
 let private foodPage (page: FoodPage) =
@@ -261,7 +273,7 @@ let private foodPage (page: FoodPage) =
                         prop.className "browse-body"
                         prop.children [
                             Html.div [
-                                prop.className "label-grid reveal"
+                                prop.className "label-grid home-food-grid reveal"
                                 prop.children (page.Cards |> List.map foodCard)
                             ]
                         ]

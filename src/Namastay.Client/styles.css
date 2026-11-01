@@ -2585,11 +2585,6 @@ button:focus-visible {
   text-decoration: none;
 }
 
-.region-card .food-line {
-  justify-content: space-between;
-  gap: 12px;
-}
-
 .signed-main {
   display: grid;
   gap: 12px;
@@ -2777,4 +2772,31 @@ button:focus-visible {
 
 .mood {
   text-decoration: none;
+}
+
+/* Region cards keep to a width where names fit on one line. */
+.region-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr));
+}
+
+.region-card li a {
+  line-height: 1.2;
+}
+
+.food-lines li + li {
+  border-top: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.food-lines a {
+  font-weight: 500;
+}
+
+.home-food-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr));
+}
+
+@media (min-width: 1024px) {
+  .region-grid {
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  }
 }

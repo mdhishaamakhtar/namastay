@@ -164,7 +164,7 @@ type HomeTests(browser: BrowserFixture) =
         task {
             let! page = browser.NewPage()
             let! _ = page.GotoAsync(browser.BaseUrl + "/food")
-            do! page.Locator(".food-line").First.ClickAsync()
+            do! page.Locator(".food-lines a").First.ClickAsync()
             do! page.WaitForURLAsync "**/dishes/**"
             do! page.Locator(".listing").First.WaitForAsync()
         }
