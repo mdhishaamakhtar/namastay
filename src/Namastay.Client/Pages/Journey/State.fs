@@ -94,10 +94,13 @@ let private tripRequest (model: Model) = {
 
 let private build (model: Model) =
     { model with Step = Step.Building },
-    Cmd.OfPromise.perform
-        (fun request -> Client.post<TripRequest, SavedTrip> Routes.createItinerary.Template request)
-        (tripRequest model)
-        TripBuilt
+    Cmd.batch [
+        Cmd.ofEffect (fun _ -> Theme.neutral ())
+        Cmd.OfPromise.perform
+            (fun request -> Client.post<TripRequest, SavedTrip> Routes.createItinerary.Template request)
+            (tripRequest model)
+            TripBuilt
+    ]
 
 let private apply choice (plan: Plan) =
     match choice with
@@ -163,9 +166,7 @@ let update msg (model: Model) =
                     Step = Step.Asking(index + 1)
             },
             Cmd.none
-    | BuildTrip, _, _ ->
-        let building, command = build model
-        building, Cmd.batch [ Cmd.ofEffect (fun _ -> Theme.neutral ()); command ]
+    | BuildTrip, _, _ -> build model
     | TripBuilt(Ok saved), _, _ ->
         let address = Route.url [ "shareToken", saved.ShareToken ] [] Routes.trip
 
