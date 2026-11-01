@@ -26,6 +26,25 @@ let place: Place = {
     IsThisForYou = None
     GettingThere = None
     Airport = None
+    FoodIntro = None
+    Dishes = [
+        {
+            Name = "River trout"
+            Description = "Fried and served with rice."
+            Vegetarian = false
+            Evidence = evidence
+        }
+    ]
+    Eateries = [
+        {
+            Name = "The Bridge Cafe"
+            Area = "Old town"
+            GoFor = "The trout."
+            CostLevel = CostLevel.Budget
+            VegetarianOnly = false
+            Evidence = evidence
+        }
+    ]
     Published = true
     Interests = [
         {

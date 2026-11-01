@@ -20,6 +20,7 @@ type HeadRow = {
     Summary: string
     IsThisForYou: string option
     GettingThere: string option
+    FoodIntro: string option
     MarkPath: string option
     DaysMin: int
     DaysMax: int
@@ -77,4 +78,20 @@ type PhotoRow = {
     Credit: string
     Licence: string
     SourceUrl: string
+}
+
+[<CLIMutable>]
+type DishRow = {
+    Name: string
+    Description: string
+    Vegetarian: bool
+}
+
+[<CLIMutable>]
+type EateryRow = {
+    Name: string
+    Area: string
+    GoFor: string
+    CostLevel: string
+    VegetarianOnly: bool
 }

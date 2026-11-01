@@ -49,6 +49,9 @@ let private loadPlaces source =
                 IsThisForYou = None
                 GettingThere = None
                 Airport = place.Airport
+                FoodIntro = None
+                Dishes = []
+                Eateries = []
                 Published = place.Published
                 Interests =
                     matching place.Slug interests _.PlaceSlug

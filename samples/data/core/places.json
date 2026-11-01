@@ -200,7 +200,9 @@
       "status": "editorial",
       "lastChecked": "2026-01-01",
       "sourceIds": []
-    }
+    },
+    "dishes": [],
+    "eateries": []
   },
   {
     "slug": "example-bay",
@@ -403,7 +405,9 @@
       "status": "editorial",
       "lastChecked": "2026-01-01",
       "sourceIds": []
-    }
+    },
+    "dishes": [],
+    "eateries": []
   },
   {
     "slug": "example-island",
@@ -593,6 +597,8 @@
       "status": "editorial",
       "lastChecked": "2026-01-01",
       "sourceIds": []
-    }
+    },
+    "dishes": [],
+    "eateries": []
   }
 ]

@@ -122,6 +122,16 @@ type GuidePageTests(postgres: PostgresFixture) =
         }
 
     [<Fact>]
+    member _.``a guide says what to eat and where``() =
+        task {
+            let! http, _ = start ()
+            let! html = page http "/places/kasol"
+            Assert.Contains("What to eat", html)
+            Assert.Contains("River trout", html)
+            Assert.Contains("The Bridge Cafe", html)
+        }
+
+    [<Fact>]
     member _.``each photo opens full size``() =
         task {
             let! http, _ = start ()

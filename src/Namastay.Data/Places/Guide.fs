@@ -12,7 +12,7 @@ open Namastay.Shared.Contracts
 let private hedged = "status in ('one_source', 'conflict') as hedged"
 
 let private headSql =
-    "select p.slug, p.name, p.state, r.name as region, p.summary, p.is_this_for_you, p.getting_there, mark.file_path as mark_path, p.days_min, p.days_max,
+    "select p.slug, p.name, p.state, r.name as region, p.summary, p.is_this_for_you, p.getting_there, p.food_intro, mark.file_path as mark_path, p.days_min, p.days_max,
             p.cost_low, p.cost_high, p.gate, f.deep, f.mid, f.pale, f.text_on_deep,
             p.last_checked::text as last_checked
      from places p
@@ -39,6 +39,20 @@ let private dayPlansSql =
 let private stayAreasSql =
     $"select name, cost_level, note, {hedged} from stay_areas
       where place_slug = @slug and status <> 'unverified' order by name"
+
+let private dishesSql =
+    "select name, description, vegetarian from dishes
+     where place_slug = @slug and status <> 'unverified' order by name"
+
+let private eateriesSql =
+    "select name, area, go_for, cost_level, vegetarian_only from eateries
+     where place_slug = @slug and status <> 'unverified' order by name"
+
+let private costLabel (level: string) =
+    match level with
+    | "budget" -> "Cheap eats"
+    | "luxury" -> "A treat"
+    | _ -> "Mid-range"
 
 let private noticesSql =
     $"select kind, severity, body, {hedged} from notices
@@ -79,6 +93,9 @@ let private toGuide (head: HeadRow) : PlaceGuide = {
     Suits = []
     Months = []
     Experiences = []
+    FoodIntro = head.FoodIntro
+    Dishes = []
+    Eateries = []
     DayPlans = []
     StayAreas = []
     Notices = []
@@ -100,6 +117,8 @@ let tryLoad (source: NpgsqlDataSource) (slug: string) : Task<PlaceGuide option> 
             let! experiences = query<ExperienceRow> source experiencesSql bySlug
             let! dayPlans = query<DayRow> source dayPlansSql bySlug
             let! stayAreas = query<StayRow> source stayAreasSql bySlug
+            let! dishes = query<DishRow> source dishesSql bySlug
+            let! eateries = query<EateryRow> source eateriesSql bySlug
 
             let! notices =
                 query<NoticeRow> source noticesSql {| slug = slug; state = head.State |}
@@ -130,6 +149,22 @@ let tryLoad (source: NpgsqlDataSource) (slug: string) : Task<PlaceGuide option> 
                                 Variant = row.Variant
                                 Day = row.Day
                                 Plan = row.Plan
+                            })
+                        Dishes =
+                            dishes
+                            |> List.map (fun row -> {
+                                Name = row.Name
+                                Description = row.Description
+                                Vegetarian = row.Vegetarian
+                            })
+                        Eateries =
+                            eateries
+                            |> List.map (fun row -> {
+                                Name = row.Name
+                                Area = row.Area
+                                GoFor = row.GoFor
+                                Cost = costLabel row.CostLevel
+                                VegetarianOnly = row.VegetarianOnly
                             })
                         StayAreas =
                             stayAreas

@@ -187,6 +187,47 @@ let private lightbox (count: int) index (photo: GuidePhoto) =
 let private lightboxes (place: PlaceGuide) =
     place.Photos |> List.mapi (lightbox place.Photos.Length)
 
+let private dish (item: GuideDish) =
+    article [ _class "spot" ] [
+        h3 [] [ str item.Name ]
+        p [] [ str item.Description ]
+        if item.Vegetarian then
+            p [ _class "veg" ] [ str "Vegetarian" ]
+    ]
+
+let private eatery (item: GuideEatery) =
+    div [ _class "eatery" ] [
+        div [] [ strong [] [ str item.Name ]; span [] [ str item.Area ] ]
+        p [] [ str item.GoFor ]
+        span [ _class "eatery-cost" ] [
+            str (
+                if item.VegetarianOnly then
+                    $"{item.Cost}, vegetarian"
+                else
+                    item.Cost
+            )
+        ]
+    ]
+
+let private food (place: PlaceGuide) =
+    match place.Dishes, place.Eateries with
+    | [], [] -> []
+    | dishes, eateries -> [
+        section [] [
+            h2 [] [ str "What to eat" ]
+            yield!
+                place.FoodIntro
+                |> Option.toList
+                |> List.map (fun text -> p [ _class "food-intro" ] [ str text ])
+            div [ _class "spots" ] (dishes |> List.map dish)
+            match eateries with
+            | [] -> ()
+            | items ->
+                h3 [ _class "eateries-title" ] [ str "Where to go" ]
+                div [ _class "eateries" ] (items |> List.map eatery)
+        ]
+      ]
+
 let private stayArea (area: GuideStay) = [
     p [] [
         strong [] [ str area.Name ]
@@ -282,6 +323,7 @@ let private content (place: PlaceGuide) =
         facts place
         intro place
         yield! experiences place
+        yield! food place
         yield! gallery place
         logistics place
         yield! notices place

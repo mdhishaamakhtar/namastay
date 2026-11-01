@@ -97,6 +97,20 @@ type GuideNotice = {
     Hedged: bool
 }
 
+type GuideDish = {
+    Name: string
+    Description: string
+    Vegetarian: bool
+}
+
+type GuideEatery = {
+    Name: string
+    Area: string
+    GoFor: string
+    Cost: string
+    VegetarianOnly: bool
+}
+
 type GuidePhoto = {
     Url: string
     Alt: string
@@ -123,6 +137,9 @@ type PlaceGuide = {
     Suits: TravellerType list
     Months: GuideMonth list
     Experiences: GuideExperience list
+    FoodIntro: string option
+    Dishes: GuideDish list
+    Eateries: GuideEatery list
     DayPlans: GuideDay list
     StayAreas: GuideStay list
     Notices: GuideNotice list

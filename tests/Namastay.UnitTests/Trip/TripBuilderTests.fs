@@ -42,6 +42,9 @@ let place slug cluster family interest : Place = {
     IsThisForYou = None
     GettingThere = None
     Airport = None
+    FoodIntro = None
+    Dishes = []
+    Eateries = []
     Published = true
     Interests = [ { InterestSlug = interest; Weight = 5 } ]
     Months = months [ 10; 11 ] []

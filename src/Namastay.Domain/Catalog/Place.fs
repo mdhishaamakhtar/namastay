@@ -66,6 +66,22 @@ type StayArea = {
     Evidence: Evidence
 }
 
+type Dish = {
+    Name: string
+    Description: string
+    Vegetarian: bool
+    Evidence: Evidence
+}
+
+type Eatery = {
+    Name: string
+    Area: string
+    GoFor: string
+    CostLevel: CostLevel
+    VegetarianOnly: bool
+    Evidence: Evidence
+}
+
 type Place = {
     Slug: string
     ClusterSlug: string
@@ -91,5 +107,8 @@ type Place = {
     Experiences: Experience list
     DayPlans: DayPlan list
     StayAreas: StayArea list
+    FoodIntro: string option
+    Dishes: Dish list
+    Eateries: Eatery list
     Evidence: Evidence
 }

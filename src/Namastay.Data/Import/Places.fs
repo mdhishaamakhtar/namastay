@@ -7,10 +7,10 @@ let private upsertPlace transaction (place: Place) =
     exec
         transaction
         "insert into places (slug, cluster_slug, name, state, family_slug, shade, gate, popularity,
-            days_min, days_max, cost_low, cost_high, summary, is_this_for_you, getting_there, airport, published, retired_at,
+            days_min, days_max, cost_low, cost_high, summary, is_this_for_you, getting_there, airport, food_intro, published, retired_at,
             status, last_checked)
          values (@slug, @cluster, @name, @state, @family, @shade, @gate, @popularity,
-            @daysMin, @daysMax, @costLow, @costHigh, @summary, @isThisForYou, @gettingThere, @airport, @published, null,
+            @daysMin, @daysMax, @costLow, @costHigh, @summary, @isThisForYou, @gettingThere, @airport, @foodIntro, @published, null,
             @status, @lastChecked)
          on conflict (slug) do update set
             cluster_slug = excluded.cluster_slug, name = excluded.name, state = excluded.state,
@@ -18,7 +18,7 @@ let private upsertPlace transaction (place: Place) =
             popularity = excluded.popularity, days_min = excluded.days_min, days_max = excluded.days_max,
             cost_low = excluded.cost_low, cost_high = excluded.cost_high, summary = excluded.summary,
             is_this_for_you = excluded.is_this_for_you, getting_there = excluded.getting_there,
-            airport = excluded.airport,
+            airport = excluded.airport, food_intro = excluded.food_intro,
             published = excluded.published,
             retired_at = null, status = excluded.status, last_checked = excluded.last_checked"
         {|
@@ -38,6 +38,7 @@ let private upsertPlace transaction (place: Place) =
             isThisForYou = place.IsThisForYou
             gettingThere = place.GettingThere
             airport = place.Airport
+            foodIntro = place.FoodIntro
             published = place.Published
             status = Encode.status place.Evidence.Status
             lastChecked = place.Evidence.LastChecked
@@ -54,6 +55,8 @@ let private clearChildren transaction (slug: string) =
             "traveller_fit"
             "day_plans"
             "stay_areas"
+            "dishes"
+            "eateries"
         ] do
         exec transaction $"delete from {table} where place_slug = @slug" {| slug = slug |}
         |> ignore
@@ -114,6 +117,43 @@ let private insertDayPlans transaction (place: Place) =
         |> ignore
 
         linkSources transaction "day_plans" $"{place.Slug}:{plan.Variant}:{plan.Day}" plan.Evidence
+
+let private insertFood transaction (place: Place) =
+    for dish in place.Dishes do
+        exec
+            transaction
+            "insert into dishes (place_slug, name, description, vegetarian, status, last_checked)
+             values (@place, @name, @description, @vegetarian, @status, @lastChecked)"
+            {|
+                place = place.Slug
+                name = dish.Name
+                description = dish.Description
+                vegetarian = dish.Vegetarian
+                status = Encode.status dish.Evidence.Status
+                lastChecked = dish.Evidence.LastChecked
+            |}
+        |> ignore
+
+        linkSources transaction "dishes" $"{place.Slug}:{dish.Name}" dish.Evidence
+
+    for eatery in place.Eateries do
+        exec
+            transaction
+            "insert into eateries (place_slug, name, area, go_for, cost_level, vegetarian_only, status, last_checked)
+             values (@place, @name, @area, @goFor, @costLevel, @vegetarianOnly, @status, @lastChecked)"
+            {|
+                place = place.Slug
+                name = eatery.Name
+                area = eatery.Area
+                goFor = eatery.GoFor
+                costLevel = Encode.costLevel eatery.CostLevel
+                vegetarianOnly = eatery.VegetarianOnly
+                status = Encode.status eatery.Evidence.Status
+                lastChecked = eatery.Evidence.LastChecked
+            |}
+        |> ignore
+
+        linkSources transaction "eateries" $"{place.Slug}:{eatery.Name}" eatery.Evidence
 
 let private insertStayAreas transaction (place: Place) =
     for area in place.StayAreas do
@@ -181,6 +221,7 @@ let apply transaction (catalog: Catalog) =
         insertFit transaction place
         insertDayPlans transaction place
         insertStayAreas transaction place
+        insertFood transaction place
         upsertExperiences transaction place
 
     if catalog.Complete then

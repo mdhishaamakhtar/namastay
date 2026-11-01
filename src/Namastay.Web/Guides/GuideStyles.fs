@@ -76,6 +76,15 @@ details p{padding:0 12px 12px}
 .lightbox-next{right:0}
 .lightbox-next::after{content:"\203A";right:16px}
 .gallery a img,.hero a img{cursor:zoom-in}
+.food-intro{margin-bottom:12px}
+.veg{font-size:14px;font-weight:600;color:var(--deep)}
+.eateries-title{margin:20px 0 4px;font-family:"Yatra One",Mukta,serif;font-size:22px;font-weight:400}
+.eatery{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 16px;padding:12px 0;border-top:1px solid color-mix(in srgb,var(--deep) 25%,transparent)}
+.eatery>div{display:flex;flex-wrap:wrap;gap:0 8px;align-items:baseline}
+.eatery strong{font-weight:600}
+.eatery>div span{font-size:15px}
+.eatery p{grid-column:1}
+.eatery-cost{grid-column:2;grid-row:1;font-size:14px}
 .notices{display:flex;flex-direction:column}
 .notices h2{margin-bottom:8px}
 .notice{display:grid;grid-template-columns:72px minmax(0,1fr);gap:12px;padding:12px 0;border-top:1px solid color-mix(in srgb,var(--deep) 25%,transparent)}
