@@ -87,10 +87,12 @@ let private fetch (data: DataCache) (context: HttpContext) : Task<Result<SavedTr
         match stored with
         | None -> return Error(ApiError.notFound "We couldn't find that trip.")
         | Some text ->
-            let! trip =
-                markRetired data.Source (JsonSerializer.Deserialize<Trip>(text, Json.options))
-
-            return Ok { ShareToken = token; Trip = trip }
+            match TripSnapshot.read text with
+            | None ->
+                return Error(ApiError.create ErrorCode.Conflict "We can't open this saved trip. Please plan a new one.")
+            | Some trip ->
+                let! marked = markRetired data.Source trip
+                return Ok { ShareToken = token; Trip = marked }
     }
 
 let map (app: IEndpointRouteBuilder) (data: DataCache) =

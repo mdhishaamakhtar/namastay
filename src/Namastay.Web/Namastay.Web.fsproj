@@ -12,6 +12,7 @@
     <Compile Include="Media/MediaRoute.fs" />
     <Compile Include="Places/PlacesApi.fs" />
     <Compile Include="Journey/JourneyApi.fs" />
+    <Compile Include="Trips/TripSnapshot.fs" />
     <Compile Include="Trips/TripsApi.fs" />
     <Compile Include="Guides/GuideStyles.fs" />
     <Compile Include="Guides/GuidePage.fs" />

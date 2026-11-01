@@ -393,5 +393,32 @@ type JourneyApiTests(postgres: PostgresFixture) =
             Assert.Equal<string list>(first.Trip.Stops |> List.map _.Name, second.Trip.Stops |> List.map _.Name)
         }
 
+    [<Fact>]
+    member _.``trip saved before a format change still opens``() =
+        task {
+            let! http, db = start ()
+            let! saved = create http
+            do! sql db "update itineraries set trip = trip - 'mix' #- '{stops,0,photo}'"
+            let! loaded = fetch http saved.ShareToken
+            Assert.Empty loaded.Trip.Mix
+            Assert.Equal(saved.Trip.Title, loaded.Trip.Title)
+            Assert.True(loaded.Trip.Stops.Head.Photo.IsNone)
+        }
+
+    [<Fact>]
+    member _.``unreadable saved trip returns a typed error``() =
+        task {
+            let! http, db = start ()
+            let! saved = create http
+            do! sql db "update itineraries set trip = '{\"title\":1}'"
+
+            let! response =
+                http.GetAsync(Route.url [ "shareToken", saved.ShareToken ] [] Routes.getItinerary)
+
+            let! error = response.Content.ReadFromJsonAsync<ApiError>(Json.options)
+            Assert.Equal(HttpStatusCode.Conflict, response.StatusCode)
+            Assert.Equal(ErrorCode.Conflict, error.Code)
+        }
+
     interface IDisposable with
         member _.Dispose() = (scope :> IDisposable).Dispose()
