@@ -10,12 +10,6 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
 
-  mailpit:
-    image: axllent/mailpit
-    ports:
-      - "1025:1025"
-      - "8025:8025"
-
   media:
     image: rustfs/rustfs:1.0.4
     environment:

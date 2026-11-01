@@ -1,4 +1,4 @@
-.PHONY: setup up down dev client test-e2e import import-check media-sync sample test test-unit test-integration coverage format lint lint-all check
+.PHONY: setup up down dev client test-e2e import import-check media-sync sample test test-unit test-integration coverage format lint lint-all check check-all
 
 LINT = dotnet dotnet-fsharplint lint --lint-config fsharplint.json
 
@@ -64,3 +64,6 @@ check:
 	$(MAKE) lint-all
 	$(MAKE) test-integration
 	$(MAKE) coverage
+
+# Everything, including the browser tests. Needs the app running.
+check-all: check test-e2e
