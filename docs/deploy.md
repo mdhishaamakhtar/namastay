@@ -18,7 +18,18 @@ The server refuses to start without these, and names what's missing.
 
 ## CDN
 
-Turn on Railway's CDN for both services, so pages, images and fonts come from the location nearest each visitor. Check it with a static file requested twice: the second answer should say `x-cache: HIT`. Pre-rendered HTML and the `/media` photos are safe to cache, because they only change through an import. After an import, purge the CDN cache as well.
+Railway's CDN is free but off by default, so turn it on for both services, under **Settings > Edge > Enable CDN Caching**, or:
+
+```bash
+railway cdn enable --service <service>
+```
+
+Keep the defaults: **HTML Caching** on Auto and **Purge Cache on Deploy** on HTML.
+
+- **Website:** Caddy sends `s-maxage` on pages, because Auto mode only caches HTML with a cache header. Each deploy clears them.
+- **API:** public travel data caches for 5 minutes, and photos for a year. Everything else sends `no-store`. The CDN ignores cookies, so a personal answer must never send a public cache header.
+
+To check it, request a page or photo twice. The second answer should say `x-cache: HIT`, and `/.railway/cdn-trace` shows which edge location answered. Hits don't reach the service, so its logs will undercount visitors.
 
 ## First deploy
 
@@ -31,6 +42,8 @@ The website saves its pages from the live API while building, so the API and its
 
 ## After changing travel data
 
-Import as above, then change the website's `CONTENT_STAMP` variable to anything new. That rebuilds its pages.
+1. Import as above.
+2. Wait 5 minutes, so cached API data expires. If you replaced a photo at the same path, run `railway cdn purge all` on the API, because photos cache for a year.
+3. Change the website's `CONTENT_STAMP` variable to anything new. That rebuilds its pages, and the deploy clears the cached ones.
 
 If the API can't be reached, or any page fails to load, the website build stops and the live site stays as it was.

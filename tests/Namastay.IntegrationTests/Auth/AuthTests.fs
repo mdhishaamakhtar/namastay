@@ -282,6 +282,14 @@ type AuthTests(postgres: PostgresFixture) =
         member _.Dispose() = (scope :> IDisposable).Dispose()
 
     [<Fact>]
+    member _.``personal answers tell every cache to keep out``() =
+        task {
+            let! http, _ = start ()
+            let! response = http.GetAsync Routes.me.Template
+            Assert.True response.Headers.CacheControl.NoStore
+        }
+
+    [<Fact>]
     member _.``a native app signs in with a bearer token``() =
         task {
             let! http, _ = start ()

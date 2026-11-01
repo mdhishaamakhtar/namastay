@@ -1,7 +1,10 @@
 :{$PORT:8080}
 
 root * /srv
-encode zstd gzip
+# Railway's edge caches pages for a day and clears them on each deploy. Browsers
+# check back every time, so a new deploy shows up at once. The edge also compresses.
+@pages not path /assets/* /fonts/*
+header @pages Cache-Control "public, max-age=0, s-maxage=86400, stale-while-revalidate=86400"
 
 @assets path /assets/* /fonts/*
 header @assets Cache-Control "public, max-age=31536000, immutable"

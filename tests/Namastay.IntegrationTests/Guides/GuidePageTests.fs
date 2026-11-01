@@ -353,6 +353,15 @@ type GuidePageTests(postgres: PostgresFixture) =
         }
 
     [<Fact>]
+    member _.``the sitemap is never served old``() =
+        task {
+            let! http, _ = start ()
+            let! response = http.GetAsync "/sitemap.xml"
+            let! _ = response.Content.ReadAsStringAsync()
+            Assert.Equal("no-store", string response.Headers.CacheControl)
+        }
+
+    [<Fact>]
     member _.``a missing guide stays out of search``() =
         task {
             let! http, _ = start ()

@@ -23,6 +23,8 @@ let mapGet
     =
     let run (context: HttpContext) : Task =
         task {
+            // The CDN ignores cookies, so anything that isn't plainly public must say so.
+            context.Response.Headers.CacheControl <- "no-store"
             let! result = handler context
             do! respond context result
         }

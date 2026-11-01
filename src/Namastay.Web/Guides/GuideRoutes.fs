@@ -60,6 +60,8 @@ let private sitemap (data: DataCache) (context: HttpContext) : Task =
             |> String.concat ""
 
         context.Response.ContentType <- "application/xml; charset=utf-8"
+        // The website's build reads this, and has to see new guides straight away.
+        context.Response.Headers.CacheControl <- "no-store"
 
         do!
             context.Response.WriteAsync
