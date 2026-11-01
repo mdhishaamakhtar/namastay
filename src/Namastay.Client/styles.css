@@ -1046,9 +1046,7 @@ button:focus-visible {
 
 /* A faint hairline tells one trip from the next. Inset, so no background shows through. */
 .my-trip + .my-trip {
-  box-shadow:
-    inset 1px 0 0 rgb(255 255 255 / 16%),
-    inset 0 1px 0 rgb(255 255 255 / 16%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 16%);
 }
 
 .my-trip {
@@ -1114,6 +1112,10 @@ button:focus-visible {
 
   .my-trip-open h2 {
     min-height: 2.3em;
+  }
+
+  .my-trip + .my-trip {
+    box-shadow: inset 1px 0 0 rgb(255 255 255 / 16%);
   }
 
 }
