@@ -29,6 +29,20 @@ let mapGet
 
     app.MapGet(route.Template, RequestDelegate run) |> ignore
 
+/// A POST or DELETE with no body.
+let mapAction
+    (app: IEndpointRouteBuilder)
+    (route: Route<NoBody, 'Response>)
+    (handler: HttpContext -> Task<Result<'Response, ApiError>>)
+    =
+    let run (context: HttpContext) : Task =
+        task {
+            let! result = handler context
+            do! respond context result
+        }
+
+    app.MapMethods(route.Template, [ route.Method ], RequestDelegate run) |> ignore
+
 let private unreadable =
     ApiError.validation [
         {

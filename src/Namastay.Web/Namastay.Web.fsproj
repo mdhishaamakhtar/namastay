@@ -15,6 +15,7 @@
     <Compile Include="Trips/TripsApi.fs" />
     <Compile Include="Auth/AuthApi.fs" />
     <Compile Include="Auth/GoogleSignIn.fs" />
+    <Compile Include="Trips/SavedTripsApi.fs" />
     <Compile Include="Guides/GuideStyles.fs" />
     <Compile Include="Guides/GuidePage.fs" />
     <Compile Include="Guides/GuideRoutes.fs" />

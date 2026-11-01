@@ -27,3 +27,14 @@ let signIn: Route<Credentials, Account> = Route.post "/api/auth/sign-in"
 let signOut: Route<NoBody, NoBody> = Route.post "/api/auth/sign-out"
 let me: Route<NoBody, Account> = Route.get "/api/me"
 let googleSignIn: Route<NoBody, string> = Route.get "/auth/google"
+
+let saveItinerary: Route<NoBody, SavedTripSummary> =
+    Route.post "/api/itineraries/{shareToken}/save"
+
+let myItineraries: Route<NoBody, SavedTripSummary list> =
+    Route.get "/api/my/itineraries"
+
+let deleteMine: Route<NoBody, NoBody> = {
+    Method = "DELETE"
+    Template = "/api/my/itineraries/{id}"
+}

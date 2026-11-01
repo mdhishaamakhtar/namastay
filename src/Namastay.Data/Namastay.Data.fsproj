@@ -21,6 +21,7 @@
     <Compile Include="Accounts/Users.fs" />
     <Compile Include="Journey/Graph.fs" />
     <Compile Include="Trips/Itineraries.fs" />
+    <Compile Include="Trips/SavedTrips.fs" />
     <EmbeddedResource Include="Migrations/*.sql" />
   </ItemGroup>
 

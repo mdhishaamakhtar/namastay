@@ -11,3 +11,11 @@ type Account = {
     Email: string
     Provider: SignInProvider
 }
+
+type SavedTripSummary = {
+    Id: string
+    ShareToken: string
+    Title: string
+    Days: int
+    SavedOn: string
+}
