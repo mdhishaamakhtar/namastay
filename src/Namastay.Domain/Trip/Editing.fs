@@ -83,8 +83,8 @@ let private rebuild (catalog: Catalog) (original: Trip) (edit: TripEdit) (review
             Title = edit.Title.Trim()
             Month = edit.Month
             BaseFamily = family
-            Arrive = Builder.arrive catalog routed
-            Depart = Builder.depart catalog routed
+            Arrive = Gateways.arrive catalog routed
+            Depart = Gateways.depart catalog routed
             Stops = stops
             Swaps = []
             Notices = Builder.notices catalog edit.Month routed

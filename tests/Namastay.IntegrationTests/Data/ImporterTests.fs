@@ -408,4 +408,19 @@ type ImporterTests(postgres: PostgresFixture) =
     interface IDisposable with
         member _.Dispose() = (scope :> IDisposable).Dispose()
 
+    [<Fact>]
+    member _.``a blank optional value imports as nothing``() =
+        task {
+            let! db = database ()
+
+            let catalog = {
+                Sample.catalog with
+                    Links =
+                        Sample.catalog.Links
+                        |> List.map (fun link -> { link with ComfortNote = Some null })
+            }
+
+            Run.run db Run.Apply "blank" catalog |> expectOk |> ignore
+        }
+
     interface IClassFixture<PostgresFixture>

@@ -33,6 +33,9 @@
     <Compile Include="Pages/Edit/State.fs" />
     <Compile Include="Pages/Edit/View.fs" />
     <Compile Include="Pages/Browse/State.fs" />
+    <Compile Include="Pages/Browse/Parts.fs" />
+    <Compile Include="Pages/Browse/Places.fs" />
+    <Compile Include="Pages/Browse/Food.fs" />
     <Compile Include="Pages/Browse/View.fs" />
     <Compile Include="App.fs" />
   </ItemGroup>

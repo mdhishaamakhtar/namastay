@@ -39,6 +39,20 @@ type WiringTests(postgres: PostgresFixture) =
         }
 
     [<Fact>]
+    member _.``every response carries the security headers``() =
+        task {
+            let! http = start ()
+            let! response = http.GetAsync Routes.health.Template
+            Assert.Equal("nosniff", String.Join("", response.Headers.GetValues "X-Content-Type-Options"))
+            Assert.Equal("DENY", String.Join("", response.Headers.GetValues "X-Frame-Options"))
+
+            Assert.Equal(
+                "strict-origin-when-cross-origin",
+                String.Join("", response.Headers.GetValues "Referrer-Policy")
+            )
+        }
+
+    [<Fact>]
     member _.``health is wired``() =
         task {
             let! http = start ()

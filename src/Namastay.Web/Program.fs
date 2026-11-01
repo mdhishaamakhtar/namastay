@@ -24,6 +24,7 @@ let main args =
             raise (InvalidOperationException $"Missing settings: {names}")
 
     Server.configureServices builder.Services
+    Server.configureKeys builder.Services (Settings.keysFolder builder.Configuration)
     let google = Settings.google builder.Configuration
 
     google
@@ -31,6 +32,7 @@ let main args =
 
     let app = builder.Build()
     Server.useForwardedHeaders app
+    Server.useSecurityHeaders app
     Server.useCompression app
     Server.useErrorHandling app
     app.UseStaticFiles() |> ignore

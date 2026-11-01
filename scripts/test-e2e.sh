@@ -31,9 +31,9 @@ psql_admin "drop database if exists $database with (force)"
 psql_admin "create database $database"
 
 export NAMASTAY_DB="$connection"
-dotnet run --project src/Namastay.Importer -- samples/data > /dev/null
+dotnet run ${TEST_FLAGS:-} --project src/Namastay.Importer -- samples/data > /dev/null
 
-dotnet build src/Namastay.Web --verbosity quiet
+[ -n "${TEST_FLAGS:-}" ] || dotnet build src/Namastay.Web --verbosity quiet
 ASPNETCORE_ENVIRONMENT=Development ConnectionStrings__Namastay="$connection" \
     dotnet run --no-build --no-launch-profile --project src/Namastay.Web --urls "http://localhost:$api_port" > /dev/null &
 
@@ -44,4 +44,4 @@ ASPNETCORE_ENVIRONMENT=Development ConnectionStrings__Namastay="$connection" \
 wait_for "http://localhost:$api_port/health"
 wait_for "http://localhost:$client_port"
 
-NAMASTAY_URL="http://localhost:$client_port" dotnet test tests/Namastay.E2ETests --verbosity minimal -- xUnit.StopOnFail=true
+NAMASTAY_URL="http://localhost:$client_port" dotnet test tests/Namastay.E2ETests ${TEST_FLAGS:-} --verbosity minimal -- xUnit.StopOnFail=true

@@ -38,6 +38,12 @@ module Settings =
             }
         | missing -> Error missing
 
+    /// Without this, keys live on the machine, which is fine for development.
+    let keysFolder (configuration: IConfiguration) =
+        configuration["DataProtection:KeysFolder"]
+        |> Option.ofObj
+        |> Option.filter (String.IsNullOrWhiteSpace >> not)
+
     /// Google stays off until both of its settings exist.
     let google (configuration: IConfiguration) =
         let clientId = configuration["Google:ClientId"]

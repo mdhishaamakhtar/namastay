@@ -29,7 +29,7 @@ let private toApiError error =
         ApiError.validation [
             {
                 Field = "days"
-                Message = "Please choose between 5 and 21 days."
+                Message = $"Please choose between {RequestRules.minDays} and {RequestRules.maxDays} days."
             }
         ]
     | Builder.TripError.NoPlaces ->

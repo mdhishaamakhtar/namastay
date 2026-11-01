@@ -1,12 +1,14 @@
 module Namastay.Web.Server
 
 open System
+open System.IO
 open System.Threading
 open System.Threading.RateLimiting
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Authentication
 open Microsoft.AspNetCore.Authentication.Cookies
 open Microsoft.AspNetCore.Builder
+open Microsoft.AspNetCore.DataProtection
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.HttpOverrides
 open Microsoft.AspNetCore.ResponseCompression
@@ -84,6 +86,28 @@ let configureServices (services: IServiceCollection) =
 
         options.OnRejected <- Func<OnRejectedContext, CancellationToken, ValueTask>(rejected))
     |> ignore
+
+/// Tells browsers to keep this site out of frames and to trust the types it declares.
+let private addSecurityHeaders (context: HttpContext) (next: RequestDelegate) : Task =
+    let headers = context.Response.Headers
+    headers.XContentTypeOptions <- "nosniff"
+    headers.XFrameOptions <- "DENY"
+    headers["Referrer-Policy"] <- "strict-origin-when-cross-origin"
+
+    if context.Request.IsHttps then
+        headers.StrictTransportSecurity <- "max-age=31536000"
+
+    next.Invoke context
+
+let useSecurityHeaders (app: WebApplication) =
+    app.Use(Func<HttpContext, RequestDelegate, Task>(addSecurityHeaders)) |> ignore
+
+/// Sign-in cookies must survive a redeploy, so production keeps their keys on a volume.
+let configureKeys (services: IServiceCollection) (folder: string option) =
+    folder
+    |> Option.iter (fun path ->
+        services.AddDataProtection().PersistKeysToFileSystem(DirectoryInfo path)
+        |> ignore)
 
 let useCompression (app: WebApplication) = app.UseResponseCompression() |> ignore
 

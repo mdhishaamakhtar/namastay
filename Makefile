@@ -36,14 +36,20 @@ test:
 	@$(MAKE) -j2 test-unit test-integration
 
 # Every test there is, side by side. Needs `make up`.
+# Everything builds once first, so the parallel test runs don't fight over the same files.
 test-all:
-	@$(MAKE) -j3 test-unit test-integration test-e2e
+	dotnet build tests/Namastay.UnitTests --verbosity quiet
+	dotnet build tests/Namastay.IntegrationTests --verbosity quiet
+	dotnet build tests/Namastay.E2ETests --verbosity quiet
+	dotnet build src/Namastay.Web --verbosity quiet
+	dotnet build src/Namastay.Importer --verbosity quiet
+	@$(MAKE) -j3 test-unit test-integration test-e2e TEST_FLAGS=--no-build
 
 test-unit:
-	dotnet test tests/Namastay.UnitTests -- xUnit.StopOnFail=true
+	dotnet test tests/Namastay.UnitTests $(TEST_FLAGS) -- xUnit.StopOnFail=true
 
 test-integration:
-	dotnet test tests/Namastay.IntegrationTests -- xUnit.StopOnFail=true
+	dotnet test tests/Namastay.IntegrationTests $(TEST_FLAGS) -- xUnit.StopOnFail=true
 
 # Uses its own sample database and servers, so it works whatever `make dev` has loaded. Needs `make up`.
 test-e2e:

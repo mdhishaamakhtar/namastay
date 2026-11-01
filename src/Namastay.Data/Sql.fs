@@ -13,8 +13,8 @@ type private OptionHandler<'Value>() =
     override _.SetValue(parameter, value) =
         parameter.Value <-
             match value with
-            | Some inner -> box inner
-            | None -> box DBNull.Value
+            | Some inner when not (isNull (box inner)) -> box inner
+            | _ -> box DBNull.Value
 
     override _.Parse value =
         match value with
