@@ -1753,6 +1753,8 @@ button:focus-visible {
 .home-plan,
 .home-again {
   display: flex;
+  flex: none;
+  white-space: nowrap;
   align-items: center;
   justify-content: center;
   width: 100%;
