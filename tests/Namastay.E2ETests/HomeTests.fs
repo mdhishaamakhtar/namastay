@@ -79,7 +79,10 @@ type HomeTests(browser: BrowserFixture) =
             do! search page "example"
             do! page.GetByRole(AriaRole.Link, PageGetByRoleOptions(Name = "Example Valley")).WaitForAsync()
             do! search page ""
-            let! links = page.GetByRole(AriaRole.Link).CountAsync()
+
+            let! links =
+                page.GetByRole(AriaRole.Link, PageGetByRoleOptions(Name = "Example Valley")).CountAsync()
+
             Assert.Equal(0, links)
         }
 

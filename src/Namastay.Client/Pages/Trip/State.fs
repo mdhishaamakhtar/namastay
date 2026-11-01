@@ -4,11 +4,14 @@ open Browser
 open Elmish
 open Fable.Core
 open Fable.Core.JsInterop
+open Fetch
 open Namastay.Client.Api
 open Namastay.Client.Components
 open Namastay.Client.Theme
 open Namastay.Shared
 open Namastay.Shared.Contracts
+
+module Navigation = Namastay.Client.Routing.Browser
 
 let private copiedNoteMs = 2000
 
@@ -18,11 +21,18 @@ type Sharing =
     | Copied
     | Failed
 
+/// A trip is either the public shared one or a signed-in traveller's own copy.
+[<RequireQualifiedAccess>]
+type Source =
+    | Shared of shareToken: string
+    | Mine of id: string
+
 type Model = {
-    ShareToken: string
+    Source: Source
     Trip: Remote<SavedTrip>
     Open: string option
     Sharing: Sharing
+    Problem: string option
 }
 
 type Msg =
@@ -32,21 +42,33 @@ type Msg =
     | Share
     | Shared of Sharing
     | ClearSharing
+    | SaveToAccount
+    | SavedToAccount of Result<SavedTripSummary, Client.ClientError>
+    | Print
 
-let private load (token: string) =
-    Cmd.OfPromise.perform
-        (fun url -> Client.get<SavedTrip> url)
-        (Route.url [ "shareToken", token ] [] Routes.getItinerary)
-        Loaded
+let private tripUrl source =
+    match source with
+    | Source.Shared token -> Route.url [ "shareToken", token ] [] Routes.getItinerary
+    | Source.Mine id -> Route.url [ "id", id ] [] Routes.getMine
 
-let init token =
+let private load source =
+    Cmd.OfPromise.perform (fun url -> Client.get<SavedTrip> url) (tripUrl source) Loaded
+
+let init source =
     {
-        ShareToken = token
+        Source = source
         Trip = Remote.Loading
         Open = None
         Sharing = Sharing.Idle
+        Problem = None
     },
-    load token
+    load source
+
+let private saveToAccount token =
+    Cmd.OfPromise.perform
+        (fun url -> Client.send<SavedTripSummary> url [ RequestProperties.Method HttpMethod.POST ])
+        (Route.url [ "shareToken", token ] [] Routes.saveItinerary)
+        SavedToAccount
 
 let private applyBase (trip: Trip) =
     Cmd.ofEffect (fun _ ->
@@ -65,7 +87,7 @@ let private clearLater () =
 
 let update msg (model: Model) =
     match msg with
-    | Load -> { model with Trip = Remote.Loading }, load model.ShareToken
+    | Load -> { model with Trip = Remote.Loading }, load model.Source
     | Loaded(Ok saved) ->
         {
             model with
@@ -73,6 +95,7 @@ let update msg (model: Model) =
                 Open = saved.Trip.Stops |> List.tryHead |> Option.map _.PlaceSlug
         },
         applyBase saved.Trip
+    | Loaded(Error error) when Client.isSignedOut error -> model, Cmd.ofEffect (fun _ -> Navigation.signInThenReturn ())
     | Loaded(Error error) ->
         {
             model with
@@ -88,3 +111,18 @@ let update msg (model: Model) =
     | Share -> model, share ()
     | Shared result -> { model with Sharing = result }, clearLater ()
     | ClearSharing -> { model with Sharing = Sharing.Idle }, Cmd.none
+    | SaveToAccount ->
+        match model.Source with
+        | Source.Shared token -> { model with Problem = None }, saveToAccount token
+        | Source.Mine _ -> model, Cmd.none
+    | SavedToAccount(Ok summary) ->
+        model, Cmd.ofEffect (fun _ -> Navigation.navigate (Route.url [ "id", summary.Id ] [] Routes.myTripPage))
+    | SavedToAccount(Error error) when Client.isSignedOut error ->
+        model, Cmd.ofEffect (fun _ -> Navigation.signInThenReturn ())
+    | SavedToAccount(Error error) ->
+        {
+            model with
+                Problem = Some(Client.describe error)
+        },
+        Cmd.none
+    | Print -> model, Cmd.ofEffect (fun _ -> window.print ())

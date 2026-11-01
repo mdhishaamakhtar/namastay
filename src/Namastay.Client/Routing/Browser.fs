@@ -2,6 +2,11 @@ module Namastay.Client.Routing.Browser
 
 open Browser
 open Browser.Types
+open Fable.Core
+open Fable.Core.JsInterop
+
+[<Emit("new URLSearchParams($0).get($1)")>]
+let private searchParam (search: string) (name: string) : string option = jsNative
 
 let private changed = "namastay:navigate"
 
@@ -14,6 +19,17 @@ let currentPath () =
 let navigate (path: string) =
     window.history.pushState (null, "", path)
     window.dispatchEvent (Event.Create changed) |> ignore
+
+/// Sends a signed-out visitor to sign in, then back to where they were.
+let signInThenReturn () =
+    let here = window.location.pathname
+    navigate ("/sign-in?next=" + JS.encodeURIComponent here)
+
+/// The page to return to after signing in. Only paths on this site count.
+let afterSignIn (fallback: string) =
+    match searchParam window.location.search "next" with
+    | Some path when path.StartsWith "/" && not (path.StartsWith "//") -> path
+    | _ -> fallback
 
 /// Calls `onChange` for in-app navigation and for the browser's back and forward buttons.
 let subscribe (onChange: string list -> unit) =

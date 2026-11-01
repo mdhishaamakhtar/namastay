@@ -56,7 +56,9 @@ let private notices (trip: Trip) (stop: TripStop) =
 let private guideLink token (stop: TripStop) =
     let url = Route.url [ "slug", stop.PlaceSlug ] [ "trip", token ] Routes.guidePage
 
-    if stop.Retired then
+    if stop.Custom then
+        Html.p "This is your own stop, so we haven't checked it."
+    elif stop.Retired then
         Html.p "This place is no longer in our guide."
     else
         // A guide is a server page, so this is a normal link.
@@ -122,8 +124,11 @@ let view token (trip: Trip) (openSlug: string option) dispatch firstDay (stop: T
                             Icons.chevron isOpen
                         ]
                     ]
-                    if isOpen then
-                        details token trip firstDay stop
+                    // Closed stops stay in the page, so a printed trip has every day.
+                    Html.div [
+                        prop.className (if isOpen then "stop-open" else "stop-closed")
+                        prop.children [ details token trip firstDay stop ]
+                    ]
                 ]
             ]
         ]

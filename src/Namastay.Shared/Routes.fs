@@ -5,6 +5,10 @@ open Namastay.Shared.Contracts
 let home: Route<NoBody, string> = Route.get "/"
 let journey: Route<NoBody, string> = Route.get "/journey"
 let trip: Route<NoBody, string> = Route.get "/trip/{shareToken}"
+let signInPage: Route<NoBody, string> = Route.get "/sign-in"
+let myTripsPage: Route<NoBody, string> = Route.get "/my"
+let myTripPage: Route<NoBody, string> = Route.get "/my/{id}"
+let editTripPage: Route<NoBody, string> = Route.get "/my/{id}/edit"
 let guidePage: Route<NoBody, string> = Route.get "/places/{slug}"
 let sitemap: Route<NoBody, string> = Route.get "/sitemap.xml"
 let mediaFile: Route<NoBody, string> = Route.get "/media/{**key}"
@@ -27,6 +31,7 @@ let signIn: Route<Credentials, Account> = Route.post "/api/auth/sign-in"
 let signOut: Route<NoBody, NoBody> = Route.post "/api/auth/sign-out"
 let me: Route<NoBody, Account> = Route.get "/api/me"
 let googleSignIn: Route<NoBody, string> = Route.get "/auth/google"
+let signInOptions: Route<NoBody, SignInOptions> = Route.get "/api/auth/options"
 
 let saveItinerary: Route<NoBody, SavedTripSummary> =
     Route.post "/api/itineraries/{shareToken}/save"
@@ -34,7 +39,7 @@ let saveItinerary: Route<NoBody, SavedTripSummary> =
 let myItineraries: Route<NoBody, SavedTripSummary list> =
     Route.get "/api/my/itineraries"
 
-let getMine: Route<NoBody, Trip> = Route.get "/api/my/itineraries/{id}"
+let getMine: Route<NoBody, SavedTrip> = Route.get "/api/my/itineraries/{id}"
 
 let editMine: Route<TripEdit, EditedTrip> = {
     Method = "PUT"

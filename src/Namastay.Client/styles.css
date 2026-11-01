@@ -924,3 +924,225 @@ button:focus-visible {
     animation: none;
   }
 }
+
+.home-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.home-account,
+.trip-link {
+  color: inherit;
+  font-weight: 500;
+}
+
+.stop-closed {
+  display: none;
+}
+
+.account {
+  max-width: 520px;
+}
+
+.account > * + * {
+  margin-top: 16px;
+}
+
+.account-brand {
+  display: inline-block;
+  color: inherit;
+  font-family: "Yatra One", Mukta, serif;
+  font-size: 22px;
+  text-decoration: none;
+}
+
+.account-form,
+.edit-form,
+.edit-add {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.account-google {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+}
+
+.account-switch,
+.my-trip-delete {
+  padding: 8px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 500;
+}
+
+.form-field input,
+.form-field select {
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--ink);
+  font: 400 17px/1.4 Mukta, system-ui, sans-serif;
+}
+
+.form-error {
+  margin: 0;
+  color: #9c2a12;
+  font-weight: 500;
+}
+
+.my-trips,
+.edit-stops,
+.edit-results {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.my-trip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+}
+
+.my-trip a {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.my-trip-delete {
+  flex: none;
+}
+
+.edit-stop {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 16px;
+  align-items: center;
+  padding: 12px;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+}
+
+.edit-stop-name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.edit-days,
+.edit-moves {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.edit-days span {
+  min-width: 40px;
+  text-align: center;
+}
+
+.edit-moves {
+  grid-column: 1 / -1;
+}
+
+.edit-small,
+.edit-small-text,
+.edit-results button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 4px 12px;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.edit-small:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.edit-small-text {
+  align-self: flex-start;
+}
+
+.edit-results button {
+  width: 100%;
+  text-align: left;
+}
+
+@media print {
+  .journey-brand,
+  .trip-share,
+  .trip-link,
+  .stop-guide,
+  .stop-head svg {
+    display: none;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .trip {
+    display: block;
+  }
+
+  .trip-panel,
+  .trip-content {
+    position: static;
+    width: auto;
+    height: auto;
+    min-height: 0;
+    padding: 0;
+    background: none;
+    color: #000;
+  }
+
+  .stop-closed {
+    display: block;
+  }
+
+  .stop-card,
+  .stop-head {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+    break-inside: avoid;
+  }
+
+  .stop-photo img {
+    max-height: 240px;
+    object-fit: cover;
+  }
+}

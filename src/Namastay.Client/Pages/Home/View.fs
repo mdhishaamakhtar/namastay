@@ -95,7 +95,17 @@ let private hero (navigate: string -> unit) =
     Html.section [
         prop.className "home-hero"
         prop.children [
-            Html.div [ prop.className "home-brand"; prop.text "Namastay" ]
+            Html.div [
+                prop.className "home-top"
+                prop.children [
+                    Html.div [ prop.className "home-brand"; prop.text "Namastay" ]
+                    Html.a [
+                        prop.className "home-account"
+                        prop.href Routes.myTripsPage.Template
+                        prop.text "My trips"
+                    ]
+                ]
+            ]
             Html.div [
                 prop.className "home-pitch"
                 prop.children [

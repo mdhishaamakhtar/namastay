@@ -12,6 +12,8 @@ type Account = {
     Provider: SignInProvider
 }
 
+type SignInOptions = { Google: bool }
+
 type SavedTripSummary = {
     Id: string
     ShareToken: string

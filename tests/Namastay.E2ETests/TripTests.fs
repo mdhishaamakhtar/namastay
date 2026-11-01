@@ -74,9 +74,9 @@ type TripTests(browser: BrowserFixture) =
             let! page, _ = openTrip ()
             let head = page.Locator(".stop-head").First
             do! head.ClickAsync()
-            let! closed = page.Locator(".stop-body").CountAsync()
+            let! closed = page.Locator(".stop-open").CountAsync()
             do! head.ClickAsync()
-            let! opened = page.Locator(".stop-body").CountAsync()
+            let! opened = page.Locator(".stop-open").CountAsync()
             Assert.Equal(0, closed)
             Assert.Equal(1, opened)
         }

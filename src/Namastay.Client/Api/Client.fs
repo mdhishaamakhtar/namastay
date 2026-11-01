@@ -45,13 +45,44 @@ let inline send<'Response> (url: string) (properties: RequestProperties list) =
 let inline get<'Response> (url: string) : JS.Promise<Result<'Response, ClientError>> = send<'Response> url []
 
 let inline post<'Request, 'Response> (url: string) (body: 'Request) : JS.Promise<Result<'Response, ClientError>> =
-    let json = Encode.Auto.toString (0, body, caseStrategy = CamelCase)
+    let json =
+        Encode.Auto.toString (0, body, caseStrategy = CamelCase, skipNullField = false)
 
     send<'Response> url [
         RequestProperties.Method HttpMethod.POST
         jsonHeaders
         RequestProperties.Body !^json
     ]
+
+let inline put<'Request, 'Response> (url: string) (body: 'Request) : JS.Promise<Result<'Response, ClientError>> =
+    let json =
+        Encode.Auto.toString (0, body, caseStrategy = CamelCase, skipNullField = false)
+
+    send<'Response> url [
+        RequestProperties.Method HttpMethod.PUT
+        jsonHeaders
+        RequestProperties.Body !^json
+    ]
+
+/// A request whose answer has nothing to read, so only success matters.
+let action (method: HttpMethod) (url: string) : JS.Promise<Result<unit, ClientError>> =
+    promise {
+        try
+            let! response = fetchUnsafe url [ RequestProperties.Method method ]
+
+            if response.Ok then
+                return Ok()
+            else
+                let! text = response.text ()
+                return Error(readError response.Status text)
+        with _ ->
+            return Error ClientError.Network
+    }
+
+let isSignedOut =
+    function
+    | ClientError.Server error -> error.Code = ErrorCode.Unauthorized
+    | _ -> false
 
 /// What a visitor should read, for any failure.
 let describe =

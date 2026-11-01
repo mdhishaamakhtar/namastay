@@ -252,5 +252,17 @@ type AuthTests(postgres: PostgresFixture) =
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode)
         }
 
+    [<Fact>]
+    member _.``sign-in options say whether google is offered``() =
+        task {
+            let! http, _ =
+                TestApp.start scope Sample.catalog (fun app _ -> AuthApi.mapOptions app true)
+
+            let! options =
+                http.GetFromJsonAsync<SignInOptions>(Routes.signInOptions.Template, Json.options)
+
+            Assert.True options.Google
+        }
+
     interface IDisposable with
         member _.Dispose() = (scope :> IDisposable).Dispose()

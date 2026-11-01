@@ -50,7 +50,7 @@ let private finish source (context: HttpContext) : Task =
             let! user = Users.claimForGoogle source email
             do! AuthApi.startSession context user
             do! context.SignOutAsync externalScheme
-            context.Response.Redirect Routes.home.Template
+            context.Response.Redirect Routes.myTripsPage.Template
     }
 
 let map (app: IEndpointRouteBuilder) (source: NpgsqlDataSource) =

@@ -45,6 +45,7 @@ let main args =
     TripsApi.map app data
     GuideRoutes.map app data
     AuthApi.map app database
+    AuthApi.mapOptions app google.IsSome
     SavedTripsApi.map app data
     google |> Option.iter (fun _ -> GoogleSignIn.map app database)
     app.Run()

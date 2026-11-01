@@ -217,9 +217,9 @@ type SavedTripsTests(postgres: PostgresFixture) =
             let! http, _ = start ()
             let! cookie, _, id = savedTrip http
             let! response = mine http cookie id
-            let! trip = response.Content.ReadFromJsonAsync<Trip>(Json.options)
+            let! saved = response.Content.ReadFromJsonAsync<SavedTrip>(Json.options)
             Assert.Equal(HttpStatusCode.OK, response.StatusCode)
-            Assert.NotEmpty trip.Stops
+            Assert.NotEmpty saved.Trip.Stops
         }
 
     [<Fact>]

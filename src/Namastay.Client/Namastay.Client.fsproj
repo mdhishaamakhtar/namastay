@@ -18,6 +18,12 @@
     <Compile Include="Pages/Trip/RouteMap.fs" />
     <Compile Include="Pages/Trip/Stop.fs" />
     <Compile Include="Pages/Trip/View.fs" />
+    <Compile Include="Pages/SignIn/State.fs" />
+    <Compile Include="Pages/SignIn/View.fs" />
+    <Compile Include="Pages/MyTrips/State.fs" />
+    <Compile Include="Pages/MyTrips/View.fs" />
+    <Compile Include="Pages/Edit/State.fs" />
+    <Compile Include="Pages/Edit/View.fs" />
     <Compile Include="App.fs" />
   </ItemGroup>
 

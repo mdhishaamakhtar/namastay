@@ -62,11 +62,39 @@ let private panel (model: Model) (trip: Trip) dispatch =
                     prop.className "trip-mix"
                     prop.children [ Html.h2 "Your mix"; yield! trip.Mix |> List.map mixBar ]
                 ]
+            match model.Source with
+            | Source.Shared _ ->
+                Html.button [
+                    prop.className "button trip-share press"
+                    prop.text (shareLabel model.Sharing)
+                    prop.onClick (fun _ -> dispatch Share)
+                ]
+
+                Html.button [
+                    prop.className "button trip-share press"
+                    prop.text "Save and change this trip"
+                    prop.onClick (fun _ -> dispatch SaveToAccount)
+                ]
+            | Source.Mine id ->
+                Html.a [
+                    prop.className "button trip-share press"
+                    prop.href (Route.url [ "id", id ] [] Routes.editTripPage)
+                    prop.text "Change this trip"
+                ]
+
+                Html.a [
+                    prop.className "trip-link"
+                    prop.href Routes.myTripsPage.Template
+                    prop.text "My trips"
+                ]
             Html.button [
                 prop.className "button trip-share press"
-                prop.text (shareLabel model.Sharing)
-                prop.onClick (fun _ -> dispatch Share)
+                prop.text "Save as PDF"
+                prop.onClick (fun _ -> dispatch Print)
             ]
+            match model.Problem with
+            | Some text -> Html.p [ prop.role "alert"; prop.text text ]
+            | None -> Html.none
         ]
     ]
 
@@ -112,12 +140,14 @@ let private firstDays (stops: TripStop list) =
     |> List.scan (fun day stop -> day + stop.Days) 1
     |> List.truncate stops.Length
 
-let private stops (model: Model) (trip: Trip) dispatch =
+let private stops (model: Model) (saved: SavedTrip) dispatch =
+    let trip = saved.Trip
+
     Html.ol [
         prop.className "trip-stops"
         prop.children (
             List.zip (firstDays trip.Stops) trip.Stops
-            |> List.map (fun (day, stop) -> Stop.view model.ShareToken trip model.Open dispatch day stop)
+            |> List.map (fun (day, stop) -> Stop.view saved.ShareToken trip model.Open dispatch day stop)
         )
     ]
 
@@ -135,7 +165,7 @@ let view (model: Model) dispatch =
                     prop.children [
                         swaps saved.Trip
                         bestMonths saved.Trip
-                        stops model saved.Trip dispatch
+                        stops model saved dispatch
                         leftOut saved.Trip
                     ]
                 ]

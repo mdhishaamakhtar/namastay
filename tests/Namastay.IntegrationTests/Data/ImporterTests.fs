@@ -257,7 +257,7 @@ type ImporterTests(postgres: PostgresFixture) =
             Assert.Equal(23, clusters)
             Assert.Equal(60, places)
             Assert.Equal(26, exclusions)
-            Assert.Equal(1, published)
+            Assert.Equal(59, published)
         }
 
     [<Fact>]

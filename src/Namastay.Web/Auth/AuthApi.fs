@@ -127,6 +127,10 @@ let private me source (context: HttpContext) : Task<Result<Account, ApiError>> =
             | None -> Error(ApiError.create ErrorCode.Unauthorized "Please sign in.")
     }
 
+/// Tells the sign-in page which ways of signing in this server offers.
+let mapOptions (app: IEndpointRouteBuilder) (google: bool) =
+    Endpoint.mapGet app Routes.signInOptions (fun _ -> Task.FromResult(Ok { Google = google }))
+
 let map (app: IEndpointRouteBuilder) (source: NpgsqlDataSource) =
     (Endpoint.mapBody app Routes.signUp (signUp source)).RequireRateLimiting Limits.signInPolicy
     |> ignore

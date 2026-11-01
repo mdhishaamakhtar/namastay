@@ -97,14 +97,19 @@ let private withMine source (context: HttpContext) action =
                 | Some row ->
                     match TripSnapshot.read row.Trip with
                     | None -> return Error cantOpen
-                    | Some trip -> return! action user id trip
+                    | Some trip -> return! action user row trip
         })
 
 let private fetch source (context: HttpContext) =
-    withMine source context (fun _ _ trip ->
+    withMine source context (fun _ row trip ->
         task {
             let! marked = TripsApi.markRetired source trip
-            return Ok marked
+
+            return
+                Ok {
+                    ShareToken = row.ShareToken
+                    Trip = marked
+                }
         })
 
 let private blocked (reasons: string list) =
@@ -117,7 +122,7 @@ let private blocked (reasons: string list) =
     }
 
 let private edit (data: DataCache) (context: HttpContext) (changes: TripEdit) =
-    withMine data.Source context (fun user id trip ->
+    withMine data.Source context (fun user row trip ->
         task {
             let! catalog = DataCache.getOrLoad data "catalog" (fun () -> Read.load data.Source)
 
@@ -125,7 +130,7 @@ let private edit (data: DataCache) (context: HttpContext) (changes: TripEdit) =
             | Error reasons -> return Error(blocked reasons)
             | Ok edited ->
                 let text = JsonSerializer.Serialize(edited.Trip, Json.options)
-                let! saved = SavedTrips.tryUpdate data.Source user.Id id edited.Trip.Title text
+                let! saved = SavedTrips.tryUpdate data.Source user.Id row.Id edited.Trip.Title text
                 return if saved then Ok edited else Error notFound
         })
 
