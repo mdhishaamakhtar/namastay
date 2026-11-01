@@ -21,6 +21,11 @@ let private waiting (label: string) (className: string) (children: ReactElement 
         prop.children children
     ]
 
+/// Real elements with hidden text, so a skeleton takes the size the page will.
+let private blank = "\u00A0"
+
+let private hiddenText (text: string) = [ prop.className "bone-text"; prop.text text ]
+
 let private stop index =
     Html.li [
         prop.key (string index)
@@ -43,12 +48,47 @@ let private stop index =
         ]
     ]
 
-/// The airport row at each end of a trip.
-let private airport (key: string) =
+/// A line between stops: the round mark, then two lines of text.
+let private leg (key: string) =
     Html.li [
         prop.key key
         prop.className "stop stop-airport"
-        prop.children [ bone "bone-line" ]
+        prop.children [
+            Html.div [
+                prop.className "stop-leg"
+                prop.children [
+                    Html.div [
+                        prop.className "stop-leg-line"
+                        prop.children [ Html.span [ prop.className "stop-leg-mark" ] ]
+                    ]
+                    Html.div [
+                        prop.className "stop-leg-plain"
+                        prop.children [
+                            Html.span [
+                                prop.className "stop-leg-text"
+                                prop.children [
+                                    Html.strong (hiddenText "Train to somewhere")
+                                    Html.span (hiddenText "About 3 hours")
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ]
+    ]
+
+let private routeRow index =
+    Html.li [
+        prop.key (string index)
+        prop.children [ Html.span [ prop.className "route-dot" ]; Html.span (hiddenText "A place") ]
+    ]
+
+let private mixRow index =
+    Html.div [
+        prop.key (string index)
+        prop.className "mix-row"
+        prop.children [ Html.span (hiddenText "A feeling"); Html.div [ prop.className "mix-track" ] ]
     ]
 
 /// The trip page, for opening a trip and for the moment one is being built.
@@ -57,18 +97,16 @@ let trip (label: string) (buttons: int) =
         Html.aside [
             prop.className "trip-panel"
             prop.children [
-                bone "bone-heading"
-                Html.div [ prop.className "route"; prop.children [ for _ in 1..6 -> bone "bone-route" ] ]
+                Html.h1 (hiddenText "14 days in Rajasthan and North India")
+                Html.ol [
+                    prop.className "route"
+                    prop.children [ for index in 1..6 -> routeRow index ]
+                ]
                 Html.div [
                     prop.className "trip-mix"
-                    prop.children [
-                        bone "bone-subheading"
-                        bone "bone-track"
-                        bone "bone-track"
-                        bone "bone-track"
-                    ]
+                    prop.children [ Html.h2 (hiddenText "Your mix"); yield! List.map mixRow [ 1; 2; 3 ] ]
                 ]
-                yield! List.replicate buttons button
+                Html.div [ prop.className "trip-actions"; prop.children (List.replicate buttons button) ]
             ]
         ]
         Html.div [
@@ -78,11 +116,14 @@ let trip (label: string) (buttons: int) =
                 Html.ol [
                     prop.className "trip-stops"
                     prop.children [
-                        airport "land"
+                        leg "land"
+                        leg "land-leg"
                         stop 1
                         bone "bone-open"
-                        yield! List.map stop [ 2; 3; 4; 5; 6; 7 ]
-                        airport "home"
+                        for index in 2..5 do
+                            leg $"leg-{index}"
+                            stop index
+                        leg "home"
                     ]
                 ]
             ]
@@ -140,11 +181,6 @@ let swipeCard (label: string) =
             prop.children [ bone "bone-input"; bone "bone-input" ]
         ]
     ]
-
-/// Real elements with hidden text, so a skeleton takes the size the page will.
-let private blank = "\u00A0"
-
-let private hiddenText (text: string) = [ prop.className "bone-text"; prop.text text ]
 
 let private browseHead (section: Menu.Section) (title: string) (extra: ReactElement list) =
     Html.div [

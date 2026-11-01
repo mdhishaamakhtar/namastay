@@ -18,6 +18,8 @@ type Screen =
     | SignIn of SignIn.State.Model
     | MyTrips of MyTrips.State.Model
     | Account of Account.State.Model
+    | Reading of ReadingPage
+    | Credits of Credits.State.Model
     | Edit of Edit.State.Model
     | Browse of Browse.State.Model
     | NotFound
@@ -32,6 +34,7 @@ type Msg =
     | SignInMsg of SignIn.State.Msg
     | MyTripsMsg of MyTrips.State.Msg
     | AccountMsg of Account.State.Msg
+    | CreditsMsg of Credits.State.Msg
     | EditMsg of Edit.State.Msg
     | BrowseMsg of Browse.State.Msg
 
@@ -59,6 +62,10 @@ let private show (segments: string list) =
     | Page.Account ->
         let account, command = Account.State.init ()
         { Screen = Screen.Account account }, Cmd.map AccountMsg command
+    | Page.Reading page -> { Screen = Screen.Reading page }, Cmd.none
+    | Page.Credits ->
+        let credits, command = Credits.State.init ()
+        { Screen = Screen.Credits credits }, Cmd.map CreditsMsg command
     | Page.Browse target ->
         let browse, command = Browse.State.init target
         { Screen = Screen.Browse browse }, Cmd.map BrowseMsg command
@@ -100,6 +107,9 @@ let update msg model =
     | MyTripsMsg inner, Screen.MyTrips trips ->
         let updated, command = MyTrips.State.update inner trips
         { Screen = Screen.MyTrips updated }, Cmd.map MyTripsMsg command
+    | CreditsMsg inner, Screen.Credits credits ->
+        let updated, command = Credits.State.update inner credits
+        { Screen = Screen.Credits updated }, Cmd.map CreditsMsg command
     | AccountMsg inner, Screen.Account account ->
         let updated, command = Account.State.update inner account
         { Screen = Screen.Account updated }, Cmd.map AccountMsg command
@@ -115,18 +125,9 @@ let update msg model =
     | SignInMsg _, _
     | MyTripsMsg _, _
     | AccountMsg _, _
+    | CreditsMsg _, _
     | EditMsg _, _
     | BrowseMsg _, _ -> model, Cmd.none
-
-let private notFound () =
-    Html.main [
-        Html.h1 "We can't find that page"
-        Html.a [
-            prop.className "button"
-            prop.href Routes.home.Template
-            prop.text "Back to Namastay"
-        ]
-    ]
 
 let private personal (title: string) (page: ReactElement) =
     Html.div [
@@ -134,18 +135,26 @@ let private personal (title: string) (page: ReactElement) =
         prop.children [ Seo.Private title; page ]
     ]
 
+/// A page people read gets the site's footer. Tasks like swiping keep the screen to themselves.
+let private withFooter (page: ReactElement) =
+    Html.div [ prop.style [ style.display.contents ]; prop.children [ page; Footer.view ] ]
+
 let view model dispatch =
     match model.Screen with
-    | Screen.Home home -> Home.View.view home (HomeMsg >> dispatch) Browser.navigate
+    | Screen.Home home -> withFooter (Home.View.view home (HomeMsg >> dispatch) Browser.navigate)
     | Screen.Journey journey ->
         personal "Plan your trip | Namastay" (Journey.View.view journey (JourneyMsg >> dispatch))
     | Screen.Trip trip -> personal "Your trip | Namastay" (Trip.View.view trip (TripMsg >> dispatch))
     | Screen.SignIn signIn -> personal "Sign in | Namastay" (SignIn.View.view signIn (SignInMsg >> dispatch))
-    | Screen.MyTrips trips -> personal "My trips | Namastay" (MyTrips.View.view trips (MyTripsMsg >> dispatch))
-    | Screen.Account account -> personal "Your account | Namastay" (Account.View.view account (AccountMsg >> dispatch))
+    | Screen.MyTrips trips ->
+        personal "My trips | Namastay" (withFooter (MyTrips.View.view trips (MyTripsMsg >> dispatch)))
+    | Screen.Account account ->
+        personal "Your account | Namastay" (withFooter (Account.View.view account (AccountMsg >> dispatch)))
     | Screen.Edit edit -> personal "Change your trip | Namastay" (Edit.View.view edit (EditMsg >> dispatch))
-    | Screen.Browse browse -> Browse.View.view browse (BrowseMsg >> dispatch)
-    | Screen.NotFound -> personal "Page not found | Namastay" (notFound ())
+    | Screen.Browse browse -> withFooter (Browse.View.view browse (BrowseMsg >> dispatch))
+    | Screen.Reading page -> withFooter (Reading.View.view page)
+    | Screen.Credits credits -> withFooter (Credits.View.view credits (CreditsMsg >> dispatch))
+    | Screen.NotFound -> personal "Page not found | Namastay" (withFooter NotFound.view)
 
 let subscribe (_: Model) : Sub<Msg> = [ [ "url" ], (fun dispatch -> Browser.subscribe (UrlChanged >> dispatch)) ]
 

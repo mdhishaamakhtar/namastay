@@ -80,3 +80,7 @@ make down        # stop Postgres and the photo store
 - [Architecture](docs/architecture.md)
 - [Data format](docs/data-format.md)
 - [Deploying](docs/deploy.md)
+
+## License
+
+[GPL-3.0](LICENSE). This covers the code. The travel data and photos aren't part of this repository.

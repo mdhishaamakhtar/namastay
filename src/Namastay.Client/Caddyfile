@@ -23,5 +23,11 @@ rewrite @myTrip /shells/my-trip.html
 
 rewrite /trip/* /shells/trip.html
 
-try_files {path} {path}/index.html /app.html
+# Every real address has a file by now, so anything else is a true 404.
+try_files {path} {path}/index.html
 file_server
+
+handle_errors {
+	rewrite * /404.html
+	file_server
+}

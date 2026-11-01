@@ -1,6 +1,7 @@
 module Namastay.Client.Pages.Trip.View
 
 open Feliz
+open Namastay.Client.Api
 open Namastay.Client.Components
 open Namastay.Client.Pages.Trip
 open Namastay.Client.Pages.Trip.State
@@ -42,29 +43,34 @@ let private panel (model: Model) (trip: Trip) dispatch =
                     prop.className "trip-mix"
                     prop.children [ Html.h2 "Your mix"; yield! trip.Mix |> List.map mixBar ]
                 ]
-            match model.Source with
-            | Source.Shared _ ->
-                Html.button [
-                    prop.className "button trip-share press"
-                    prop.text (shareLabel model.Sharing)
-                    prop.onClick (fun _ -> dispatch Share)
-                ]
+            Html.div [
+                prop.className "trip-actions"
+                prop.children [
+                    match model.Source with
+                    | Source.Shared _ ->
+                        Html.button [
+                            prop.className "button trip-share press"
+                            prop.text (shareLabel model.Sharing)
+                            prop.onClick (fun _ -> dispatch Share)
+                        ]
 
-                Html.button [
-                    prop.className "button trip-share press"
-                    prop.text "Save and change this trip"
-                    prop.onClick (fun _ -> dispatch SaveToAccount)
+                        Html.button [
+                            prop.className "button trip-share press"
+                            prop.text "Save and change this trip"
+                            prop.onClick (fun _ -> dispatch SaveToAccount)
+                        ]
+                    | Source.Mine id ->
+                        Html.a [
+                            prop.className "button trip-share press"
+                            prop.href (Route.url [ "id", id ] [] Routes.editTripPage)
+                            prop.text "Change this trip"
+                        ]
+                    Html.button [
+                        prop.className "button trip-share press"
+                        prop.text "Save as PDF"
+                        prop.onClick (fun _ -> dispatch Print)
+                    ]
                 ]
-            | Source.Mine id ->
-                Html.a [
-                    prop.className "button trip-share press"
-                    prop.href (Route.url [ "id", id ] [] Routes.editTripPage)
-                    prop.text "Change this trip"
-                ]
-            Html.button [
-                prop.className "button trip-share press"
-                prop.text "Save as PDF"
-                prop.onClick (fun _ -> dispatch Print)
             ]
             match model.Problem with
             | Some text -> Html.p [ prop.role "alert"; prop.text text ]
@@ -165,6 +171,7 @@ let view (model: Model) dispatch =
     withMenu model
     <| match model.Trip with
        | Remote.Loading -> Skeletons.trip "Finding your trip" (tripButtons model.Source)
+       | Remote.Failed error when Client.isNotFound error -> NotFound.view
        | Remote.Failed error -> Html.main [ States.failed error (fun () -> dispatch Load) ]
        | Remote.Loaded saved ->
            Html.div [

@@ -11,6 +11,12 @@ type Browse =
     | Dish of slug: string
 
 [<RequireQualifiedAccess>]
+type ReadingPage =
+    | Privacy
+    | Terms
+    | Contact
+
+[<RequireQualifiedAccess>]
 type Page =
     | Home
     | Journey
@@ -18,6 +24,8 @@ type Page =
     | SignIn
     | MyTrips
     | Account
+    | Reading of ReadingPage
+    | Credits
     | MyTrip of id: string
     | EditTrip of id: string
     | Browse of Browse
@@ -31,6 +39,10 @@ let parse (segments: string list) =
     | [ "sign-in" ] -> Page.SignIn
     | [ "my" ] -> Page.MyTrips
     | [ "account" ] -> Page.Account
+    | [ "privacy" ] -> Page.Reading ReadingPage.Privacy
+    | [ "terms" ] -> Page.Reading ReadingPage.Terms
+    | [ "contact" ] -> Page.Reading ReadingPage.Contact
+    | [ "credits" ] -> Page.Credits
     | [ "my"; id ] -> Page.MyTrip id
     | [ "my"; id; "edit" ] -> Page.EditTrip id
     | [ "explore" ] -> Page.Browse Browse.Places

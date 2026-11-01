@@ -220,6 +220,49 @@ type HomeTests(browser: BrowserFixture) =
         }
 
     [<Fact>]
+    member _.``refreshing keeps the scroll position``() =
+        task {
+            let! page = browser.NewPage()
+            let! _ = page.GotoAsync(browser.BaseUrl + "/food")
+            do! page.Locator(".site-foot").WaitForAsync()
+
+            let! _ =
+                page.EvaluateAsync "document.body.style.minHeight = '3000px'; window.scrollTo(0, 400)"
+
+            let! _ = page.ReloadAsync()
+            do! page.Locator(".site-foot").WaitForAsync()
+
+            let! _ =
+                page.WaitForFunctionAsync
+                    "window.scrollY > 0 || document.documentElement.scrollHeight <= window.innerHeight"
+
+            return ()
+        }
+
+    [<Fact>]
+    member _.``the footer leads to the privacy page``() =
+        task {
+            let! page = browser.NewPage()
+            let! _ = page.GotoAsync(browser.BaseUrl + "/food")
+
+            do!
+                page
+                    .Locator(".site-foot")
+                    .GetByRole(AriaRole.Link, LocatorGetByRoleOptions(Name = "Privacy"))
+                    .ClickAsync()
+
+            do! page.GetByRole(AriaRole.Heading, PageGetByRoleOptions(Name = "What we keep")).WaitForAsync()
+        }
+
+    [<Fact>]
+    member _.``an address that doesn't exist says so``() =
+        task {
+            let! page = browser.NewPage()
+            let! _ = page.GotoAsync(browser.BaseUrl + "/nowhere/at/all")
+            do! page.GetByText("This road doesn't go anywhere").WaitForAsync()
+        }
+
+    [<Fact>]
     member _.``sign in stays out of search``() =
         task {
             let! page = browser.NewPage()
@@ -236,7 +279,7 @@ type HomeTests(browser: BrowserFixture) =
         task {
             let! page = browser.NewPage()
             let! _ = page.GotoAsync(browser.BaseUrl + "/explore/nowhere")
-            do! page.GetByText("We don't have a page for that yet.").WaitForAsync()
+            do! page.GetByText("This road doesn't go anywhere").WaitForAsync()
         }
 
     interface IClassFixture<BrowserFixture>

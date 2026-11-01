@@ -18,6 +18,7 @@
     <Compile Include="Places/Feelings.fs" />
     <Compile Include="Places/Landing.fs" />
     <Compile Include="Places/Directory.fs" />
+    <Compile Include="Places/Credits.fs" />
     <Compile Include="Places/Browse.fs" />
     <Compile Include="Places/LeadPhoto.fs" />
     <Compile Include="Places/Guide.fs" />

@@ -625,6 +625,13 @@ button:focus-visible {
   background: currentColor;
 }
 
+.trip-actions {
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  gap: 12px;
+}
+
 .trip-share {
   background: var(--paper);
   color: var(--ink);
@@ -892,7 +899,11 @@ button:focus-visible {
   font-weight: 600;
 }
 
-@media (min-width: 720px) {
+.stop-card {
+  container-type: inline-size;
+}
+
+@container (min-width: 600px) {
   .stop-body-photo {
     grid-template-columns: 280px minmax(0, 1fr);
     gap: 24px;
@@ -901,6 +912,7 @@ button:focus-visible {
 
 @media (min-width: 1024px) {
   .trip {
+    --menu-height: 76px;
     display: grid;
     grid-template-columns: minmax(380px, 520px) minmax(0, 1fr);
     min-height: 100dvh;
@@ -908,9 +920,9 @@ button:focus-visible {
 
   .trip-panel {
     position: sticky;
-    top: 0;
+    top: var(--menu-height);
     align-self: start;
-    height: 100dvh;
+    height: calc(100dvh - var(--menu-height));
     gap: 20px;
     padding: 32px 48px 40px;
     overflow-y: auto;
@@ -920,9 +932,8 @@ button:focus-visible {
     font-size: 52px;
   }
 
-  .trip-share {
+  .trip-actions {
     margin-top: auto;
-    flex: none;
   }
 
   .trip-content {
@@ -1031,7 +1042,7 @@ button:focus-visible {
   width: fit-content;
   max-width: 100%;
   border-radius: 2px;
-  background: color-mix(in srgb, currentColor 12%, transparent);
+  background: rgb(128 128 128 / 22%);
   color: transparent;
 }
 
@@ -1258,6 +1269,8 @@ button:focus-visible {
 @media print {
   .journey-brand,
   .trip-menu,
+  .trip-actions,
+  .site-foot,
   .trip-share,
   .trip-link,
   .stop-guide,
@@ -2298,8 +2311,8 @@ button:focus-visible {
   font-weight: 600;
 }
 
-.account-body {
-  padding: 28px 22px 56px;
+.browse .account-body {
+  padding: 32px 22px 64px;
 }
 
 .account-details {
@@ -2307,7 +2320,6 @@ button:focus-visible {
   flex-direction: column;
   gap: 10px;
   max-width: 620px;
-  margin: 0 auto;
 }
 
 .account-details h2 {
@@ -2321,6 +2333,11 @@ button:focus-visible {
   margin: 0 0 24px;
   font-size: 19px;
   overflow-wrap: anywhere;
+}
+
+.account-details .my-password {
+  max-width: none;
+  margin-top: 4px;
 }
 
 .account-row {
@@ -2346,9 +2363,182 @@ button:focus-visible {
 }
 
 .trip-menu {
-  padding: 16px 22px;
+  padding: 16px 24px;
   background: var(--ink);
   color: var(--paper);
+}
+
+@media (min-width: 1024px) {
+  .trip-menu {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    height: 76px;
+    padding: 0 max(56px, calc(100% - 1476px)) 0 48px;
+  }
+
+  .trip-menu > * {
+    flex: 1;
+  }
+}
+
+.site-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 30px 22px;
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.site-foot p {
+  margin: 0;
+  opacity: 0.85;
+}
+
+.site-foot nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 24px;
+}
+
+.site-foot nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.browse .lost {
+  display: grid;
+  gap: 28px;
+  padding: 22px;
+}
+
+.lost-art {
+  overflow: hidden;
+  border-radius: 2px;
+  background: #2f5d3a;
+}
+
+.lost-art img {
+  display: block;
+  width: 100%;
+  border-bottom: 3px solid var(--brand);
+}
+
+.lost-text {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.lost-text h2 {
+  font-family: "Yatra One", Mukta, serif;
+  font-size: 36px;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.lost-text p {
+  margin: 0;
+  font-size: 19px;
+}
+
+.lost-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.lost-actions .button {
+  flex: 1 1 auto;
+  background: var(--brand);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.lost-actions .button-quiet {
+  border: 1px solid var(--ink);
+  background: none;
+}
+
+.browse .reading {
+  max-width: 720px;
+  padding: 16px 22px 48px;
+}
+
+.reading h2 {
+  margin-top: 28px;
+  margin-bottom: 8px;
+  font-family: "Yatra One", Mukta, serif;
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.reading p {
+  margin: 0 0 10px;
+  font-size: 18px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.browse .credits {
+  display: flex;
+  flex-direction: column;
+  max-width: 900px;
+  margin: 0;
+  padding: 8px 22px 48px;
+  list-style: none;
+}
+
+.credits li {
+  padding: 12px 0;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
+.credits li:first-child {
+  border-top: 0;
+}
+
+.credits a {
+  color: inherit;
+}
+
+@media (min-width: 1024px) {
+  .site-foot {
+    padding: 40px max(64px, calc((100% - 1240px) / 2));
+  }
+
+  .browse .lost {
+    grid-template-columns: 520px minmax(0, 1fr);
+    gap: 56px;
+    align-items: center;
+    padding: 56px max(64px, calc((100% - 1240px) / 2));
+  }
+
+  .lost-text h2 {
+    font-size: 46px;
+  }
+
+  .lost-actions .button {
+    flex: 0 0 auto;
+  }
+
+  .browse .account-body {
+    padding: 48px max(64px, calc((100% - 1240px) / 2)) 72px;
+  }
+
+  .browse .reading,
+  .browse .credits {
+    margin-left: max(64px, calc((100% - 1240px) / 2));
+    padding-left: 0;
+  }
 }
 
 .my-actions {

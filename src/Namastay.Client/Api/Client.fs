@@ -118,6 +118,11 @@ let action (method: HttpMethod) (url: string) : JS.Promise<Result<unit, ClientEr
             return Error ClientError.Network
     }
 
+let isNotFound =
+    function
+    | ClientError.Server error -> error.Code = ErrorCode.NotFound
+    | _ -> false
+
 let isSignedOut =
     function
     | ClientError.Server error -> error.Code = ErrorCode.Unauthorized

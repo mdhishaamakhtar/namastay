@@ -26,6 +26,36 @@
           document.documentElement.setAttribute("data-returning", "");
       } catch {}
     </script>
+    <script>
+      // Content arrives after the browser's own attempt to restore scroll on refresh,
+      // so this keeps trying until the page is tall enough, and stops if the visitor scrolls.
+      (function () {
+        try {
+          var key = function () { return "namastay-scroll:" + location.pathname; };
+          addEventListener("pagehide", function () {
+            sessionStorage.setItem(key(), String(scrollY));
+          });
+          var entry = performance.getEntriesByType("navigation")[0];
+          var target = Number(sessionStorage.getItem(key()));
+          if (!entry || entry.type !== "reload" || !target) return;
+          history.scrollRestoration = "manual";
+          var start = performance.now();
+          var stopped = false;
+          var stop = function () { stopped = true; history.scrollRestoration = "auto"; };
+          ["wheel", "touchstart", "keydown"].forEach(function (name) {
+            addEventListener(name, stop, { once: true, passive: true });
+          });
+          var settle = function () {
+            if (stopped) return;
+            scrollTo(0, target);
+            var waited = performance.now() - start;
+            if ((Math.abs(scrollY - target) < 2 && waited > 800) || waited > 5000) stop();
+            else requestAnimationFrame(settle);
+          };
+          settle();
+        } catch {}
+      })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="/logo.svg" />
     <link rel="preload" href="/fonts/yatra-one-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/mukta-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
