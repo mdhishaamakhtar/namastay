@@ -3,8 +3,19 @@ module Namastay.Client.Components.States
 open Feliz
 open Namastay.Client.Api
 
+/// An empty matchbox label, so waiting already looks like Namastay.
 let loading (label: string) =
-    Html.div [ prop.className "state"; prop.role "status"; prop.text label ]
+    Html.div [
+        prop.className "loading"
+        prop.role "status"
+        prop.children [
+            Html.div [
+                prop.className "loading-label"
+                prop.children [ Html.div [ prop.className "loading-frame" ] ]
+            ]
+            Html.p label
+        ]
+    ]
 
 let message (text: string) =
     Html.div [ prop.className "state"; prop.text text ]

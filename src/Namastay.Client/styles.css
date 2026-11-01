@@ -879,3 +879,48 @@ button:focus-visible {
     transition: none;
   }
 }
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 48px 0;
+}
+
+.loading p {
+  margin: 0;
+}
+
+.loading-label {
+  width: 200px;
+  height: 260px;
+  padding: 8px;
+  border-radius: 4px;
+  background: #fbfaf2;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.22);
+}
+
+.loading-frame {
+  height: 100%;
+  border: 2px solid var(--ink);
+  background: linear-gradient(100deg, transparent 40%, rgba(242, 181, 43, 0.3) 50%, transparent 60%);
+  background-size: 300% 100%;
+  animation: loading-sweep 1400ms linear infinite;
+}
+
+@keyframes loading-sweep {
+  from {
+    background-position: 100% 0;
+  }
+
+  to {
+    background-position: 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-frame {
+    animation: none;
+  }
+}
