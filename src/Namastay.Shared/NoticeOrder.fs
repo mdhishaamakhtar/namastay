@@ -19,3 +19,10 @@ let split (severity: 'Notice -> NoticeSeverity) (limit: int) (notices: 'Notice l
     let urgent = ordered |> List.filter (severity >> mustShow) |> List.length
     let shown = max urgent limit |> min ordered.Length
     List.splitAt shown ordered
+
+let kindName kind =
+    match kind with
+    | GuideNoticeKind.Closure -> "Opening"
+    | GuideNoticeKind.Safety -> "Safety"
+    | GuideNoticeKind.Legal -> "Rules"
+    | GuideNoticeKind.Permit -> "Permit"

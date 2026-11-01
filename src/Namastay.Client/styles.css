@@ -855,8 +855,32 @@ button:focus-visible {
   background: color-mix(in srgb, var(--ink) 7%, transparent);
 }
 
-.stop-more {
+.stop-notice {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid color-mix(in srgb, currentColor 16%, transparent);
   font-size: 15px;
+}
+
+.stop-notice strong {
+  font-weight: 600;
+}
+
+.stop-notice p {
+  margin: 0;
+}
+
+.stop-notices-more {
+  border-top: 1px solid color-mix(in srgb, currentColor 16%, transparent);
+  font-size: 15px;
+}
+
+.stop-notices-more summary {
+  padding: 10px 0;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .stop-guide {

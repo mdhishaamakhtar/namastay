@@ -225,7 +225,7 @@ type TripTests(browser: BrowserFixture) =
         }
 
     [<Fact>]
-    member _.``stop notices appear in the warning style``() =
+    member _.``permits stay open on a stop``() =
         task {
             let! page =
                 openChangedTrip (fun (json: JsonNode) ->
@@ -239,7 +239,7 @@ type TripTests(browser: BrowserFixture) =
                             )
                         ))
 
-            do! page.Locator(".stop-warning", PageLocatorOptions(HasText = "You need a permit.")).WaitForAsync()
+            do! page.Locator(".stop-notice", PageLocatorOptions(HasText = "You need a permit.")).WaitForAsync()
         }
 
     [<Fact>]

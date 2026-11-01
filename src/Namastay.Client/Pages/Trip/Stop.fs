@@ -40,24 +40,34 @@ let private photo (stop: TripStop) =
         ]
     | None -> Html.none
 
-let private shownNotices = 2
+let private noticeRow (notice: TripNotice) =
+    Html.div [
+        prop.key notice.Body
+        prop.className "stop-notice"
+        prop.custom ("role", "note")
+        prop.children [ Html.strong (NoticeOrder.kindName notice.Kind); Html.p notice.Body ]
+    ]
 
+let private moreNotices (rest: TripNotice list) =
+    Html.details [
+        prop.className "stop-notices-more"
+        prop.children [
+            Html.summary $"{rest.Length} more to know"
+            yield! rest |> List.map noticeRow
+        ]
+    ]
+
+/// Only what could stop the trip stays open, so the days stay easy to read.
 let private notices (trip: Trip) (stop: TripStop) =
     let shown, rest =
         trip.Notices
         |> List.filter (fun notice -> notice.PlaceSlug = Some stop.PlaceSlug)
-        |> NoticeOrder.split _.Severity shownNotices
+        |> NoticeOrder.split _.Severity 0
 
     [
-        for notice in shown do
-            Html.p [
-                prop.key notice.Body
-                prop.className "stop-warning"
-                prop.custom ("role", "note")
-                prop.text notice.Body
-            ]
+        yield! shown |> List.map noticeRow
         if not rest.IsEmpty then
-            Html.p [ prop.className "stop-more"; prop.text $"{rest.Length} more in the guide." ]
+            moreNotices rest
     ]
 
 let private guideLink token (stop: TripStop) =

@@ -209,16 +209,9 @@ let private logistics (place: PlaceGuide) =
 
 let private shownNotices = 3
 
-let private kindName kind =
-    match kind with
-    | GuideNoticeKind.Closure -> "Opening"
-    | GuideNoticeKind.Safety -> "Safety"
-    | GuideNoticeKind.Legal -> "Rules"
-    | GuideNoticeKind.Permit -> "Permit"
-
 let private noticeRow (item: GuideNotice) =
     div [ _class "notice" ] [
-        strong [] [ str (kindName item.Kind) ]
+        strong [] [ str (NoticeOrder.kindName item.Kind) ]
         div [] [ p [] [ str item.Body ]; yield! hedge item.Hedged ]
     ]
 

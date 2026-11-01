@@ -24,7 +24,7 @@ let private feelingsSql =
      join place_interests pi on pi.interest_slug = i.slug
      join places p on p.slug = pi.place_slug
      join colour_families f on f.slug = p.family_slug
-     where p.published and p.retired_at is null and pi.weight >= @strongFit
+     where p.published and p.retired_at is null and pi.weight >= @strongFit and i.parent_slug is null
      order by i.slug, pi.weight desc, p.name"
 
 let private toFeeling (rows: FeelingRow list) = {
