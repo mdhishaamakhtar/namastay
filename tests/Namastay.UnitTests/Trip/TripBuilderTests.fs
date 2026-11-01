@@ -988,3 +988,18 @@ let ``the trip says where you fly home from`` () =
 
 [<Fact>]
 let ``no gateways in the data means no arrival is claimed`` () = Assert.True((hubTrip 7).Arrive.IsNone)
+
+[<Fact>]
+let ``a trip that includes the landing city starts there`` () =
+    let world = {
+        gatewayCatalog with
+            Places = [
+                airport "capital" "c-hills" "stone" "forts"
+                place "side" "c-hills" "pine" "mountains"
+            ]
+            Links = both "capital" "side"
+            Cards = [ card "likes-side" "interest:mountains" (Some "side") ]
+    }
+
+    let trip = build world (request (liked [ "likes-side" ]) 6 None)
+    Assert.Equal<string list>([ "capital"; "side" ], trip.Stops |> List.map _.PlaceSlug)

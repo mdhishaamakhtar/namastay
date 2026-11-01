@@ -11,8 +11,8 @@ type RoutedStop = {
 
 let private beamWidth = 60
 let private unfilledDayPenalty = 10
-let private farStartPenalty = 70
-let private farEndPenalty = 60
+let private oneLinkCost = 25
+let private farCost = 70
 
 let private regionLimit days =
     if days <= 7 then 1
@@ -106,32 +106,31 @@ let rec private explore grow reached frontier =
 
         explore grow (next @ reached) next
 
-/// Where a route can begin and end: a city with an airport, or one link from it.
-/// With no airports in the data, every place counts.
-let private reachableFromAirport (catalog: Catalog) (links: Map<string * string, TransportLink>) =
+/// What it costs a route to begin at a place: nothing in an airport city, a little
+/// one link away, and a lot anywhere further. With no airports in the data, every place is free.
+let private startCost (catalog: Catalog) (links: Map<string * string, TransportLink>) =
     let airports = catalog.Places |> List.filter _.Airport.IsSome |> List.map _.Slug
 
-    let near (slug: string) =
-        airports.IsEmpty
-        || airports
-           |> List.exists (fun airport -> airport = slug || links.ContainsKey(airport, slug))
-
-    near
+    fun (slug: string) ->
+        if airports.IsEmpty || List.contains slug airports then
+            0
+        elif airports |> List.exists (fun airport -> links.ContainsKey(airport, slug)) then
+            oneLinkCost
+        else
+            farCost
 
 /// The route's taste, less penalties for days it can't honestly fill and for ends nobody can fly to.
-let private worth days near (path: Path) =
-    let penalty (slug: string) (cost: int) = if near slug then 0 else cost
-
+let private worth days cost (path: Path) =
     path.Score
     - unfilledDayPenalty * max 0 (days - path.Capacity)
-    - penalty (List.last path.Stops).Place.Slug farStartPenalty
-    - penalty path.Stops.Head.Place.Slug farEndPenalty
+    - cost (List.last path.Stops).Place.Slug
+    - cost path.Stops.Head.Place.Slug / 2
 
-let private bestPath days near (paths: Path list) =
+let private bestPath days cost (paths: Path list) =
     paths
     |> List.minBy (fun path ->
         let slugs = path.Stops |> List.map _.Place.Slug
-        -(worth days near path), -path.FirstScore, slugs)
+        -(worth days cost path), -path.FirstScore, slugs)
 
 /// Shares spare days around the stops, then past their usual maximum if it must.
 [<TailCall>]
@@ -205,7 +204,7 @@ let route (catalog: Catalog) (request: TripRequest) prefersDepth (scored: (Place
 
     let stops =
         explore grow starts starts
-        |> bestPath request.Days (reachableFromAirport catalog links)
+        |> bestPath request.Days (startCost catalog links)
         |> _.Stops
         |> List.rev
 
