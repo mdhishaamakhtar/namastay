@@ -81,7 +81,14 @@ let link = {
 
 let catalog = {
     Catalog.empty with
-        Regions = [ { Slug = "himalaya"; Name = "Himalaya" } ]
+        Regions = [
+            {
+                Slug = "himalaya"
+                Name = "Himalaya"
+                Colour = None
+                Sort = None
+            }
+        ]
         Clusters = [
             {
                 Slug = "kullu"

@@ -15,6 +15,16 @@ type TransportComfort =
 
 type CardAnswer = { Card: string; Liked: bool }
 
+/// What a trip is limited to, when it's planned from a region, feeling or dish.
+[<RequireQualifiedAccess>]
+type ScopeKind =
+    | Region
+    | FoodInRegion
+    | Feeling
+    | Dish
+
+type TripScope = { Kind: ScopeKind; Slug: string }
+
 type TripRequest = {
     Answers: CardAnswer list
     Days: int
@@ -22,6 +32,7 @@ type TripRequest = {
     Travellers: TravellerType
     Budget: BudgetLevel
     TransportComfort: TransportComfort
+    Scope: TripScope option
 }
 
 type TravelLeg = {

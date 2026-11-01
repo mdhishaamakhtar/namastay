@@ -77,11 +77,11 @@ type HomeTests(browser: BrowserFixture) =
         }
 
     [<Fact>]
-    member _.``choosing a feeling shows its places``() =
+    member _.``a feeling opens its own page``() =
         task {
             let! page = openHome ()
             do! page.Locator(".mood:not(.bone)").First.ClickAsync()
-            do! page.Locator(".result").First.WaitForAsync()
+            do! page.Locator(".browse-plan").WaitForAsync()
         }
 
     [<Fact>]
@@ -148,11 +148,33 @@ type HomeTests(browser: BrowserFixture) =
         }
 
     [<Fact>]
-    member _.``a feeling's places appear beside the feelings``() =
+    member _.``places lists regions and a region offers its own trip``() =
         task {
-            let! page = openHome ()
-            do! page.Locator(".mood:not(.bone)").First.ClickAsync()
-            do! page.Locator(".home-moods .result").First.WaitForAsync()
+            let! page = browser.NewPage()
+            let! _ = page.GotoAsync(browser.BaseUrl + "/explore")
+            do! page.Locator(".region-top").First.ClickAsync()
+            do! page.WaitForURLAsync "**/explore/**"
+            do! page.Locator(".browse-plan a").ClickAsync()
+            do! page.WaitForURLAsync "**/journey?scope=region**"
+            do! page.Locator(".journey-scope").WaitForAsync()
+        }
+
+    [<Fact>]
+    member _.``food leads to a region and a dish``() =
+        task {
+            let! page = browser.NewPage()
+            let! _ = page.GotoAsync(browser.BaseUrl + "/food")
+            do! page.Locator(".food-line").First.ClickAsync()
+            do! page.WaitForURLAsync "**/dishes/**"
+            do! page.Locator(".listing").First.WaitForAsync()
+        }
+
+    [<Fact>]
+    member _.``an unknown region says so``() =
+        task {
+            let! page = browser.NewPage()
+            let! _ = page.GotoAsync(browser.BaseUrl + "/explore/nowhere")
+            do! page.GetByText("We don't have a page for that yet.").WaitForAsync()
         }
 
     interface IClassFixture<BrowserFixture>

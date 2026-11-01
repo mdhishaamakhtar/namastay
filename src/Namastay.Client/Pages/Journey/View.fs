@@ -4,6 +4,7 @@ open Feliz
 open Namastay.Client.Components
 open Namastay.Client.Pages.Journey
 open Namastay.Client.Pages.Journey.State
+open Namastay.Client.Routing
 open Namastay.Shared
 open Namastay.Shared.Contracts
 
@@ -13,15 +14,18 @@ let private shell (progress: string) (children: ReactElement list) =
         prop.children [
             Html.div [
                 prop.className "journey-top"
-                prop.children [
-                    Html.a [
-                        prop.className "journey-brand"
-                        prop.href Routes.home.Template
-                        prop.text "Namastay"
-                    ]
-                    Html.span progress
-                ]
+                prop.children [ Menu.brand; Html.span progress ]
             ]
+            match Browser.queryParam "label" with
+            | Some name ->
+                Html.p [
+                    prop.className "journey-limit"
+                    prop.children [
+                        Html.span [ prop.className "journey-scope"; prop.text $"{name} only" ]
+                        Html.span "Every card and stop stays inside this."
+                    ]
+                ]
+            | None -> Html.none
             yield! children
         ]
     ]

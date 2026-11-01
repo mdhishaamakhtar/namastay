@@ -33,6 +33,7 @@ let place: Place = {
             Name = "River trout"
             Description = "Fried and served with rice."
             Vegetarian = false
+            PhotoSlug = None
             Evidence = evidence
         }
     ]
@@ -108,7 +109,14 @@ let link = {
 
 let catalog = {
     Catalog.empty with
-        Regions = [ { Slug = "himalaya"; Name = "Himalaya" } ]
+        Regions = [
+            {
+                Slug = "himalaya"
+                Name = "Himalaya"
+                Colour = None
+                Sort = None
+            }
+        ]
         Clusters = [
             {
                 Slug = "kullu"

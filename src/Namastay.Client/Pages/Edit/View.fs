@@ -255,11 +255,7 @@ let private panel (model: Model) dispatch =
     Html.aside [
         prop.className "trip-panel"
         prop.children [
-            Html.a [
-                prop.className "journey-brand"
-                prop.href (tripAddress model)
-                prop.text "Back to your trip"
-            ]
+            Menu.brand
             Html.label [
                 prop.className "edit-title"
                 prop.children [

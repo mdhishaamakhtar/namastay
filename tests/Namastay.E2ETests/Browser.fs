@@ -38,7 +38,7 @@ type BrowserFixture() =
     member this.CreateTrip(page: IPage) =
         task {
             let body =
-                """{"answers":[{"card":"green-valleys","liked":true}],"days":7,"month":null,"travellers":"Solo","budget":"Mid","transportComfort":"Anything"}"""
+                """{"answers":[{"card":"green-valleys","liked":true}],"days":7,"month":null,"travellers":"Solo","budget":"Mid","transportComfort":"Anything","scope":null}"""
 
             let! response =
                 page.APIRequest.PostAsync(

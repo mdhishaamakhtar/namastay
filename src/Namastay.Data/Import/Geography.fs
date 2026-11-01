@@ -6,11 +6,13 @@ open Namastay.Domain.Catalog
 let private upsertRegion transaction (region: Region) =
     exec
         transaction
-        "insert into regions (slug, name) values (@slug, @name)
-         on conflict (slug) do update set name = excluded.name"
+        "insert into regions (slug, name, colour, sort) values (@slug, @name, @colour, @sort)
+         on conflict (slug) do update set name = excluded.name, colour = excluded.colour, sort = excluded.sort"
         {|
             slug = region.Slug
             name = region.Name
+            colour = region.Colour
+            sort = region.Sort
         |}
     |> ignore
 

@@ -36,11 +36,8 @@ let private fan (model: Model) =
 
 let private visitorNote visitor =
     match visitor with
-    | Visitor.Unknown -> ""
     | Visitor.SignedOut -> "Free, and no sign-up needed. Sign in only to keep your trips."
-    | Visitor.SignedIn 0 -> "Welcome back."
-    | Visitor.SignedIn 1 -> "Welcome back. You have one saved trip."
-    | Visitor.SignedIn count -> $"Welcome back. You have {count} saved trips."
+    | _ -> "Free, and no sign-up needed."
 
 let view (model: Model) (navigate: string -> unit) =
     Html.section [
@@ -49,21 +46,15 @@ let view (model: Model) (navigate: string -> unit) =
             Html.div [
                 prop.className "home-top"
                 prop.children [
-                    Html.div [ prop.className "home-brand"; prop.text "Namastay" ]
+                    Menu.brand
                     match model.Visitor with
-                    | Visitor.Unknown -> Html.none
                     | Visitor.SignedOut ->
                         Html.a [
                             prop.className "home-account"
                             prop.href Routes.signInPage.Template
                             prop.text "Sign in"
                         ]
-                    | Visitor.SignedIn _ ->
-                        Html.a [
-                            prop.className "home-account"
-                            prop.href Routes.myTripsPage.Template
-                            prop.text "My trips"
-                        ]
+                    | _ -> Html.none
                 ]
             ]
             Html.h1 "India is a lot. Find yours."

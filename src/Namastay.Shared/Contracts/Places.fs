@@ -135,6 +135,55 @@ type LandingPage = {
     Cards: LandingCard list
 }
 
+type DirectoryRegion = {
+    Slug: string
+    Name: string
+    Colour: string
+    Places: PlaceSummary list
+}
+
+type FoodDish = {
+    Slug: string
+    Name: string
+    Place: string
+    PlaceSlug: string
+}
+
+type FoodRegion = {
+    Slug: string
+    Name: string
+    Colour: string
+    Dishes: FoodDish list
+}
+
+type FoodPage = {
+    Cards: LandingCard list
+    Regions: FoodRegion list
+}
+
+/// One line in a region, feeling or dish page: a place or a dish with why it's there.
+type Listing = {
+    Slug: string
+    Name: string
+    Line: string
+    Colour: string
+}
+
+type BrowsePage = {
+    Slug: string
+    Name: string
+    Colour: string
+    Items: Listing list
+}
+
+type DishPage = {
+    Slug: string
+    Name: string
+    Description: string
+    Photo: GuidePhoto option
+    Places: Listing list
+}
+
 type PlaceGuide = {
     Slug: string
     Name: string

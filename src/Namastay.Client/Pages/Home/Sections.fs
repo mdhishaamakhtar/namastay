@@ -6,12 +6,12 @@ open Namastay.Client.Pages.Home.State
 open Namastay.Shared
 open Namastay.Shared.Contracts
 
-let private moodTile dispatch (feeling: Feeling) =
-    Html.button [
+let private moodTile (feeling: Feeling) =
+    Html.a [
         prop.key feeling.Slug
         prop.className "mood press"
         prop.style [ style.backgroundColor feeling.Colour ]
-        prop.onClick (fun _ -> dispatch (ChooseFeeling feeling))
+        prop.href (Route.url [ "slug", feeling.Slug ] [] Routes.feelingPage)
         prop.children [
             Html.img [ prop.src $"/feelings/{feeling.Slug}.svg"; prop.alt "" ]
             Html.strong feeling.Name
@@ -19,30 +19,19 @@ let private moodTile dispatch (feeling: Feeling) =
         ]
     ]
 
-let moods (model: Model) dispatch =
+let moods (heading: string) (model: Model) dispatch =
     Html.section [
         prop.className "home-section home-moods"
         prop.children [
-            Html.h2 "Or start with a feeling"
+            Html.h2 heading
             match model.Feelings with
             | Remote.Loading -> Skeletons.feelings "Finding feelings"
             | Remote.Failed error -> States.failed error (fun () -> dispatch LoadFeelings)
             | Remote.Loaded feelings ->
-                Html.div [
-                    prop.className "moods reveal"
-                    prop.children (feelings |> List.map (moodTile dispatch))
-                ]
-            Html.div [
-                prop.custom ("aria-live", "polite")
-                prop.children [
-                    if model.Chosen.IsSome then
-                        Search.results model dispatch
-                ]
-            ]
+                Html.div [ prop.className "moods reveal"; prop.children (feelings |> List.map moodTile) ]
         ]
     ]
 
-/// A matchbox label: a framed photo over the place's colour.
 let private labelLink (name: LandingCard -> string) (line: LandingCard -> string) (card: LandingCard) =
     // A guide is a server page, so this is a normal link.
     Html.a [

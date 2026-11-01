@@ -38,6 +38,9 @@ type Model = {
     Answers: CardAnswer list
     Plan: Plan
     Step: Step
+    /// What this trip is limited to, and how to say so.
+    Scope: TripScope option
+    ScopeName: string option
 }
 
 type Msg =
@@ -50,10 +53,23 @@ type Msg =
 
 let questionCount = 5
 
+let private scopeInAddress () =
+    let kind =
+        match Browser.queryParam "scope" with
+        | Some "region" -> Some ScopeKind.Region
+        | Some "food" -> Some ScopeKind.FoodInRegion
+        | Some "feeling" -> Some ScopeKind.Feeling
+        | Some "dish" -> Some ScopeKind.Dish
+        | _ -> None
+
+    match kind, Browser.queryParam "of" with
+    | Some chosen, Some slug -> Some { Kind = chosen; Slug = slug }
+    | _ -> None
+
 let private loadGraph () =
     Cmd.OfPromise.perform
         (fun url -> Client.held (Client.get<JourneyGraph> url))
-        Routes.journeyStart.Template
+        (Routes.journeyStart.Template + window.location.search)
         GraphLoaded
 
 let init () =
@@ -69,6 +85,8 @@ let init () =
             Comfort = TransportComfort.Anything
         }
         Step = Step.Swiping
+        Scope = scopeInAddress ()
+        ScopeName = Browser.queryParam "label"
     },
     Cmd.batch [ Cmd.ofEffect (fun _ -> Theme.stage None); loadGraph () ]
 
@@ -93,6 +111,7 @@ let private tripRequest (model: Model) = {
     Travellers = model.Plan.Travellers
     Budget = model.Plan.Budget
     TransportComfort = model.Plan.Comfort
+    Scope = model.Scope
 }
 
 let private build (model: Model) =

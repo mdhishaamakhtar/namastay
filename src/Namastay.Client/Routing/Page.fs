@@ -1,5 +1,15 @@
 module Namastay.Client.Routing.Page
 
+/// The pages you browse from, each found by what's in its address.
+[<RequireQualifiedAccess>]
+type Browse =
+    | Places
+    | Food
+    | Region of slug: string
+    | FoodRegion of slug: string
+    | Feeling of slug: string
+    | Dish of slug: string
+
 [<RequireQualifiedAccess>]
 type Page =
     | Home
@@ -9,6 +19,7 @@ type Page =
     | MyTrips
     | MyTrip of id: string
     | EditTrip of id: string
+    | Browse of Browse
     | NotFound
 
 let parse (segments: string list) =
@@ -20,4 +31,10 @@ let parse (segments: string list) =
     | [ "my" ] -> Page.MyTrips
     | [ "my"; id ] -> Page.MyTrip id
     | [ "my"; id; "edit" ] -> Page.EditTrip id
+    | [ "explore" ] -> Page.Browse Browse.Places
+    | [ "explore"; slug ] -> Page.Browse(Browse.Region slug)
+    | [ "food" ] -> Page.Browse Browse.Food
+    | [ "food"; slug ] -> Page.Browse(Browse.FoodRegion slug)
+    | [ "feelings"; slug ] -> Page.Browse(Browse.Feeling slug)
+    | [ "dishes"; slug ] -> Page.Browse(Browse.Dish slug)
     | _ -> Page.NotFound

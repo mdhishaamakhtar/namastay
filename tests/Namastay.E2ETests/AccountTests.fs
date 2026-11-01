@@ -19,7 +19,7 @@ type AccountTests(browser: BrowserFixture) =
     let openNewTrip (page: IPage) =
         task {
             let body =
-                """{"answers":[{"card":"green-valleys","liked":true}],"days":7,"month":null,"travellers":"Solo","budget":"Mid","transportComfort":"Anything"}"""
+                """{"answers":[{"card":"green-valleys","liked":true}],"days":7,"month":null,"travellers":"Solo","budget":"Mid","transportComfort":"Anything","scope":null}"""
 
             let! response =
                 page.APIRequest.PostAsync(
@@ -112,7 +112,7 @@ type AccountTests(browser: BrowserFixture) =
             let! page = saveNewTrip ()
             let! _ = page.GotoAsync browser.BaseUrl
             do! (link page "My trips").WaitForAsync()
-            do! page.GetByText("You have one saved trip.", PageGetByTextOptions(Exact = false)).WaitForAsync()
+            do! page.GetByText("Pick up where you left off").WaitForAsync()
         }
 
     [<Fact>]

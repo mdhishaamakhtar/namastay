@@ -8,6 +8,7 @@ open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Routing
 open Npgsql
 open Namastay.Data.Catalog
+open Namastay.Data.Places
 open Namastay.Data.Trips
 open Namastay.Domain.Trip
 open Namastay.Shared
@@ -38,7 +39,16 @@ let private buildAndSave (data: DataCache) request =
     task {
         let! catalog = DataCache.getOrLoad data "catalog" (fun () -> Read.load data.Source)
 
-        match Builder.build catalog request with
+        let! allowed =
+            match request.Scope with
+            | Some scope ->
+                task {
+                    let! places = Browse.placesIn data.Source scope
+                    return Some places
+                }
+            | None -> Task.FromResult None
+
+        match Builder.buildWithin allowed catalog request with
         | Error error -> return Error(toApiError error)
         | Ok trip ->
             let token = newToken ()

@@ -65,10 +65,29 @@ let searchBox (model: Model) dispatch =
             ]
             Html.div [
                 prop.custom ("aria-live", "polite")
-                prop.children [
-                    if model.Chosen.IsNone then
-                        results model dispatch
-                ]
+                prop.children [ results model dispatch ]
+            ]
+        ]
+    ]
+
+/// The search box alone, for pages where a heading already says what it's for.
+let box (model: Model) dispatch =
+    Html.div [
+        prop.className "search-box"
+        prop.children [
+            Html.input [
+                prop.className "search-input"
+                prop.type' "search"
+                prop.ariaLabel "Find a place"
+                prop.placeholder "Find a place: Goa, Varanasi, Ladakh"
+                prop.autoComplete "off"
+                prop.value model.Query
+                prop.onChange (QueryChanged >> dispatch)
+            ]
+            Html.div [
+                prop.className "search-found"
+                prop.custom ("aria-live", "polite")
+                prop.children [ results model dispatch ]
             ]
         ]
     ]

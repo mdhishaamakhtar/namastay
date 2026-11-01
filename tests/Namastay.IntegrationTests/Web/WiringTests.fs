@@ -108,6 +108,7 @@ type WiringTests(postgres: PostgresFixture) =
                 Travellers = TravellerType.Solo
                 Budget = BudgetLevel.Mid
                 TransportComfort = TransportComfort.Anything
+                Scope = None
             }
 
             let! response =

@@ -10,6 +10,8 @@ let private searchParam (search: string) (name: string) : string option = jsNati
 
 let private changed = "namastay:navigate"
 
+let queryParam (name: string) = searchParam window.location.search name
+
 let currentPath () =
     window.location.pathname.Split('/')
     |> Array.filter (fun part -> part <> "")

@@ -216,7 +216,14 @@ let load (source: NpgsqlDataSource) : Task<Catalog> =
 
         return {
             Catalog.empty with
-                Regions = regions |> List.map (fun row -> { Slug = row.Slug; Name = row.Name })
+                Regions =
+                    regions
+                    |> List.map (fun row -> {
+                        Slug = row.Slug
+                        Name = row.Name
+                        Colour = None
+                        Sort = None
+                    })
                 Clusters =
                     clusters
                     |> List.map (fun row -> {

@@ -10,16 +10,10 @@ open Namastay.Shared.Contracts
 let private label (trip: SavedTripSummary) =
     let colour = trip.Colours |> Option.map _.Deep |> Option.defaultValue Theme.ink
 
-    let route =
-        if trip.Route.IsEmpty then
-            []
-        else
-            [ String.concat " → " trip.Route ]
-
     Html.a [
         prop.className "label-link my-trip-open"
         prop.href (Route.url [ "id", trip.Id ] [] Routes.myTripPage)
-        prop.children [ Label.view colour trip.Photo trip.Title route ]
+        prop.children [ Label.view colour trip.Photo trip.Title [] ]
     ]
 
 let private card (model: Model) dispatch (trip: SavedTripSummary) =
@@ -73,11 +67,7 @@ let private header (model: Model) dispatch =
             Html.div [
                 prop.className "home-top"
                 prop.children [
-                    Html.a [
-                        prop.className "home-brand"
-                        prop.href Routes.home.Template
-                        prop.text "Namastay"
-                    ]
+                    Menu.brand
                     Html.button [
                         prop.className "account-switch"
                         prop.text "Sign out"

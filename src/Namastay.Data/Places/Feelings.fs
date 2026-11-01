@@ -28,7 +28,7 @@ let private feelingsSql =
      where p.published and p.retired_at is null and pi.weight >= @strongFit and i.parent_slug is null
      order by i.slug, pi.weight desc, p.name"
 
-let private toFeeling (rows: FeelingRow list) = {
+let private toFeeling (rows: FeelingRow list) : Feeling = {
     Slug = rows.Head.Slug
     Name = rows.Head.Name
     Places = rows |> List.truncate namedPlaces |> List.map (_.Place >> PlaceName.plain)

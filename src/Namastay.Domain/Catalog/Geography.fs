@@ -1,6 +1,11 @@
 namespace Namastay.Domain.Catalog
 
-type Region = { Slug: string; Name: string }
+type Region = {
+    Slug: string
+    Name: string
+    Colour: string option
+    Sort: int option
+}
 
 type Cluster = {
     Slug: string

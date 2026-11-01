@@ -125,6 +125,24 @@ let swipeCard (label: string) =
         ]
     ]
 
+/// A browsing page: the dark header, then shapes for its list.
+let browse (label: string) =
+    waiting label "browse" [
+        Html.div [
+            prop.className "browse-head"
+            prop.children [
+                Html.div [
+                    prop.className "browse-title"
+                    prop.children [ bone "bone-heading"; bone "bone-line" ]
+                ]
+            ]
+        ]
+        Html.div [
+            prop.className "browse-body"
+            prop.children [ bone "bone-stop"; bone "bone-stop"; bone "bone-stop" ]
+        ]
+    ]
+
 /// The feeling tiles on the home page.
 let feelings (label: string) =
     waiting label "moods" [

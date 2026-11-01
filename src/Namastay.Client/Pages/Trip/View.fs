@@ -35,11 +35,7 @@ let private panel (model: Model) (trip: Trip) dispatch =
     Html.aside [
         prop.className "trip-panel"
         prop.children [
-            Html.a [
-                prop.className "journey-brand"
-                prop.href Routes.home.Template
-                prop.text "Namastay"
-            ]
+            Menu.brand
             Html.h1 trip.Title
             RouteMap.view trip.Stops
             if not trip.Mix.IsEmpty then

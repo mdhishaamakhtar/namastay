@@ -439,6 +439,61 @@ type PlacesApiTests(postgres: PostgresFixture) =
         }
 
     [<Fact>]
+    member _.``the directory groups published places by region``() =
+        task {
+            let! http, _ = start catalog
+
+            let! regions =
+                http.GetFromJsonAsync<DirectoryRegion list>(Routes.directory.Template, Json.options)
+
+            let listed = regions |> List.collect _.Places
+            Assert.Equal(catalog.Places |> List.filter _.Published |> List.length, listed.Length)
+            Assert.All(listed, (fun place -> Assert.True place.Published))
+        }
+
+    [<Fact>]
+    member _.``the food page lists each dish once per region``() =
+        task {
+            let! http, _ = start catalog
+            let! page = http.GetFromJsonAsync<FoodPage>(Routes.food.Template, Json.options)
+
+            for region in page.Regions do
+                let names = region.Dishes |> List.map _.Name
+                Assert.Equal<string list>(List.distinct names, names)
+        }
+
+    [<Fact>]
+    member _.``a region page lists its places``() =
+        task {
+            let! http, _ = start catalog
+            let url = Route.url [ "slug", "himalaya" ] [] Routes.regionDetail
+            let! page = http.GetFromJsonAsync<BrowsePage>(url, Json.options)
+            Assert.NotEmpty page.Items
+        }
+
+    [<Fact>]
+    member _.``an unknown region is a 404 with the error shape``() =
+        task {
+            let! http, _ = start catalog
+            let! response = http.GetAsync(Route.url [ "slug", "nowhere" ] [] Routes.regionDetail)
+            let! error = response.Content.ReadFromJsonAsync<ApiError>(Json.options)
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode)
+            Assert.Equal(ErrorCode.NotFound, error.Code)
+        }
+
+    [<Fact>]
+    member _.``a dish has one page listing every place that serves it``() =
+        task {
+            let! http, _ = start catalog
+            let! food = http.GetFromJsonAsync<FoodPage>(Routes.food.Template, Json.options)
+            let first = food.Regions.Head.Dishes.Head
+            let url = Route.url [ "slug", first.Slug ] [] Routes.dishDetail
+            let! dish = http.GetFromJsonAsync<DishPage>(url, Json.options)
+            Assert.Equal(first.Name, dish.Name)
+            Assert.NotEmpty dish.Places
+        }
+
+    [<Fact>]
     member _.``an unknown feeling has no places``() =
         task {
             let! http, _ = start catalog

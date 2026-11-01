@@ -69,6 +69,35 @@ let private landing (data: DataCache) (_: HttpContext) =
         return Ok page
     }
 
+let private directory (data: DataCache) (_: HttpContext) =
+    task {
+        let! regions =
+            DataCache.getOrLoad data "directory" (fun () -> Directory.regions data.Source)
+
+        return Ok regions
+    }
+
+let private food (data: DataCache) (_: HttpContext) =
+    task {
+        let! page = DataCache.getOrLoad data "food" (fun () -> Directory.food data.Source)
+        return Ok page
+    }
+
+/// A page found by the slug in its address, or a clear 404.
+let private bySlug (data: DataCache) (name: string) (load: string -> Task<'Page option>) (context: HttpContext) =
+    task {
+        let slug = string context.Request.RouteValues["slug"]
+
+        if Input.isSlug slug then
+            let! found = DataCache.getOrLoadOption data $"{name}:{slug}" (fun () -> load slug)
+
+            match found with
+            | Some page -> return Ok page
+            | None -> return Error(ApiError.notFound "We don't have a page for that yet.")
+        else
+            return Error(ApiError.notFound "We don't have a page for that yet.")
+    }
+
 let private feelingPlaces (data: DataCache) (context: HttpContext) =
     task {
         let slug = string context.Request.RouteValues["slug"]
@@ -85,6 +114,12 @@ let private feelingPlaces (data: DataCache) (context: HttpContext) =
 let map (app: IEndpointRouteBuilder) (data: DataCache) =
     Endpoint.mapData app data Routes.feelings (feelings data)
     Endpoint.mapData app data Routes.landing (landing data)
+    Endpoint.mapData app data Routes.directory (directory data)
+    Endpoint.mapData app data Routes.food (food data)
+    Endpoint.mapData app data Routes.regionDetail (bySlug data "region" (Browse.region data.Source))
+    Endpoint.mapData app data Routes.foodRegionDetail (bySlug data "food-region" (Browse.foodRegion data.Source))
+    Endpoint.mapData app data Routes.feelingDetail (bySlug data "feeling-page" (Browse.feeling data.Source))
+    Endpoint.mapData app data Routes.dishDetail (bySlug data "dish" (Browse.dish data.Source))
     Endpoint.mapData app data Routes.feelingPlaces (feelingPlaces data)
     Endpoint.mapGet app Routes.searchPlaces (search data)
     Endpoint.mapData app data Routes.placeGuide (guide data)

@@ -10,6 +10,12 @@ let myTripsPage: Route<NoBody, string> = Route.get "/my"
 let myTripPage: Route<NoBody, string> = Route.get "/my/{id}"
 let editTripPage: Route<NoBody, string> = Route.get "/my/{id}/edit"
 let guidePage: Route<NoBody, string> = Route.get "/places/{slug}"
+let explorePage: Route<NoBody, string> = Route.get "/explore"
+let foodPage: Route<NoBody, string> = Route.get "/food"
+let regionPage: Route<NoBody, string> = Route.get "/explore/{slug}"
+let foodRegionPage: Route<NoBody, string> = Route.get "/food/{slug}"
+let feelingPage: Route<NoBody, string> = Route.get "/feelings/{slug}"
+let dishPage: Route<NoBody, string> = Route.get "/dishes/{slug}"
 let sitemap: Route<NoBody, string> = Route.get "/sitemap.xml"
 let mediaFile: Route<NoBody, string> = Route.get "/media/{**key}"
 
@@ -22,6 +28,15 @@ let searchPlaces: Route<NoBody, PlaceSummary list> = Route.get "/api/places"
 let placeGuide: Route<NoBody, PlaceGuide> = Route.get "/api/places/{slug}"
 let feelings: Route<NoBody, Feeling list> = Route.get "/api/feelings"
 let landing: Route<NoBody, LandingPage> = Route.get "/api/landing"
+let directory: Route<NoBody, DirectoryRegion list> = Route.get "/api/directory"
+let food: Route<NoBody, FoodPage> = Route.get "/api/food"
+let regionDetail: Route<NoBody, BrowsePage> = Route.get "/api/regions/{slug}"
+
+let foodRegionDetail: Route<NoBody, BrowsePage> =
+    Route.get "/api/food/regions/{slug}"
+
+let feelingDetail: Route<NoBody, BrowsePage> = Route.get "/api/feelings/{slug}/page"
+let dishDetail: Route<NoBody, DishPage> = Route.get "/api/dishes/{slug}"
 
 let feelingPlaces: Route<NoBody, PlaceSummary list> =
     Route.get "/api/feelings/{slug}/places"

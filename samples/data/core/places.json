@@ -201,7 +201,18 @@
       "lastChecked": "2026-01-01",
       "sourceIds": []
     },
-    "dishes": [],
+    "dishes": [
+      {
+        "name": "Example soup",
+        "description": "A hot bowl for trying out the food pages.",
+        "vegetarian": true,
+        "evidence": {
+          "status": "editorial",
+          "lastChecked": "2026-01-01",
+          "sourceIds": []
+        }
+      }
+    ],
     "eateries": [],
     "hub": false
   },

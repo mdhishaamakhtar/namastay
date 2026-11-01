@@ -17,6 +17,7 @@ type Screen =
     | SignIn of SignIn.State.Model
     | MyTrips of MyTrips.State.Model
     | Edit of Edit.State.Model
+    | Browse of Browse.State.Model
     | NotFound
 
 type Model = { Screen: Screen }
@@ -29,6 +30,7 @@ type Msg =
     | SignInMsg of SignIn.State.Msg
     | MyTripsMsg of MyTrips.State.Msg
     | EditMsg of Edit.State.Msg
+    | BrowseMsg of Browse.State.Msg
 
 let private showTrip source =
     let trip, command = Trip.State.init source
@@ -51,6 +53,9 @@ let private show (segments: string list) =
     | Page.MyTrips ->
         let trips, command = MyTrips.State.init ()
         { Screen = Screen.MyTrips trips }, Cmd.map MyTripsMsg command
+    | Page.Browse target ->
+        let browse, command = Browse.State.init target
+        { Screen = Screen.Browse browse }, Cmd.map BrowseMsg command
     | Page.EditTrip id ->
         let edit, command = Edit.State.init id
         { Screen = Screen.Edit edit }, Cmd.map EditMsg command
@@ -83,12 +88,16 @@ let update msg model =
     | EditMsg inner, Screen.Edit edit ->
         let updated, command = Edit.State.update inner edit
         { Screen = Screen.Edit updated }, Cmd.map EditMsg command
+    | BrowseMsg inner, Screen.Browse browse ->
+        let updated, command = Browse.State.update inner browse
+        { Screen = Screen.Browse updated }, Cmd.map BrowseMsg command
     | HomeMsg _, _
     | JourneyMsg _, _
     | TripMsg _, _
     | SignInMsg _, _
     | MyTripsMsg _, _
-    | EditMsg _, _ -> model, Cmd.none
+    | EditMsg _, _
+    | BrowseMsg _, _ -> model, Cmd.none
 
 let private notFound () =
     Html.main [
@@ -108,6 +117,7 @@ let view model dispatch =
     | Screen.SignIn signIn -> SignIn.View.view signIn (SignInMsg >> dispatch)
     | Screen.MyTrips trips -> MyTrips.View.view trips (MyTripsMsg >> dispatch)
     | Screen.Edit edit -> Edit.View.view edit (EditMsg >> dispatch)
+    | Screen.Browse browse -> Browse.View.view browse (BrowseMsg >> dispatch)
     | Screen.NotFound -> notFound ()
 
 let subscribe (_: Model) : Sub<Msg> = [ [ "url" ], (fun dispatch -> Browser.subscribe (UrlChanged >> dispatch)) ]

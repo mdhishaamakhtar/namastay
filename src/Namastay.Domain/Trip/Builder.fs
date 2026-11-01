@@ -49,14 +49,15 @@ let monthName (month: int) =
 let private isGated (profile: TravellerProfile) (place: Place) =
     place.Gate = Gate.Permit && not (List.contains place.Slug profile.Collected)
 
-let private candidates (catalog: Catalog) profile (request: TripRequest) =
+let private candidates (catalog: Catalog) profile (allowed: Set<string> option) =
     let excluded = catalog.Exclusions |> List.map _.Slug |> Set.ofList
 
     catalog.Places
     |> List.filter (fun place ->
         place.Published
         && not (excluded.Contains place.Slug)
-        && not (isGated profile place))
+        && not (isGated profile place)
+        && allowed |> Option.forall (Set.contains place.Slug))
 
 let private rank profile request (places: Place list) =
     places
@@ -387,12 +388,13 @@ let private assemble catalog profile (request: TripRequest) places stops : Trip 
 }
 
 /// Builds a realistic trip from rules and data alone. The same input gives the same trip.
-let build (catalog: Catalog) (request: TripRequest) : Result<Trip, TripError> =
+/// `allowed` limits it to those places, for a trip planned from a region, feeling or dish.
+let buildWithin (allowed: Set<string> option) (catalog: Catalog) (request: TripRequest) : Result<Trip, TripError> =
     if request.Days < RequestRules.minDays || request.Days > RequestRules.maxDays then
         Error(TripError.InvalidDays request.Days)
     else
         let profile = Profile.from catalog.Cards request
-        let places = candidates catalog profile request
+        let places = candidates catalog profile allowed
         // Someone who liked a place in a hard month gets it with a warning. Closed is closed.
         let usable =
             places
@@ -408,3 +410,5 @@ let build (catalog: Catalog) (request: TripRequest) : Result<Trip, TripError> =
                 Routing.route catalog request (profile.Depth > 0) profile.Collected (rank profile request usable)
 
             Ok(assemble catalog profile request places stops)
+
+let build (catalog: Catalog) (request: TripRequest) = buildWithin None catalog request

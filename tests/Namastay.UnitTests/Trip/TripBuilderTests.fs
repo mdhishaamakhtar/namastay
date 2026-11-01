@@ -120,9 +120,24 @@ let family slug = {
 let catalog = {
     Catalog.empty with
         Regions = [
-            { Slug = "hills"; Name = "Hills" }
-            { Slug = "coast"; Name = "Coast" }
-            { Slug = "plains"; Name = "Plains" }
+            {
+                Slug = "hills"
+                Name = "Hills"
+                Colour = None
+                Sort = None
+            }
+            {
+                Slug = "coast"
+                Name = "Coast"
+                Colour = None
+                Sort = None
+            }
+            {
+                Slug = "plains"
+                Name = "Plains"
+                Colour = None
+                Sort = None
+            }
         ]
         Clusters = [
             {
@@ -208,6 +223,7 @@ let request answers days month = {
     Travellers = TravellerType.Solo
     Budget = BudgetLevel.Mid
     TransportComfort = TransportComfort.Anything
+    Scope = None
 }
 
 let build catalog request =
@@ -474,6 +490,7 @@ let ``no flights comfort uses no flights`` () =
         build world {
             request answers 14 None with
                 TransportComfort = TransportComfort.NoFlights
+                Scope = None
         }
 
     let modes = trip.Stops |> List.choose _.Arrival |> List.map _.Mode
@@ -1314,3 +1331,22 @@ let ``a travel day picks the plan that fits the days left`` () =
     let trip = build world (request (liked [ "likes-near"; "likes-far" ]) 6 None)
     let stop = trip.Stops |> List.find (fun item -> item.PlaceSlug = "far")
     Assert.Contains("short two", stop.Plans |> List.map _.Plan)
+
+[<Fact>]
+let ``a limited trip only uses the allowed places`` () =
+    let world = {
+        catalog with
+            Places = [
+                place "inside" "c-hills" "pine" "mountains"
+                place "outside" "c-hills" "pine" "mountains"
+            ]
+            Links = both "inside" "outside"
+            Cards = [ card "likes-outside" "interest:mountains" (Some "outside") ]
+    }
+
+    let result =
+        Builder.buildWithin (Some(Set.ofList [ "inside" ])) world (request (liked [ "likes-outside" ]) 6 None)
+
+    match result with
+    | Ok trip -> Assert.Equal<string list>([ "inside" ], trip.Stops |> List.map _.PlaceSlug)
+    | Error error -> raise (Xunit.Sdk.XunitException $"expected a trip, got {error}")

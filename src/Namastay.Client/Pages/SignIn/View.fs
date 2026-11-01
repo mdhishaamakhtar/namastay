@@ -1,6 +1,7 @@
 module Namastay.Client.Pages.SignIn.View
 
 open Feliz
+open Namastay.Client.Components
 open Namastay.Client.Pages.SignIn.State
 open Namastay.Shared
 open Namastay.Shared.Contracts
@@ -125,17 +126,7 @@ let view (model: Model) dispatch =
     Html.div [
         prop.className "account-page"
         prop.children [
-            Html.aside [
-                prop.className "account-stage"
-                prop.children [
-                    Html.a [
-                        prop.className "journey-brand"
-                        prop.href Routes.home.Template
-                        prop.text "Namastay"
-                    ]
-                    label model
-                ]
-            ]
+            Html.aside [ prop.className "account-stage"; prop.children [ Menu.brand; label model ] ]
             Html.main [
                 prop.className "account-main"
                 prop.children [

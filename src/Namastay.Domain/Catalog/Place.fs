@@ -70,6 +70,8 @@ type Dish = {
     Name: string
     Description: string
     Vegetarian: bool
+    /// A photo of this dish, when a food card has one.
+    PhotoSlug: string option
     Evidence: Evidence
 }
 

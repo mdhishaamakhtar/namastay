@@ -14,16 +14,15 @@ let private searchDelay = 200
 [<RequireQualifiedAccess>]
 type Visitor =
     | Unknown
+    | Unsure
     | SignedOut
-    | SignedIn of savedTrips: int
+    | SignedIn of SavedTripSummary list
 
 type Model = {
     Query: string
     /// Counts searches, so a slow old answer can't replace a newer one.
     Attempt: int
     Results: Remote<PlaceSummary list> option
-    /// The feeling behind the results, if any. They appear beside whatever asked for them.
-    Chosen: Feeling option
     Feelings: Remote<Feeling list>
     Landing: Remote<LandingPage>
     Visitor: Visitor
@@ -36,7 +35,6 @@ type Msg =
     | Retry
     | LoadFeelings
     | FeelingsLoaded of Result<Feeling list, Client.ClientError>
-    | ChooseFeeling of Feeling
     | LoadLanding
     | VisitorKnown of Result<SavedTripSummary list, Client.ClientError>
     | LandingLoaded of Result<LandingPage, Client.ClientError>
@@ -58,7 +56,6 @@ let init () =
         Query = ""
         Attempt = 0
         Results = None
-        Chosen = None
         Feelings = Remote.Loading
         Landing = Remote.Loading
         Visitor = Visitor.Unknown
@@ -78,20 +75,6 @@ let private search (model: Model) =
     Cmd.OfPromise.perform (fun target -> Client.get<PlaceSummary list> target) url (fun result ->
         Answered(model.Attempt, result))
 
-let private chooseFeeling (feeling: Feeling) (model: Model) =
-    let attempt = model.Attempt + 1
-    let url = Route.url [ "slug", feeling.Slug ] [] Routes.feelingPlaces
-
-    {
-        model with
-            Query = ""
-            Attempt = attempt
-            Results = Some Remote.Loading
-            Chosen = Some feeling
-    },
-    Cmd.OfPromise.perform (fun target -> Client.get<PlaceSummary list> target) url (fun result ->
-        Answered(attempt, result))
-
 let update msg (model: Model) =
     match msg with
     | QueryChanged query when query.Trim() = "" ->
@@ -100,7 +83,6 @@ let update msg (model: Model) =
                 Query = query
                 Attempt = model.Attempt + 1
                 Results = None
-                Chosen = None
         },
         Cmd.none
     | QueryChanged query ->
@@ -110,7 +92,6 @@ let update msg (model: Model) =
             model with
                 Query = query
                 Attempt = attempt
-                Chosen = None
         },
         waitForPause attempt
     | PauseEnded attempt when attempt = model.Attempt -> search model
@@ -126,10 +107,7 @@ let update msg (model: Model) =
                 Results = Some(Remote.Failed error)
         },
         Cmd.none
-    | Retry ->
-        match model.Chosen with
-        | Some feeling -> chooseFeeling feeling model
-        | None -> search model
+    | Retry -> search model
     | LoadFeelings -> { model with Feelings = Remote.Loading }, loadFeelings ()
     | FeelingsLoaded(Ok feelings) ->
         {
@@ -146,7 +124,7 @@ let update msg (model: Model) =
     | VisitorKnown(Ok trips) ->
         {
             model with
-                Visitor = Visitor.SignedIn trips.Length
+                Visitor = Visitor.SignedIn trips
         },
         Cmd.none
     | VisitorKnown(Error error) when Client.isSignedOut error ->
@@ -155,7 +133,7 @@ let update msg (model: Model) =
                 Visitor = Visitor.SignedOut
         },
         Cmd.none
-    | VisitorKnown(Error _) -> model, Cmd.none
+    | VisitorKnown(Error _) -> { model with Visitor = Visitor.Unsure }, Cmd.none
     | LoadLanding -> { model with Landing = Remote.Loading }, loadLanding ()
     | LandingLoaded(Ok page) ->
         {
@@ -169,6 +147,5 @@ let update msg (model: Model) =
                 Landing = Remote.Failed error
         },
         Cmd.none
-    | ChooseFeeling feeling -> chooseFeeling feeling model
     | PauseEnded _
     | Answered _ -> model, Cmd.none
