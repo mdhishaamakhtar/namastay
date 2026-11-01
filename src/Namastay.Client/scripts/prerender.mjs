@@ -68,7 +68,7 @@ const serveSite = (context) =>
 /// Keeps a page's data inside it, so the app starts from what's already on screen.
 const withSeed = (html, answers) => {
   const seed = JSON.stringify(answers).replace(/</g, "\\u003c");
-  const script = `<script>window.__seed=${seed};setTimeout(()=>document.documentElement.removeAttribute("data-seeded"),1500)</script>`;
+  const script = `<script>window.__seed=${seed}</script>`;
   return html.replace("<html", "<html data-seeded").replace("</head>", `${script}</head>`);
 };
 

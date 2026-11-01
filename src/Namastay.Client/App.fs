@@ -76,7 +76,10 @@ let init () =
 
 let update msg model =
     match msg, model.Screen with
-    | UrlChanged segments, _ -> showFresh segments
+    | UrlChanged segments, _ ->
+        // Pages reached from here are new, so they can fade in. The saved one never replays it.
+        Browser.Dom.document.documentElement.removeAttribute "data-seeded"
+        showFresh segments
     | HomeMsg inner, Screen.Home home ->
         let updated, command = Home.State.update inner home
         { Screen = Screen.Home updated }, Cmd.map HomeMsg command
