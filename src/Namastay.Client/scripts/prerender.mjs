@@ -65,15 +65,30 @@ const serveSite = (context) =>
     await route.fulfill({ body, contentType: type ?? "text/html" });
   });
 
+/// Keeps a page's data inside it, so the app starts from what's already on screen.
+const withSeed = (html, answers) => {
+  const seed = JSON.stringify(answers).replace(/</g, "\\u003c");
+  const script = `<script>window.__seed=${seed};setTimeout(()=>document.documentElement.removeAttribute("data-seeded"),1500)</script>`;
+  return html.replace("<html", "<html data-seeded").replace("</head>", `${script}</head>`);
+};
+
 const renderApp = async (context, path) => {
   const page = await context.newPage();
   const problems = [];
+  const answers = {};
 
   page.on("requestfailed", (request) => problems.push(request.url()));
   page.on("response", (response) => {
     // Crawlers are signed out, so being refused a personal page is expected.
     const signedOut = response.status() === 401;
     if (response.status() >= 400 && !signedOut) problems.push(`${response.status()} ${response.url()}`);
+  });
+
+  page.on("response", async (response) => {
+    const address = new URL(response.url());
+    if (address.origin === api && address.pathname.startsWith("/api/") && response.ok()) {
+      answers[address.pathname] = await response.text();
+    }
   });
 
   await page.goto(site + path);
@@ -89,7 +104,7 @@ const renderApp = async (context, path) => {
 
   await page.waitForLoadState("networkidle");
   if (problems.length > 0) throw new Error(`${path} didn't load fully: ${problems.join(", ")}`);
-  await save(path, await page.content());
+  await save(path, withSeed(await page.content(), answers));
   await page.close();
 };
 

@@ -95,6 +95,18 @@ let isSignedOut =
     | ClientError.Server error -> error.Code = ErrorCode.Unauthorized
     | _ -> false
 
+/// Saved pages carry the answers they were built from. Each one is used once, on arrival.
+[<Emit("(() => { const seed = window.__seed ?? {}; const text = seed[$0]; delete seed[$0]; return text ?? null; })()")>]
+let takeSeed (url: string) : string = jsNative
+
+/// What a saved page already knows about `url`, so it needn't wait for the API.
+let inline seeded<'Response> (url: string) : 'Response option =
+    match takeSeed url with
+    | null -> None
+    | text ->
+        Decode.Auto.fromString<'Response>(text, caseStrategy = CamelCase)
+        |> Result.toOption
+
 let private shortestSkeleton = 350
 
 /// Keeps a skeleton up long enough to read as calm. A faster answer would look like a flicker.

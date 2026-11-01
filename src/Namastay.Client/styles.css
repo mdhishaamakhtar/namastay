@@ -1014,6 +1014,11 @@ button:focus-visible {
   }
 }
 
+/* A saved page is already on screen, so it mustn't fade in again. */
+[data-seeded] .reveal {
+  animation: none;
+}
+
 @keyframes reveal {
   from {
     opacity: 0;
