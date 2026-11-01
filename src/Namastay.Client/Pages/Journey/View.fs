@@ -133,10 +133,10 @@ let private asking index dispatch =
 
 let view (model: Model) dispatch =
     match model.Graph, model.Step with
-    | Remote.Loading, _ -> shell "" [ Html.main [ States.loading "Getting your cards ready" ] ]
+    | Remote.Loading, _ -> shell "" [ Skeletons.swipeCard "Getting your cards ready" ]
     | Remote.Failed error, _ -> shell "" [ Html.main [ States.failed error (fun () -> dispatch LoadGraph) ] ]
     | Remote.Loaded graph, Step.Swiping -> swiping graph model dispatch
     | Remote.Loaded _, Step.Asking index -> asking index dispatch
-    | Remote.Loaded _, Step.Building -> shell "" [ Html.main [ States.loading "Building your trip" ] ]
+    | Remote.Loaded _, Step.Building -> Skeletons.trip "Building your trip"
     | Remote.Loaded _, Step.Failed error ->
         shell "" [ Html.main [ States.failed error (fun () -> dispatch BuildTrip) ] ]

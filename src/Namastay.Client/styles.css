@@ -880,47 +880,70 @@ button:focus-visible {
   }
 }
 
-.loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  padding: 48px 0;
-}
-
-.loading p {
-  margin: 0;
-}
-
-.loading-label {
-  width: 200px;
-  height: 260px;
-  padding: 8px;
+.bone {
+  display: block;
   border-radius: 4px;
-  background: #fbfaf2;
-  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.22);
+  background: color-mix(in srgb, currentColor 14%, transparent);
+  animation: bone-pulse 1400ms ease-in-out infinite;
 }
 
-.loading-frame {
-  height: 100%;
-  border: 2px solid var(--ink);
-  background: linear-gradient(100deg, transparent 40%, rgba(242, 181, 43, 0.3) 50%, transparent 60%);
-  background-size: 300% 100%;
-  animation: loading-sweep 1400ms linear infinite;
+.bone-title {
+  width: 70%;
+  height: 32px;
 }
 
-@keyframes loading-sweep {
-  from {
-    background-position: 100% 0;
-  }
+.bone-line {
+  width: 55%;
+  height: 16px;
+}
 
-  to {
-    background-position: 0 0;
+.bone-short {
+  width: 30%;
+  height: 14px;
+}
+
+.bone-input {
+  width: 100%;
+  height: 48px;
+}
+
+.bone-stop {
+  width: 100%;
+  height: 112px;
+}
+
+.stop-bones {
+  display: flex;
+  align-items: center;
+  min-height: 72px;
+  padding: 8px 16px;
+}
+
+.stop-card:has(.bone) {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.my-trips[role="status"] .my-trip {
+  background: color-mix(in srgb, var(--ink) 8%, var(--paper));
+  color: var(--ink);
+}
+
+.my-trip .bone-title {
+  margin-top: 16px;
+}
+
+.my-trip .bone-line {
+  margin-top: 12px;
+}
+
+@keyframes bone-pulse {
+  50% {
+    opacity: 0.5;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .loading-frame {
+  .bone {
     animation: none;
   }
 }

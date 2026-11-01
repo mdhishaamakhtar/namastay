@@ -95,7 +95,7 @@ type AccountTests(browser: BrowserFixture) =
         task {
             let! page = saveNewTrip ()
             do! (link page "My trips").ClickAsync()
-            do! page.Locator(".my-trip").WaitForAsync()
+            do! page.Locator(".my-trip a").WaitForAsync()
         }
 
     [<Fact>]

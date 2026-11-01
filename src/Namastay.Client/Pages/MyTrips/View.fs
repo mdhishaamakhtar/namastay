@@ -110,7 +110,7 @@ let view (model: Model) dispatch =
                 prop.className "trip-content"
                 prop.children [
                     match model.Trips with
-                    | Remote.Loading -> States.loading "Finding your trips"
+                    | Remote.Loading -> Skeletons.myTrips "Finding your trips"
                     | Remote.Failed error -> States.failed error (fun () -> dispatch Load)
                     | Remote.Loaded saved -> trips model dispatch saved
                     match model.Problem with

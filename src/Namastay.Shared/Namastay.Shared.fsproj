@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <Compile Include="Routing.fs" />
+    <Compile Include="Duration.fs" />
     <Compile Include="Contracts/Errors.fs" />
     <Compile Include="Contracts/Places.fs" />
     <Compile Include="Contracts/Trips.fs" />

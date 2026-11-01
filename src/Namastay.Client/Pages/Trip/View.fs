@@ -140,7 +140,7 @@ let private stops (model: Model) (saved: SavedTrip) dispatch =
 
 let view (model: Model) dispatch =
     match model.Trip with
-    | Remote.Loading -> Html.main [ States.loading "Finding your trip" ]
+    | Remote.Loading -> Skeletons.trip "Finding your trip"
     | Remote.Failed error -> Html.main [ States.failed error (fun () -> dispatch Load) ]
     | Remote.Loaded saved ->
         Html.div [

@@ -9,7 +9,7 @@ type JourneyTests(browser: BrowserFixture) =
     let goToJourney (page: IPage) =
         task {
             let! _ = page.GotoAsync(browser.BaseUrl + "/journey")
-            do! page.Locator(".card-label").WaitForAsync()
+            do! page.Locator(".card-label:not(:has(.bone))").WaitForAsync()
         }
 
     let openJourney () =

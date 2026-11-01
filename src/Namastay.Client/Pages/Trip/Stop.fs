@@ -6,8 +6,6 @@ open Namastay.Client.Pages.Trip.State
 open Namastay.Shared
 open Namastay.Shared.Contracts
 
-let private hours (minutes: int) = float minutes / 60.0
-
 let private modeName =
     function
     | TravelMode.Flight -> "Flight"
@@ -17,7 +15,7 @@ let private modeName =
     | TravelMode.CableCar -> "Cable car"
 
 let private legText (leg: TravelLeg) =
-    let time = $"about {hours leg.MinutesMin:g} to {hours leg.MinutesMax:g} hours"
+    let time = Duration.describe leg.MinutesMin leg.MinutesMax
 
     let note =
         leg.ComfortNote |> Option.map (fun text -> " " + text) |> Option.defaultValue ""

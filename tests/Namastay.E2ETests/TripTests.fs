@@ -61,6 +61,21 @@ type TripTests(browser: BrowserFixture) =
         }
 
     [<Fact>]
+    member _.``a slow trip shows the page skeleton``() =
+        task {
+            let! page = browser.NewPage()
+            let! token = createTrip page
+
+            let! _ =
+                page.RouteAsync("**/api/itineraries/*", Func<IRoute, Task>(fun _ -> Task.CompletedTask))
+
+            let! _ = page.GotoAsync $"{browser.BaseUrl}/trip/{token}"
+            do! page.Locator(".trip .bone").First.WaitForAsync()
+            let! stops = page.Locator(".trip-stops .stop-card").CountAsync()
+            Assert.True(stops > 0)
+        }
+
+    [<Fact>]
     member _.``first stop starts open``() =
         task {
             let! page, _ = openTrip ()

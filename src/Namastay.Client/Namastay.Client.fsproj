@@ -8,6 +8,7 @@
     <Compile Include="Components/Dates.fs" />
     <Compile Include="Components/Remote.fs" />
     <Compile Include="Components/States.fs" />
+    <Compile Include="Components/Skeletons.fs" />
     <Compile Include="Components/Icons.fs" />
     <Compile Include="Pages/Home/State.fs" />
     <Compile Include="Pages/Home/View.fs" />

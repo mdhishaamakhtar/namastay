@@ -203,7 +203,7 @@ let view (model: Model) dispatch =
                 prop.className "account"
                 prop.children [
                     match model.Trip with
-                    | Remote.Loading -> States.loading "Finding your trip"
+                    | Remote.Loading -> Skeletons.editor "Finding your trip"
                     | Remote.Failed error -> States.failed error (fun () -> dispatch Load)
                     | Remote.Loaded _ -> editor model dispatch
                 ]
