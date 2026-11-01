@@ -17,6 +17,7 @@ type Page =
     | Trip of shareToken: string
     | SignIn
     | MyTrips
+    | Account
     | MyTrip of id: string
     | EditTrip of id: string
     | Browse of Browse
@@ -29,6 +30,7 @@ let parse (segments: string list) =
     | [ "trip"; token ] -> Page.Trip token
     | [ "sign-in" ] -> Page.SignIn
     | [ "my" ] -> Page.MyTrips
+    | [ "account" ] -> Page.Account
     | [ "my"; id ] -> Page.MyTrip id
     | [ "my"; id; "edit" ] -> Page.EditTrip id
     | [ "explore" ] -> Page.Browse Browse.Places

@@ -25,11 +25,39 @@ let readError (status: int) (text: string) =
     | Ok error -> ClientError.Server error
     | Error _ -> ClientError.Unreadable $"The server answered {status} in an unknown format."
 
-let inline decodeBody<'Response> (response: Response) =
+/// Answers saved inside the page, and any public ones fetched since, so a page
+/// already seen opens at once and then quietly catches up.
+[<Emit("(window.__seed ?? {})[$0] ?? null")>]
+let private seedText (url: string) : string = jsNative
+
+[<Emit("(window.__seed ??= {})[$0] = $1")>]
+let private rememberAnswer (url: string) (text: string) : unit = jsNative
+
+/// Personal answers are never kept, so they can't outlive signing out.
+let private isPublic (url: string) =
+    not (
+        url.StartsWith "/api/my"
+        || url.StartsWith "/api/me"
+        || url.StartsWith "/api/itineraries"
+    )
+
+let keepAnswer (url: string) (text: string) =
+    if isPublic url then
+        rememberAnswer url text
+
+[<Emit("(() => { try { return localStorage.getItem('namastay-signed-in') === 'yes'; } catch { return false; } })()")>]
+let wasSignedIn () : bool = jsNative
+
+[<Emit("(() => { try { $0 ? localStorage.setItem('namastay-signed-in', 'yes') : localStorage.removeItem('namastay-signed-in'); } catch {} })()")>]
+let rememberSignedIn (signedIn: bool) : unit = jsNative
+
+let inline decodeBody<'Response> (url: string) (response: Response) =
     promise {
         let! text = response.text ()
 
         if response.Ok then
+            keepAnswer url text
+
             return
                 Decode.Auto.fromString<'Response>(text, caseStrategy = CamelCase)
                 |> Result.mapError ClientError.Unreadable
@@ -47,7 +75,7 @@ let inline send<'Response> (url: string) (properties: RequestProperties list) =
     promise {
         try
             let! response = fetchUnsafe (fromApi url) (withSignIn :: properties)
-            return! decodeBody<'Response> response
+            return! decodeBody<'Response> url response
         with _ ->
             return Error ClientError.Network
     }
@@ -95,13 +123,9 @@ let isSignedOut =
     | ClientError.Server error -> error.Code = ErrorCode.Unauthorized
     | _ -> false
 
-/// Saved pages carry the answers they were built from. Each one is used once, on arrival.
-[<Emit("(() => { const seed = window.__seed ?? {}; const text = seed[$0]; delete seed[$0]; return text ?? null; })()")>]
-let takeSeed (url: string) : string = jsNative
-
-/// What a saved page already knows about `url`, so it needn't wait for the API.
+/// What's already known about `url`, so it needn't wait for the API.
 let inline seeded<'Response> (url: string) : 'Response option =
-    match takeSeed url with
+    match seedText url with
     | null -> None
     | text ->
         Decode.Auto.fromString<'Response>(text, caseStrategy = CamelCase)

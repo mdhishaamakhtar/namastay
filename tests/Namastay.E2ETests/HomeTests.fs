@@ -154,7 +154,7 @@ type HomeTests(browser: BrowserFixture) =
         task {
             let! page = browser.NewPage()
             let! _ = page.GotoAsync(browser.BaseUrl + "/explore")
-            do! page.Locator(".region-top").First.ClickAsync()
+            do! page.Locator("a.region-top").First.ClickAsync()
             do! page.WaitForURLAsync "**/explore/**"
             do! page.Locator(".browse-plan a").ClickAsync()
             do! page.WaitForURLAsync "**/journey?scope=region**"
@@ -168,7 +168,7 @@ type HomeTests(browser: BrowserFixture) =
             let! _ = page.GotoAsync(browser.BaseUrl + "/food")
             do! page.Locator(".region-card li a").First.ClickAsync()
             do! page.WaitForURLAsync "**/dishes/**"
-            do! page.Locator(".listing").First.WaitForAsync()
+            do! page.Locator("a.listing").First.WaitForAsync()
         }
 
     [<Fact>]

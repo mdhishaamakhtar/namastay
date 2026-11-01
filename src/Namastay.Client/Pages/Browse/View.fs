@@ -137,7 +137,13 @@ let private dishPage (page: DishPage) =
 
 let view (model: Model) dispatch =
     match model.Content with
-    | Remote.Loading -> Skeletons.browse "Finding this page"
+    | Remote.Loading ->
+        match model.Target with
+        | Browse.Places -> Skeletons.places "Finding places"
+        | Browse.Food -> Skeletons.food "Finding food"
+        | Browse.FoodRegion _
+        | Browse.Dish _ -> Skeletons.listed "Finding this page" Menu.Section.Food
+        | _ -> Skeletons.listed "Finding this page" Menu.Section.Places
     | Remote.Failed error ->
         Html.div [
             prop.className "browse"

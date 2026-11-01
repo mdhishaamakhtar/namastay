@@ -54,12 +54,6 @@ let private loadVisitor () =
 let private remote (seed: 'Value option) =
     seed |> Option.map Remote.Loaded |> Option.defaultValue Remote.Loading
 
-[<Emit("(() => { try { return localStorage.getItem('namastay-signed-in') === 'yes'; } catch { return false; } })()")>]
-let private wasSignedIn () : bool = jsNative
-
-[<Emit("(() => { try { $0 ? localStorage.setItem('namastay-signed-in', 'yes') : localStorage.removeItem('namastay-signed-in'); } catch {} })()")>]
-let private rememberSignedIn (signedIn: bool) : unit = jsNative
-
 let init () =
     let landing = Client.seeded<LandingPage> Routes.landing.Template
 
@@ -71,7 +65,7 @@ let init () =
         Landing = remote landing
         // A saved page shows the landing at once, unless this visitor has their own home.
         Visitor =
-            if landing.IsSome && not (wasSignedIn ()) then
+            if landing.IsSome && not (Client.wasSignedIn ()) then
                 Visitor.Unsure
             else
                 Visitor.Unknown
@@ -144,7 +138,7 @@ let update msg (model: Model) =
         },
         Cmd.none
     | VisitorKnown(Ok trips) ->
-        rememberSignedIn true
+        Client.rememberSignedIn true
 
         {
             model with
@@ -152,7 +146,7 @@ let update msg (model: Model) =
         },
         Cmd.none
     | VisitorKnown(Error error) when Client.isSignedOut error ->
-        rememberSignedIn false
+        Client.rememberSignedIn false
 
         {
             model with

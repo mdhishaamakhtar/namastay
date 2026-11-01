@@ -76,48 +76,12 @@ let private header (model: Model) dispatch =
                                     | _ -> "Plan a new trip"
                                 )
                             ]
-                            Html.button [
-                                prop.className "account-switch"
-                                prop.text "Sign out"
-                                prop.onClick (fun _ -> dispatch SignOut)
-                            ]
                         ]
                     ]
                 ]
             ]
         ]
     ]
-
-let private addPassword (model: Model) dispatch =
-    Html.form [
-        prop.className "my-password"
-        prop.onSubmit (fun event ->
-            event.preventDefault ()
-            dispatch SavePassword)
-        prop.children [
-            Html.h2 "Add a password"
-            Html.p "You sign in with Google. Add a password and you can use your email too."
-            Html.input [
-                prop.className "search-input"
-                prop.type' "password"
-                prop.ariaLabel "New password"
-                prop.placeholder "New password, 10 characters or more"
-                prop.custom ("autoComplete", "new-password")
-                prop.value model.NewPassword
-                prop.onChange (NewPasswordChanged >> dispatch)
-            ]
-            match model.PasswordProblem with
-            | Some text -> Html.p [ prop.className "form-error"; prop.role "alert"; prop.text text ]
-            | None -> Html.none
-            Html.button [ prop.className "button press"; prop.type'.submit; prop.text "Save password" ]
-        ]
-    ]
-
-let private password (model: Model) dispatch =
-    match model.Account with
-    | Some account when not account.HasPassword -> addPassword model dispatch
-    | Some _ when model.PasswordSaved -> Html.p [ prop.className "my-password-saved"; prop.text "Password saved." ]
-    | _ -> Html.none
 
 let view (model: Model) dispatch =
     Html.div [
@@ -133,7 +97,6 @@ let view (model: Model) dispatch =
                     match model.Problem with
                     | Some text -> Html.p [ prop.className "form-error"; prop.role "alert"; prop.text text ]
                     | None -> Html.none
-                    password model dispatch
                 ]
             ]
         ]

@@ -163,6 +163,7 @@ const sitemap = (paths) => {
 const robots = `User-agent: *
 Allow: /
 Disallow: /my
+Disallow: /account
 Disallow: /sign-in
 Disallow: /journey
 Disallow: /trip
@@ -185,6 +186,7 @@ await inBatches(
   [
     ["/journey", "journey/index.html"],
     ["/my", "my/index.html"],
+    ["/account", "account/index.html"],
     ["/trip/shell", "shells/trip.html"],
     ["/my/shell", "shells/my-trip.html"],
     ["/my/shell/edit", "shells/edit.html"],

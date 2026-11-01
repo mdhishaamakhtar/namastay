@@ -2,6 +2,7 @@
 module Namastay.Client.Components.Menu
 
 open Feliz
+open Namastay.Client.Api
 open Namastay.Shared
 
 [<RequireQualifiedAccess>]
@@ -10,6 +11,9 @@ type Section =
     | Places
     | Food
     | MyTrips
+    | Account
+    /// A page that isn't one of the main sections.
+    | Elsewhere
 
 let brand =
     Html.a [
@@ -44,6 +48,10 @@ let view (current: Section) =
                     item current Section.Places "Places" Routes.explorePage.Template
                     item current Section.Food "Food" Routes.foodPage.Template
                     item current Section.MyTrips "My trips" Routes.myTripsPage.Template
+                    if Client.wasSignedIn () then
+                        item current Section.Account "Account" Routes.accountPage.Template
+                    else
+                        item current Section.Account "Sign in" Routes.signInPage.Template
                 ]
             ]
         ]
