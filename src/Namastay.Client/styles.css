@@ -1029,6 +1029,7 @@ button:focus-visible {
 
 .my-trips {
   display: grid;
+  overflow: hidden;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
   width: 100%;
   margin: 0;
@@ -1044,9 +1045,12 @@ button:focus-visible {
   max-width: none;
 }
 
-/* A faint hairline tells one trip from the next. Inset, so no background shows through. */
-.my-trip + .my-trip {
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 16%);
+/* A faint hairline tells one trip from the next. It falls on the card before, and the
+   list clips the outer edges, so lines only show between cards at any column count. */
+.my-trip {
+  box-shadow:
+    -1px 0 0 rgb(255 255 255 / 24%),
+    0 -1px 0 rgb(255 255 255 / 24%);
 }
 
 .my-trip {
@@ -1112,10 +1116,6 @@ button:focus-visible {
 
   .my-trip-open h2 {
     min-height: 2.3em;
-  }
-
-  .my-trip + .my-trip {
-    box-shadow: inset 1px 0 0 rgb(255 255 255 / 16%);
   }
 
 }
