@@ -12,6 +12,9 @@ type Account = {
     Provider: SignInProvider
 }
 
+/// What a native app keeps after signing in, and sends as a bearer token.
+type TokenGrant = { Token: string; Account: Account }
+
 type SignInOptions = {
     Google: bool
     Photo: GuidePhoto option

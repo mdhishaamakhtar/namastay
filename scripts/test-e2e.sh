@@ -34,11 +34,11 @@ export NAMASTAY_DB="$connection"
 dotnet run ${TEST_FLAGS:-} --project src/Namastay.Importer -- samples/data > /dev/null
 
 [ -n "${TEST_FLAGS:-}" ] || dotnet build src/Namastay.Web --verbosity quiet
-ASPNETCORE_ENVIRONMENT=Development ConnectionStrings__Namastay="$connection" \
+ASPNETCORE_ENVIRONMENT=Development ConnectionStrings__Namastay="$connection" Site__Url="http://localhost:$client_port" \
     dotnet run --no-build --no-launch-profile --project src/Namastay.Web --urls "http://localhost:$api_port" > /dev/null &
 
 (cd src/Namastay.Client && dotnet fable . -o build-e2e > /dev/null)
-(cd src/Namastay.Client && NAMASTAY_BUILD=build-e2e npx vite build --outDir dist-e2e --emptyOutDir > /dev/null)
+(cd src/Namastay.Client && VITE_API_URL= NAMASTAY_BUILD=build-e2e npx vite build --outDir dist-e2e --emptyOutDir > /dev/null)
 (cd src/Namastay.Client && NAMASTAY_API="http://localhost:$api_port" exec npx vite preview --outDir dist-e2e --port "$client_port" --strictPort > /dev/null) &
 
 wait_for "http://localhost:$api_port/health"

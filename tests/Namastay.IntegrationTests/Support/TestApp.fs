@@ -10,10 +10,16 @@ open Namastay.Data.Import
 open Namastay.Domain.Catalog
 open Namastay.IntegrationTests
 open Namastay.Web
+open Namastay.Web.Auth
 open Namastay.Web.Http
 
 [<RequireQualifiedAccess>]
 module TestApp =
+    let testSite: Tokens.Site = {
+        TokenKey = "only-for-tests-and-long-enough-to-sign"
+        Url = "https://site.test"
+    }
+
     /// A migrated database holding `catalog`, and a client for an app with the given routes.
     let start (scope: DatabaseScope) (catalog: Catalog) (mapRoutes: WebApplication -> DataCache -> unit) =
         task {
@@ -26,10 +32,11 @@ module TestApp =
 
             let builder = WebApplication.CreateBuilder()
             builder.WebHost.UseTestServer() |> ignore
-            Server.configureServices builder.Services
+            Server.configureServices testSite builder.Services
             let app = scope.Own(builder.Build())
             Server.useForwardedHeaders app
             Server.useCompression app
+            Server.useWebsiteAccess app
             Server.useErrorHandling app
             Server.useRateLimits app
             Server.useSessions app

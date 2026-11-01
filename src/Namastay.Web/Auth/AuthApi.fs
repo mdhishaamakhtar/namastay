@@ -4,12 +4,12 @@ open System
 open System.Net.Mail
 open System.Security.Claims
 open System.Threading.Tasks
-open Microsoft.AspNetCore.Authentication
-open Microsoft.AspNetCore.Authentication.Cookies
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Identity
 open Microsoft.AspNetCore.Routing
+open Microsoft.Extensions.DependencyInjection
+open Microsoft.IdentityModel.JsonWebTokens
 open Npgsql
 open Namastay.Data.Accounts
 open Namastay.Data.Places
@@ -60,15 +60,12 @@ let private toAccount (user: Users.UserRow) : Account = {
             SignInProvider.Password
 }
 
-/// Starts the cookie session. Used by every sign-in route, Google included.
-let startSession (context: HttpContext) (user: Users.UserRow) : Task =
-    let identity =
-        ClaimsIdentity(
-            [ Claim(ClaimTypes.NameIdentifier, user.Id.ToString()) ],
-            CookieAuthenticationDefaults.AuthenticationScheme
-        )
+let private siteOf (context: HttpContext) =
+    context.RequestServices.GetRequiredService<Tokens.Site>()
 
-    context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, ClaimsPrincipal identity)
+/// Signs a browser in. Used by every web sign-in route, Google included.
+let startSession (context: HttpContext) (user: Users.UserRow) =
+    Tokens.setCookie context (Tokens.create (siteOf context) user.Id)
 
 let private matches (user: Users.UserRow option) (password: string) =
     let hash = user |> Option.bind _.PasswordHash |> Option.defaultValue decoyHash
@@ -90,7 +87,7 @@ let private signUp source (context: HttpContext) (credentials: Credentials) : Ta
 
             match created with
             | Some user ->
-                do! startSession context user
+                startSession context user
                 return Ok(toAccount user)
             | None -> return Error(ApiError.create ErrorCode.Conflict "That email already has an account.")
         | fields -> return Error(ApiError.validation fields)
@@ -101,19 +98,35 @@ let private signIn source (context: HttpContext) (credentials: Credentials) : Ta
         let! user = Users.tryFindByEmail source (credentials.Email.Trim())
 
         if matches user credentials.Password then
-            do! startSession context user.Value
+            startSession context user.Value
             return Ok(toAccount user.Value)
         else
             return Error(ApiError.create ErrorCode.Unauthorized wrongDetails)
     }
 
+/// Native apps sign in here, and get the token back instead of a cookie.
+let private issueToken source (context: HttpContext) (credentials: Credentials) : Task<Result<TokenGrant, ApiError>> =
+    task {
+        let! user = Users.tryFindByEmail source (credentials.Email.Trim())
+
+        if matches user credentials.Password then
+            return
+                Ok {
+                    Token = Tokens.create (siteOf context) user.Value.Id
+                    Account = toAccount user.Value
+                }
+        else
+            return Error(ApiError.create ErrorCode.Unauthorized wrongDetails)
+    }
+
 let private signOut (context: HttpContext) : Task =
-    context.SignOutAsync CookieAuthenticationDefaults.AuthenticationScheme
+    Tokens.clearCookie context
+    Task.CompletedTask
 
 /// The signed-in user, if any. Other features use this to know who is asking.
 let currentUser source (context: HttpContext) : Task<Users.UserRow option> =
     task {
-        match Guid.TryParse(context.User.FindFirstValue ClaimTypes.NameIdentifier) with
+        match Guid.TryParse(context.User.FindFirstValue JwtRegisteredClaimNames.Sub) with
         | true, id -> return! Users.tryFindById source id
         | _ -> return None
     }
@@ -141,6 +154,9 @@ let map (app: IEndpointRouteBuilder) (source: NpgsqlDataSource) =
     |> ignore
 
     (Endpoint.mapBody app Routes.signIn (signIn source)).RequireRateLimiting Limits.signInPolicy
+    |> ignore
+
+    (Endpoint.mapBody app Routes.issueToken (issueToken source)).RequireRateLimiting Limits.signInPolicy
     |> ignore
 
     app.MapPost(Routes.signOut.Template, RequestDelegate signOut) |> ignore

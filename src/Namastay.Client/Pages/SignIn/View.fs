@@ -1,6 +1,7 @@
 module Namastay.Client.Pages.SignIn.View
 
 open Feliz
+open Namastay.Client.Api
 open Namastay.Client.Components
 open Namastay.Client.Pages.SignIn.State
 open Namastay.Shared
@@ -38,7 +39,7 @@ let private google (model: Model) =
         // Google's sign-in is a server page, so this is a normal link.
         Html.a [
             prop.className "button account-google press"
-            prop.href Routes.googleSignIn.Template
+            prop.href (Client.fromApi Routes.googleSignIn.Template)
             prop.text "Continue with Google"
         ]
     else
@@ -52,7 +53,7 @@ let private label (model: Model) =
                 prop.className "account-label-frame"
                 prop.children [
                     match model.Photo with
-                    | Some photo -> Html.img [ prop.src photo.Url; prop.alt photo.Alt ]
+                    | Some photo -> Html.img [ prop.src (Client.fromApi photo.Url); prop.alt photo.Alt ]
                     | None -> Html.div [ prop.className "account-label-blank" ]
                     Html.div [
                         prop.className "account-label-text"

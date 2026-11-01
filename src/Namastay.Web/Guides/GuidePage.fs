@@ -277,16 +277,19 @@ let private notices (place: PlaceGuide) =
         ]
       ]
 
-let private planLink (label: string) =
-    a [ _class "plan"; _href Routes.journey.Template ] [ str label ]
+let private planLink (site: string) (label: string) =
+    a [ _class "plan"; _href (site + Routes.journey.Template) ] [ str label ]
 
-let private topBar (trip: string option) =
+let private topBar (site: string) (trip: string option) =
     div [ _class "top" ] [
         match trip with
         | Some token ->
-            a [ _class "back"; _href (Route.url [ "shareToken", token ] [] Routes.trip) ] [ backIcon; str "Your trip" ]
-        | None -> a [ _class "back"; _href Routes.journey.Template ] [ str "Plan a trip" ]
-        a [ _class "brand"; _href Routes.home.Template ] [ str "Namastay" ]
+            a [
+                _class "back"
+                _href (site + Route.url [ "shareToken", token ] [] Routes.trip)
+            ] [ backIcon; str "Your trip" ]
+        | None -> a [ _class "back"; _href (site + Routes.journey.Template) ] [ str "Plan a trip" ]
+        a [ _class "brand"; _href (site + Routes.home.Template) ] [ str "Namastay" ]
     ]
 
 let private heroLabel (place: PlaceGuide) =
@@ -309,16 +312,16 @@ let private heroLabel (place: PlaceGuide) =
         ]
       ]
 
-let private panel trip (place: PlaceGuide) =
+let private panel (site: string) trip (place: PlaceGuide) =
     tag "aside" [ _class "panel" ] [
-        topBar trip
+        topBar site trip
         yield! heroLabel place
         h1 [] [ str place.Name ]
         p [ _class "summary" ] [ str place.Summary ]
-        planLink "Plan a trip around this"
+        planLink site "Plan a trip around this"
     ]
 
-let private content (place: PlaceGuide) =
+let private content (site: string) (place: PlaceGuide) =
     main [ _class "content" ] [
         facts place
         intro place
@@ -327,19 +330,19 @@ let private content (place: PlaceGuide) =
         yield! gallery place
         logistics place
         yield! notices place
-        planLink "Plan a trip around this"
+        planLink site "Plan a trip around this"
         footer [] [ str $"Last checked {lastChecked place.LastChecked}" ]
     ]
 
 /// `trip` adds a way back to the itinerary that led here.
-let render (trip: string option) (place: PlaceGuide) =
+let render (site: string) (trip: string option) (place: PlaceGuide) =
     shell $"{place.Name} travel guide | Namastay" place.Summary (GuideStyles.colours place.Colours) [
-        div [ _class "guide" ] [ panel trip place; content place ]
+        div [ _class "guide" ] [ panel site trip place; content site place ]
         yield! lightboxes place
     ]
     |> RenderView.AsString.htmlDocument
 
-let notFound () =
+let notFound (site: string) =
     shell
         "Guide not found | Namastay"
         "We don't have a guide for that place yet."
@@ -348,7 +351,7 @@ let notFound () =
             main [ _class "content" ] [
                 h1 [] [ str "We don't have that guide yet" ]
                 p [] [ str "It may not be written yet, or the address may have changed." ]
-                a [ _class "plan"; _href Routes.home.Template ] [ str "Back to Namastay" ]
+                a [ _class "plan"; _href (site + Routes.home.Template) ] [ str "Back to Namastay" ]
             ]
         ]
     |> RenderView.AsString.htmlDocument

@@ -1,6 +1,7 @@
 module Namastay.Client.Pages.Browse.Places
 
 open Feliz
+open Namastay.Client.Api
 open Namastay.Client.Components
 open Namastay.Client.Pages.Browse.Parts
 open Namastay.Client.Pages.Browse.State
@@ -12,7 +13,7 @@ let private placeLine (place: PlaceSummary) =
         prop.key place.Slug
         prop.children [
             Html.a [
-                prop.href (Route.url [ "slug", place.Slug ] [] Routes.guidePage)
+                prop.href (Client.fromApi (Route.url [ "slug", place.Slug ] [] Routes.guidePage))
                 prop.children [
                     Html.span [
                         prop.className "listing-colour"

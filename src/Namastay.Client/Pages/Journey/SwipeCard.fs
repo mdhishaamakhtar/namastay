@@ -4,6 +4,7 @@ open Fable.Core
 open Browser
 open Browser.Types
 open Feliz
+open Namastay.Client.Api
 open Namastay.Shared.Contracts
 
 [<ImportMember("./swipe.js")>]
@@ -20,7 +21,7 @@ let private mark (card: JourneyCard) =
     | Some url ->
         Html.div [
             prop.className "card-mark"
-            prop.children [ Html.img [ prop.src url; prop.alt "" ] ]
+            prop.children [ Html.img [ prop.src (Client.fromApi url); prop.alt "" ] ]
         ]
     | None -> Html.none
 
@@ -29,7 +30,7 @@ let private photo (card: JourneyCard) =
     | Some url ->
         Html.img [
             prop.className "card-photo"
-            prop.src url
+            prop.src (Client.fromApi url)
             prop.alt (card.ImageAlt |> Option.defaultValue "")
             prop.draggable false
         ]

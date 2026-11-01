@@ -1,6 +1,7 @@
 module Namastay.Client.Pages.Home.Search
 
 open Feliz
+open Namastay.Client.Api
 open Namastay.Client.Components
 open Namastay.Client.Pages.Home.State
 open Namastay.Shared
@@ -21,7 +22,7 @@ let private result (place: PlaceSummary) =
         Html.a [
             prop.key place.Slug
             prop.className "result press"
-            prop.href (Route.url [ "slug", place.Slug ] [] Routes.guidePage)
+            prop.href (Client.fromApi (Route.url [ "slug", place.Slug ] [] Routes.guidePage))
             prop.children [ colourBar place.FamilyDeep; resultText place place.Region ]
         ]
     else

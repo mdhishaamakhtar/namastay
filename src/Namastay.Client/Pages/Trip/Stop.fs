@@ -1,6 +1,7 @@
 module Namastay.Client.Pages.Trip.Stop
 
 open Feliz
+open Namastay.Client.Api
 open Namastay.Client.Components
 open Namastay.Client.Pages.Trip.State
 open Namastay.Shared
@@ -121,7 +122,11 @@ let private photo (stop: TripStop) =
         Html.figure [
             prop.className "stop-photo"
             prop.children [
-                Html.img [ prop.src item.Url; prop.alt item.Alt; prop.custom ("loading", "lazy") ]
+                Html.img [
+                    prop.src (Client.fromApi item.Url)
+                    prop.alt item.Alt
+                    prop.custom ("loading", "lazy")
+                ]
                 Html.figcaption [ prop.text $"{item.Credit}, {item.Licence}" ]
             ]
         ]
@@ -167,7 +172,8 @@ let private notices (trip: Trip) (stop: TripStop) =
         ]
 
 let private guideLink token (stop: TripStop) =
-    let url = Route.url [ "slug", stop.PlaceSlug ] [ "trip", token ] Routes.guidePage
+    let url =
+        Client.fromApi (Route.url [ "slug", stop.PlaceSlug ] [ "trip", token ] Routes.guidePage)
 
     if stop.Custom then
         Html.p [

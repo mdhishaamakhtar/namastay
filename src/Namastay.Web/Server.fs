@@ -1,14 +1,11 @@
 module Namastay.Web.Server
 
 open System
-open System.IO
 open System.Threading
 open System.Threading.RateLimiting
 open System.Threading.Tasks
-open Microsoft.AspNetCore.Authentication
-open Microsoft.AspNetCore.Authentication.Cookies
+open Microsoft.AspNetCore.Authentication.JwtBearer
 open Microsoft.AspNetCore.Builder
-open Microsoft.AspNetCore.DataProtection
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.HttpOverrides
 open Microsoft.AspNetCore.ResponseCompression
@@ -20,6 +17,7 @@ open Npgsql
 open Namastay.Data
 open Namastay.Shared
 open Namastay.Shared.Contracts
+open Namastay.Web.Auth
 open Namastay.Web.Http
 
 let tripsPerMinute = Limits.tripsPerMinute
@@ -39,24 +37,22 @@ let private rejected (context: OnRejectedContext) (_: CancellationToken) =
         (ApiError.create ErrorCode.RateLimited "That's a lot of requests. Please wait a minute.")
     |> ValueTask
 
-let private unauthorized (context: RedirectContext<CookieAuthenticationOptions>) : Task =
-    context.Response.StatusCode <- StatusCodes.Status401Unauthorized
-    Task.CompletedTask
+let private configureSessions (site: Tokens.Site) (services: IServiceCollection) =
+    services.AddSingleton site |> ignore
 
-let private configureSessions (services: IServiceCollection) =
-    services
-        .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-        .AddCookie(fun options ->
-            options.Cookie.Name <- "namastay"
-            options.Cookie.HttpOnly <- true
-            options.Cookie.SameSite <- SameSiteMode.Lax
-            options.Cookie.SecurePolicy <- CookieSecurePolicy.SameAsRequest
-            options.ExpireTimeSpan <- TimeSpan.FromDays 30.0
-            options.SlidingExpiration <- true
-            options.Events.OnRedirectToLogin <- Func<RedirectContext<CookieAuthenticationOptions>, Task>(unauthorized))
+    services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(Tokens.configure site)
     |> ignore
 
-let configureServices (services: IServiceCollection) =
+/// The website calls this API from the visitor's browser, so only it may read answers
+/// and send the sign-in cookie. Native apps aren't browsers, so this doesn't touch them.
+let private configureWebsiteAccess (site: Tokens.Site) (services: IServiceCollection) =
+    services.AddCors(fun options ->
+        options.AddDefaultPolicy(fun policy ->
+            policy.WithOrigins(site.Url).AllowCredentials().AllowAnyHeader().AllowAnyMethod()
+            |> ignore))
+    |> ignore
+
+let configureServices (site: Tokens.Site) (services: IServiceCollection) =
     // The host's proxy is the only way in, so its forwarded headers can be trusted.
     // ForwardLimit stays at 1, so a visitor can't fake an address further back in the list.
     services.Configure<ForwardedHeadersOptions>(fun (options: ForwardedHeadersOptions) ->
@@ -66,7 +62,8 @@ let configureServices (services: IServiceCollection) =
     |> ignore
 
     services.AddLogging() |> ignore
-    configureSessions services
+    configureSessions site services
+    configureWebsiteAccess site services
 
     services.AddResponseCompression(fun options ->
         options.EnableForHttps <- true
@@ -102,16 +99,11 @@ let private addSecurityHeaders (context: HttpContext) (next: RequestDelegate) : 
 let useSecurityHeaders (app: WebApplication) =
     app.Use(Func<HttpContext, RequestDelegate, Task>(addSecurityHeaders)) |> ignore
 
-/// Sign-in cookies must survive a redeploy, so production keeps their keys on a volume.
-let configureKeys (services: IServiceCollection) (folder: string option) =
-    folder
-    |> Option.iter (fun path ->
-        services.AddDataProtection().PersistKeysToFileSystem(DirectoryInfo path)
-        |> ignore)
-
 let useCompression (app: WebApplication) = app.UseResponseCompression() |> ignore
 
 let useForwardedHeaders (app: WebApplication) = app.UseForwardedHeaders() |> ignore
+
+let useWebsiteAccess (app: WebApplication) = app.UseCors() |> ignore
 
 let useRateLimits (app: WebApplication) = app.UseRateLimiter() |> ignore
 

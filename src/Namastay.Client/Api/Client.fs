@@ -13,6 +13,13 @@ type ClientError =
     | Server of ApiError
     | Unreadable of string
 
+/// Where the API lives. Empty in development, where Vite passes calls along.
+[<Emit("import.meta.env.VITE_API_URL ?? ''")>]
+let apiUrl: string = jsNative
+
+/// The full address of something the API serves, such as a photo or a guide.
+let fromApi (path: string) = apiUrl + path
+
 let readError (status: int) (text: string) =
     match Decode.Auto.fromString<ApiError>(text, caseStrategy = CamelCase) with
     | Ok error -> ClientError.Server error
@@ -30,13 +37,16 @@ let inline decodeBody<'Response> (response: Response) =
             return Error(readError response.Status text)
     }
 
+/// The website and the API are separate addresses, so the sign-in cookie must be asked for.
+let withSignIn = RequestProperties.Credentials RequestCredentials.Include
+
 let jsonHeaders =
     requestHeaders [ HttpRequestHeaders.ContentType "application/json" ]
 
 let inline send<'Response> (url: string) (properties: RequestProperties list) =
     promise {
         try
-            let! response = fetchUnsafe url properties
+            let! response = fetchUnsafe (fromApi url) (withSignIn :: properties)
             return! decodeBody<'Response> response
         with _ ->
             return Error ClientError.Network
@@ -68,7 +78,8 @@ let inline put<'Request, 'Response> (url: string) (body: 'Request) : JS.Promise<
 let action (method: HttpMethod) (url: string) : JS.Promise<Result<unit, ClientError>> =
     promise {
         try
-            let! response = fetchUnsafe url [ RequestProperties.Method method ]
+            let! response =
+                fetchUnsafe (fromApi url) [ withSignIn; RequestProperties.Method method ]
 
             if response.Ok then
                 return Ok()

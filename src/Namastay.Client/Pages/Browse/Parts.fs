@@ -2,6 +2,7 @@
 module Namastay.Client.Pages.Browse.Parts
 
 open Feliz
+open Namastay.Client.Api
 open Fable.Core
 open Namastay.Client.Components
 open Namastay.Client.Pages.Browse.State
@@ -101,7 +102,7 @@ let listing (href: Listing -> string) (item: Listing) =
     ]
 
 let guideUrl (item: Listing) =
-    Route.url [ "slug", item.Slug ] [] Routes.guidePage
+    Client.fromApi (Route.url [ "slug", item.Slug ] [] Routes.guidePage)
 
 let dishUrl (item: Listing) =
     Route.url [ "slug", item.Slug ] [] Routes.dishPage

@@ -173,8 +173,8 @@ type GuidePageTests(postgres: PostgresFixture) =
         task {
             let! http, _ = start ()
             let! html = page http "/places/kasol"
-            Assert.Contains("href=\"/\"", html)
-            Assert.Contains("href=\"/journey\"", html)
+            Assert.Contains($"href=\"{TestApp.testSite.Url}/\"", html)
+            Assert.Contains($"href=\"{TestApp.testSite.Url}/journey\"", html)
         }
 
     [<Fact>]
@@ -193,7 +193,7 @@ type GuidePageTests(postgres: PostgresFixture) =
             let! response = http.GetAsync "/places/manali"
             let! html = response.Content.ReadAsStringAsync()
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode)
-            Assert.Contains("href=\"/\"", html)
+            Assert.Contains($"href=\"{TestApp.testSite.Url}/\"", html)
         }
 
     [<Fact>]
@@ -346,7 +346,7 @@ type GuidePageTests(postgres: PostgresFixture) =
             let! fromTrip = page http "/places/kasol?trip=ABCDEFGHIJKL"
             let! forged = page http "/places/kasol?trip=%22%3E%3Cscript%3E"
             Assert.DoesNotContain("Your trip", plain)
-            Assert.Contains("href=\"/trip/ABCDEFGHIJKL\"", fromTrip)
+            Assert.Contains($"href=\"{TestApp.testSite.Url}/trip/ABCDEFGHIJKL\"", fromTrip)
             Assert.DoesNotContain("Your trip", forged)
         }
 

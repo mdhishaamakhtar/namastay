@@ -13,6 +13,7 @@
     <Compile Include="Journey/JourneyApi.fs" />
     <Compile Include="Trips/TripSnapshot.fs" />
     <Compile Include="Trips/TripsApi.fs" />
+    <Compile Include="Auth/Tokens.fs" />
     <Compile Include="Auth/AuthApi.fs" />
     <Compile Include="Auth/GoogleSignIn.fs" />
     <Compile Include="Trips/SavedTripsApi.fs" />
@@ -34,6 +35,7 @@
     <PackageReference Include="FSharp.SystemTextJson" />
     <PackageReference Include="Giraffe.ViewEngine" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
   </ItemGroup>
 
 </Project>

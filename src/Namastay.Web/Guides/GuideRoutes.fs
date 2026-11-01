@@ -5,8 +5,10 @@ open System.Threading.Tasks
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Routing
+open Microsoft.Extensions.DependencyInjection
 open Namastay.Data.Places
 open Namastay.Shared
+open Namastay.Web.Auth
 open Namastay.Web.Http
 
 let private html (context: HttpContext) (status: int) (body: string) : Task =
@@ -20,6 +22,7 @@ let private tripFrom (context: HttpContext) =
 
 let private guide (data: DataCache) (context: HttpContext) : Task =
     task {
+        let site = context.RequestServices.GetRequiredService<Tokens.Site>().Url
         let slug = string context.Request.RouteValues["slug"]
         let! version = DataCache.version data
 
@@ -32,8 +35,8 @@ let private guide (data: DataCache) (context: HttpContext) : Task =
         match found with
         | Some place ->
             if not (Endpoint.isFresh context version) then
-                do! html context StatusCodes.Status200OK (GuidePage.render (tripFrom context) place)
-        | None -> do! html context StatusCodes.Status404NotFound (GuidePage.notFound ())
+                do! html context StatusCodes.Status200OK (GuidePage.render site (tripFrom context) place)
+        | None -> do! html context StatusCodes.Status404NotFound (GuidePage.notFound site)
     }
 
 let private sitemap (data: DataCache) (context: HttpContext) : Task =

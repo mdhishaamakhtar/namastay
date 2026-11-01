@@ -2,6 +2,7 @@
 module Namastay.Client.Components.Label
 
 open Feliz
+open Namastay.Client.Api
 open Namastay.Shared.Contracts
 
 let view (colour: string) (photo: GuidePhoto option) (name: string) (lines: string list) =
@@ -13,7 +14,12 @@ let view (colour: string) (photo: GuidePhoto option) (name: string) (lines: stri
                 prop.style [ style.borderColor colour ]
                 prop.children [
                     match photo with
-                    | Some item -> Html.img [ prop.src item.Url; prop.alt item.Alt; prop.custom ("loading", "lazy") ]
+                    | Some item ->
+                        Html.img [
+                            prop.src (Client.fromApi item.Url)
+                            prop.alt item.Alt
+                            prop.custom ("loading", "lazy")
+                        ]
                     | None -> Html.div [ prop.className "label-no-photo"; prop.style [ style.backgroundColor colour ] ]
                     Html.div [
                         prop.className "label-text"

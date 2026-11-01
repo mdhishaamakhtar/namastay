@@ -23,8 +23,7 @@ let main args =
             let names = String.Join(", ", missing)
             raise (InvalidOperationException $"Missing settings: {names}")
 
-    Server.configureServices builder.Services
-    Server.configureKeys builder.Services (Settings.keysFolder builder.Configuration)
+    Server.configureServices settings.Site builder.Services
     let google = Settings.google builder.Configuration
 
     google
@@ -34,6 +33,7 @@ let main args =
     Server.useForwardedHeaders app
     Server.useSecurityHeaders app
     Server.useCompression app
+    Server.useWebsiteAccess app
     Server.useErrorHandling app
     app.UseStaticFiles() |> ignore
     Server.useRateLimits app

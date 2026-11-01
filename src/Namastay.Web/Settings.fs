@@ -3,11 +3,13 @@ namespace Namastay.Web
 open System
 open Microsoft.Extensions.Configuration
 open Namastay.Data.Media
+open Namastay.Web.Auth
 open Namastay.Web.Auth.GoogleSignIn
 
 type Settings = {
     Database: string
     Media: MediaSettings
+    Site: Tokens.Site
 }
 
 [<RequireQualifiedAccess>]
@@ -18,7 +20,11 @@ module Settings =
         "Media:Bucket"
         "Media:AccessKey"
         "Media:SecretKey"
+        "Auth:TokenKey"
+        "Site:Url"
     ]
+
+    let private shortestTokenKey = 32
 
     /// Names every missing setting, so a bad deployment fails at startup, not on a request.
     let load (configuration: IConfiguration) : Result<Settings, string list> =
@@ -26,6 +32,7 @@ module Settings =
             required
             |> List.filter (fun key -> String.IsNullOrWhiteSpace configuration[key])
         with
+        | [] when configuration["Auth:TokenKey"].Length < shortestTokenKey -> Error [ "Auth:TokenKey (too short)" ]
         | [] ->
             Ok {
                 Database = configuration["ConnectionStrings:Namastay"]
@@ -35,14 +42,12 @@ module Settings =
                     AccessKey = configuration["Media:AccessKey"]
                     SecretKey = configuration["Media:SecretKey"]
                 }
+                Site = {
+                    TokenKey = configuration["Auth:TokenKey"]
+                    Url = configuration["Site:Url"].TrimEnd '/'
+                }
             }
         | missing -> Error missing
-
-    /// Without this, keys live on the machine, which is fine for development.
-    let keysFolder (configuration: IConfiguration) =
-        configuration["DataProtection:KeysFolder"]
-        |> Option.ofObj
-        |> Option.filter (String.IsNullOrWhiteSpace >> not)
 
     /// Google stays off until both of its settings exist.
     let google (configuration: IConfiguration) =

@@ -60,6 +60,21 @@ type AuthTests(postgres: PostgresFixture) =
             return value
         }
 
+    let tokenFor http email =
+        task {
+            let! response = send http Routes.issueToken.Template (credentials email password)
+            let! grant = response.Content.ReadFromJsonAsync<TokenGrant>(Json.options)
+            return grant.Token
+        }
+
+    let withBearer (http: HttpClient) (token: string) =
+        task {
+            use request = new HttpRequestMessage(HttpMethod.Get, Routes.me.Template)
+            request.Headers.Authorization <- Headers.AuthenticationHeaderValue("Bearer", token)
+            let! response = http.SendAsync request
+            return response.StatusCode
+        }
+
     [<Fact>]
     member _.``sign up creates an account and signs in``() =
         task {
@@ -265,5 +280,63 @@ type AuthTests(postgres: PostgresFixture) =
 
     interface IDisposable with
         member _.Dispose() = (scope :> IDisposable).Dispose()
+
+    [<Fact>]
+    member _.``a native app signs in with a bearer token``() =
+        task {
+            let! http, _ = start ()
+            let! _ = signUp http "app@example.org" password
+            let! token = tokenFor http "app@example.org"
+            let! status = withBearer http token
+            Assert.Equal(HttpStatusCode.OK, status)
+        }
+
+    [<Fact>]
+    member _.``a token that has been changed is refused``() =
+        task {
+            let! http, _ = start ()
+            let! _ = signUp http "tampered@example.org" password
+            let! token = tokenFor http "tampered@example.org"
+            let! status = withBearer http (token.Substring(0, token.Length - 4) + "AAAA")
+            Assert.Equal(HttpStatusCode.Unauthorized, status)
+        }
+
+    [<Fact>]
+    member _.``a wrong password gets no token``() =
+        task {
+            let! http, _ = start ()
+            let! _ = signUp http "wrong@example.org" password
+
+            let! response =
+                send http Routes.issueToken.Template (credentials "wrong@example.org" "not the password")
+
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode)
+        }
+
+    [<Fact>]
+    member _.``the website may call the api with its sign-in``() =
+        task {
+            let! http, _ = start ()
+            use request = new HttpRequestMessage(HttpMethod.Get, Routes.me.Template)
+            request.Headers.Add("Origin", TestApp.testSite.Url)
+            let! response = http.SendAsync request
+
+            Assert.Equal(
+                TestApp.testSite.Url,
+                String.Join("", response.Headers.GetValues "Access-Control-Allow-Origin")
+            )
+
+            Assert.Equal("true", String.Join("", response.Headers.GetValues "Access-Control-Allow-Credentials"))
+        }
+
+    [<Fact>]
+    member _.``another website may not``() =
+        task {
+            let! http, _ = start ()
+            use request = new HttpRequestMessage(HttpMethod.Get, Routes.me.Template)
+            request.Headers.Add("Origin", "https://evil.test")
+            let! response = http.SendAsync request
+            Assert.False(response.Headers.Contains "Access-Control-Allow-Origin")
+        }
 
     interface IClassFixture<PostgresFixture>

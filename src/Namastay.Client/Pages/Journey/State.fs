@@ -100,7 +100,7 @@ let private preload (graph: JourneyGraph) (queue: string list) =
         |> Option.bind _.ImageUrl
         |> Option.iter (fun url ->
             let image = document.createElement "img" :?> Types.HTMLImageElement
-            image.src <- url))
+            image.src <- Client.fromApi url))
 
 let private settleStage (graph: JourneyGraph) answers =
     Cmd.ofEffect (fun _ -> Theme.stage (JourneyPath.leadingColours graph answers))

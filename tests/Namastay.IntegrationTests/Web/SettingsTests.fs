@@ -18,6 +18,8 @@ let private complete = [
     "Media:Bucket", "bucket"
     "Media:AccessKey", "key"
     "Media:SecretKey", "secret"
+    "Auth:TokenKey", "long-enough-to-sign-tokens-with-safely"
+    "Site:Url", "https://site.test/"
 ]
 
 [<Fact>]
@@ -61,3 +63,19 @@ let ``google turns on with both settings`` () =
         configuration [ "Google:ClientId", "id"; "Google:ClientSecret", "secret" ]
 
     Assert.Equal(Some "id", Settings.google settings |> Option.map _.ClientId)
+
+[<Fact>]
+let ``a short signing key is refused`` () =
+    let weak =
+        complete
+        |> List.map (fun (key, value) -> key, (if key = "Auth:TokenKey" then "short" else value))
+
+    match Settings.load (configuration weak) with
+    | Ok _ -> raise (Xunit.Sdk.XunitException "expected the key to be refused")
+    | Error problems -> Assert.Contains("Auth:TokenKey (too short)", problems)
+
+[<Fact>]
+let ``the website address loses its trailing slash`` () =
+    match Settings.load (configuration complete) with
+    | Ok settings -> Assert.Equal("https://site.test", settings.Site.Url)
+    | Error missing -> raise (Xunit.Sdk.XunitException $"unexpected: {missing}")

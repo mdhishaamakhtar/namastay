@@ -1,6 +1,7 @@
 module Namastay.Client.Pages.Home.Sections
 
 open Feliz
+open Namastay.Client.Api
 open Namastay.Client.Components
 open Namastay.Client.Pages.Home.State
 open Namastay.Shared
@@ -37,7 +38,7 @@ let private labelLink (name: LandingCard -> string) (line: LandingCard -> string
     Html.a [
         prop.key card.Title
         prop.className "label-link"
-        prop.href (Route.url [ "slug", card.PlaceSlug ] [] Routes.guidePage)
+        prop.href (Client.fromApi (Route.url [ "slug", card.PlaceSlug ] [] Routes.guidePage))
         prop.children [ Label.view card.Colour (Some card.Photo) (name card) [ line card ] ]
     ]
 

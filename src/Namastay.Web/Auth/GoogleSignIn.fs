@@ -4,7 +4,6 @@ module Namastay.Web.Auth.GoogleSignIn
 open System.Security.Claims
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Authentication
-open Microsoft.AspNetCore.Authentication.Cookies
 open Microsoft.AspNetCore.Authentication.Google
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
@@ -36,6 +35,7 @@ let private start (context: HttpContext) : Task =
 
 let private finish source (context: HttpContext) : Task =
     task {
+        let site = context.RequestServices.GetRequiredService<Tokens.Site>()
         let! result = context.AuthenticateAsync externalScheme
 
         let email =
@@ -45,12 +45,12 @@ let private finish source (context: HttpContext) : Task =
                 null
 
         if isNull email then
-            context.Response.Redirect Routes.home.Template
+            context.Response.Redirect(site.Url + Routes.home.Template)
         else
             let! user = Users.claimForGoogle source email
-            do! AuthApi.startSession context user
+            AuthApi.startSession context user
             do! context.SignOutAsync externalScheme
-            context.Response.Redirect Routes.myTripsPage.Template
+            context.Response.Redirect(site.Url + Routes.home.Template)
     }
 
 let map (app: IEndpointRouteBuilder) (source: NpgsqlDataSource) =

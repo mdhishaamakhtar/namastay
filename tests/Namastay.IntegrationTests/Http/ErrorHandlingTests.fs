@@ -42,7 +42,14 @@ let private client () =
     task {
         let builder = WebApplication.CreateBuilder()
         builder.WebHost.UseTestServer() |> ignore
-        Server.configureServices builder.Services
+
+        Server.configureServices
+            {
+                TokenKey = "only-for-tests-and-long-enough-to-sign"
+                Url = "https://site.test"
+            }
+            builder.Services
+
         let app = builder.Build()
         Server.useErrorHandling app
         Endpoint.mapGet app okRoute (fun _ -> Task.FromResult(Ok sample))

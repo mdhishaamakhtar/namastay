@@ -35,7 +35,7 @@ let private ticket dispatch count index first (row: Row) =
         prop.style [ style.backgroundColor row.Deep; style.color row.TextOnDeep ]
         prop.children [
             match row.Photo with
-            | Some url -> Html.img [ prop.src url; prop.alt "" ]
+            | Some url -> Html.img [ prop.src (Client.fromApi url); prop.alt "" ]
             | None -> Html.div [ prop.className "edit-ticket-blank" ]
             Html.div [
                 prop.className "edit-ticket-name"
