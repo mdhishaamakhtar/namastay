@@ -983,7 +983,7 @@ let private gatewayTrip days =
 [<Fact>]
 let ``a place with no airport link is reached through the nearest city`` () =
     let trip = gatewayTrip 6
-    Assert.Equal<string list>([ "hub"; "remote" ], trip.Stops |> List.map _.PlaceSlug)
+    Assert.Equal<string list>([ "hub"; "remote"; "capital" ], trip.Stops |> List.map _.PlaceSlug)
 
 [<Fact>]
 let ``the trip says where you land and how you get to the first stop`` () =
@@ -1007,7 +1007,7 @@ let ``starting in a gateway city needs no onward leg`` () =
 let ``the trip says where you fly home from`` () =
     let depart = (gatewayTrip 6).Depart.Value
     Assert.Equal("CAPITAL", depart.City)
-    Assert.Equal(Some "HUB", depart.Via)
+    Assert.Equal(None, depart.Via)
 
 [<Fact>]
 let ``no gateways in the data means no arrival is claimed`` () = Assert.True((hubTrip 7).Arrive.IsNone)
@@ -1492,3 +1492,65 @@ let ``a major city sits at the start or end and not in the middle`` () =
     let trip = build world (request (liked [ "likes-north"; "likes-south" ]) 9 None)
     Assert.Equal("main", (List.last trip.Stops).PlaceSlug)
     Assert.Equal(3, trip.Stops.Length)
+
+[<Fact>]
+let ``a place one city away from a hub still ends with a stay there`` () =
+    let trip =
+        likingRemote
+            [
+                hubAirport "main" "c-plains" "stone" "forts"
+                {
+                    place "between" "c-plains" "stone" "forts" with
+                        Published = false
+                }
+                place "remote" "c-hills" "pine" "mountains"
+            ]
+            (timed "main" "between" 200 @ timed "between" "remote" 120)
+            6
+            None
+
+    let last = List.last trip.Stops
+    Assert.Equal("main", last.PlaceSlug)
+    Assert.Equal(320, last.Arrival.Value.MinutesMin)
+    Assert.Equal(Some "Through BETWEEN.", last.Arrival.Value.ComfortNote)
+
+[<Fact>]
+let ``a major city passed through mid-trip becomes the last stay`` () =
+    let world = {
+        catalog with
+            Places = [
+                place "north" "c-hills" "pine" "mountains"
+                hubAirport "main" "c-plains" "stone" "forts"
+                place "south" "c-plains" "stone" "mountains"
+            ]
+            Links = timed "north" "main" 100 @ timed "main" "south" 200
+            Cards = [
+                card "likes-north" "interest:mountains" (Some "north")
+                card "likes-south" "interest:mountains" (Some "south")
+            ]
+    }
+
+    let trip = build world (request (liked [ "likes-north"; "likes-south" ]) 9 None)
+    Assert.Equal<string list>([ "main"; "north"; "south" ], slugs trip |> List.sort)
+    Assert.Equal("main", (List.last trip.Stops).PlaceSlug)
+    Assert.Equal(300, trip.Stops[1].Arrival.Value.MinutesMin)
+    Assert.Equal(Some "Through MAIN.", trip.Stops[1].Arrival.Value.ComfortNote)
+
+[<Fact>]
+let ``a closer airport city with no guide is flown from directly`` () =
+    let trip =
+        likingRemote
+            [
+                hubAirport "main" "c-plains" "stone" "forts"
+                {
+                    hubAirport "near" "c-plains" "stone" "forts" with
+                        Published = false
+                }
+                place "remote" "c-hills" "pine" "mountains"
+            ]
+            (timed "main" "remote" 300 @ timed "near" "remote" 60)
+            6
+            None
+
+    Assert.Equal("NEAR", trip.Depart.Value.City)
+    Assert.DoesNotContain("near", slugs trip)

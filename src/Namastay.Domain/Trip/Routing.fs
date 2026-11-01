@@ -1,6 +1,7 @@
 module Namastay.Domain.Trip.Routing
 
 open Namastay.Domain.Catalog
+open Namastay.Shared
 open Namastay.Shared.Contracts
 
 type RoutedStop = {
@@ -13,7 +14,7 @@ let private beamWidth = 60
 let private unfilledDayPenalty = 10
 let private oneLinkCost = 25
 let private farCost = 70
-let private midTripHubCost = 40
+let private midTripHubCost = 100
 
 let private regionLimit days =
     if days <= 7 then 1
@@ -198,25 +199,54 @@ let rec private trim excess (stops: RoutedStop list) =
 
 let private planned (stops: RoutedStop list) = stops |> List.sumBy _.Days
 
+let private throughNote (city: Place) = $"Through {PlaceName.plain city.Name}."
+
 /// A week or less leaves one day for the last city, a longer trip two.
 let private closingDays days = if days <= 7 then 1 else 2
 
 /// Where to stay before flying home, if the route doesn't already end somewhere people fly
 /// home from: the nearest main hub, or failing that, the nearest international airport.
-let private closingCity (links: Map<string * string, TransportLink>) (closers: Place list) (stops: RoutedStop list) =
+let private closingCity
+    (catalog: Catalog)
+    (links: Map<string * string, TransportLink>)
+    (closers: Place list)
+    (stops: RoutedStop list)
+    =
     let last = (List.last stops).Place
-    let visited = stops |> List.tail |> List.map _.Place.Slug
 
-    let reach (city: Place) =
-        [ links.TryFind(last.Slug, city.Slug); links.TryFind(city.Slug, last.Slug) ]
+    let closes (city: Place) =
+        closers |> List.exists (fun closer -> closer.Slug = city.Slug)
+
+    let between from target =
+        [ links.TryFind(from, target); links.TryFind(target, from) ]
         |> List.choose id
         |> List.sortBy _.MinutesMin
         |> List.tryHead
+
+    let through (city: Place) (middle: Place) =
+        match between last.Slug middle.Slug, between middle.Slug city.Slug with
+        | Some first, Some second ->
+            Some {
+                second with
+                    MinutesMin = first.MinutesMin + second.MinutesMin
+                    MinutesMax = first.MinutesMax + second.MinutesMax
+                    ComfortNote = Some(throughNote middle)
+            }
+        | _ -> None
+
+    let reach (city: Place) =
+        between last.Slug city.Slug
+        |> Option.orElse (
+            catalog.Places
+            |> List.choose (through city)
+            |> List.sortBy _.MinutesMin
+            |> List.tryHead
+        )
         |> Option.map (fun link -> city, link)
 
     let nearest (cities: Place list) =
         cities
-        |> List.filter (fun city -> not (List.contains city.Slug visited))
+        |> List.filter (fun city -> city.Slug <> last.Slug)
         |> List.choose reach
         |> List.sortBy (fun (city, link) -> link.MinutesMin, city.Slug)
         |> List.tryHead
@@ -224,9 +254,40 @@ let private closingCity (links: Map<string * string, TransportLink>) (closers: P
     if last.Hub then
         None
     else
-        match nearest (closers |> List.filter _.Hub) with
-        | None when last.Airport.IsNone -> nearest (closers |> List.filter _.Airport.IsSome)
+        match nearest (catalog.Places |> List.filter _.Hub) with
+        | None when last.Airport.IsNone -> nearest (catalog.Places |> List.filter _.Airport.IsSome)
         | found -> found
+        |> Option.filter (fst >> closes)
+
+/// Takes a city out of the route, so it can come last and not appear twice.
+/// The stop after it is now reached by passing through.
+let private without (city: Place) (stops: RoutedStop list) =
+    match stops |> List.tryFindIndex (fun stop -> stop.Place.Slug = city.Slug) with
+    | None -> stops
+    | Some index ->
+        let passing (stop: RoutedStop) (next: RoutedStop) =
+            match stop.Arrival, next.Arrival with
+            | Some first, Some second ->
+                Some {
+                    second with
+                        MinutesMin = first.MinutesMin + second.MinutesMin
+                        MinutesMax = first.MinutesMax + second.MinutesMax
+                        ComfortNote = Some(throughNote city)
+                }
+            | _ -> None
+
+        stops
+        |> List.indexed
+        |> List.choose (fun (at, stop) ->
+            if at = index then
+                None
+            elif at = index + 1 then
+                Some {
+                    stop with
+                        Arrival = passing stops[index] stop
+                }
+            else
+                Some stop)
 
 /// Regions holding a place someone liked are always open. The limit stops sprawl into the others.
 let private allowsRegions (catalog: Catalog) (request: TripRequest) liked (scored: (Place * int) list) =
@@ -282,16 +343,10 @@ let route
     let closing = closingDays request.Days
     let beforeClosing = fitted (request.Days - closing) stops
 
-    match closingCity links closers beforeClosing with
+    match closingCity catalog links closers beforeClosing with
     | None -> fitted request.Days stops
     | Some(city, link) ->
-        // A city the trip began in moves to the end, so nobody sees it twice.
-        let rest =
-            match beforeClosing with
-            | first :: next :: others when first.Place.Slug = city.Slug -> { next with Arrival = None } :: others
-            | all -> all
-
-        fitted (request.Days - closing) rest
+        fitted (request.Days - closing) (without city beforeClosing)
         @ [
             {
                 Place = city
