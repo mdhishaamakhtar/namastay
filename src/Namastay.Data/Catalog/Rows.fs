@@ -111,6 +111,18 @@ type FamilyRow = {
 }
 
 [<CLIMutable>]
+type PhotoRow = {
+    Slug: string
+    PlaceSlug: string
+    FilePath: string
+    Alt: string
+    Credit: string
+    Licence: string
+    SourceUrl: string
+    Sort: int
+}
+
+[<CLIMutable>]
 type CardRow = {
     Slug: string
     PlaceSlug: string option

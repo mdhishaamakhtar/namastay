@@ -141,6 +141,28 @@ let private loadNotices source =
             })
     }
 
+let private loadPhotos source =
+    task {
+        let! photos =
+            query<PhotoRow>
+                source
+                "select slug, place_slug, file_path, alt, credit, licence, source_url, sort from photos"
+                null
+
+        return
+            photos
+            |> List.map (fun photo -> {
+                Slug = photo.Slug
+                PlaceSlug = photo.PlaceSlug
+                FilePath = photo.FilePath
+                Alt = photo.Alt
+                Credit = photo.Credit
+                Licence = photo.Licence
+                SourceUrl = photo.SourceUrl
+                Sort = photo.Sort
+            })
+    }
+
 let private loadCards source =
     task {
         let! cards =
@@ -176,6 +198,7 @@ let load (source: NpgsqlDataSource) : Task<Catalog> =
         let! links = loadLinks source
         let! notices = loadNotices source
         let! cards = loadCards source
+        let! photos = loadPhotos source
         let! regions = query<NamedRow> source "select slug, name from regions" null
 
         let! clusters =
@@ -223,6 +246,7 @@ let load (source: NpgsqlDataSource) : Task<Catalog> =
                 Places = places
                 Links = links
                 Notices = notices
+                Photos = photos
                 Cards = cards
         }
     }

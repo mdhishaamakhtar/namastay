@@ -41,6 +41,7 @@ type TripStop = {
     Colours: PlaceColours
     Access: PlaceAccess
     StayArea: string option
+    Photo: GuidePhoto option
     Plans: TripDay list
     Arrival: TravelLeg option
     Retired: bool
@@ -59,11 +60,14 @@ type TripNotice = {
     Body: string
 }
 
+type MixShare = { Name: string; Share: int }
+
 type Trip = {
     Title: string
     BaseFamily: string
     Stops: TripStop list
     Swaps: TripSwap list
+    Mix: MixShare list
     LeftOut: string list
     Notices: TripNotice list
     BestMonths: int list

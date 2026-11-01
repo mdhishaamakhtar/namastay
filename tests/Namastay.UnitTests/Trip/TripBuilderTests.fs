@@ -820,3 +820,49 @@ let ``request rules report every problem`` () =
 let ``too many answers are reported`` () =
     let answers = [ for number in 1..1001 -> { Card = string number; Liked = true } ]
     Assert.Equal("answers", (RequestRules.check (request answers 7 None)).Head.Field)
+
+[<Fact>]
+let ``stop takes the first photo of its place`` () =
+    let photo sort = {
+        Slug = $"peak-{sort}"
+        PlaceSlug = "peak"
+        FilePath = $"photos/peak/{sort}.jpg"
+        Alt = "A peak."
+        Credit = "Someone"
+        Licence = "CC0"
+        SourceUrl = "https://example.org"
+        Sort = sort
+    }
+
+    let world = {
+        catalog with
+            Photos = [ photo 2; photo 1 ]
+    }
+
+    let trip = build world (request (liked [ "peak-card" ]) 5 None)
+    let stop = trip.Stops |> List.find (fun item -> item.PlaceSlug = "peak")
+    Assert.Equal(Some "/media/photos/peak/1.jpg", stop.Photo |> Option.map _.Url)
+
+[<Fact>]
+let ``stop without a photo has none`` () =
+    let trip = build catalog (request (liked [ "likes-hills" ]) 5 None)
+    Assert.All(trip.Stops, (fun stop -> Assert.True stop.Photo.IsNone))
+
+[<Fact>]
+let ``mix shows the strongest interests as shares`` () =
+    let trip =
+        build catalog (request (liked [ "likes-hills"; "peak-card"; "likes-beach" ]) 5 None)
+
+    Assert.Equal(
+        {
+            Name = "Name of mountains"
+            Share = 100
+        },
+        trip.Mix.Head
+    )
+
+    Assert.Equal({ Name = "Name of beaches"; Share = 50 }, trip.Mix[1])
+
+[<Fact>]
+let ``mix is empty when nothing was liked`` () =
+    Assert.Empty((build catalog (request [] 5 None)).Mix)

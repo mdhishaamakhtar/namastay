@@ -5,6 +5,7 @@ open Namastay.Domain.Catalog
 open Namastay.Domain.Trip
 open Namastay.Domain.Trip.Profile
 open Namastay.Domain.Trip.Routing
+open Namastay.Shared
 open Namastay.Shared.Contracts
 
 [<RequireQualifiedAccess>]
@@ -90,6 +91,19 @@ let private stayArea (request: TripRequest) (place: Place) =
     |> Option.orElse (verified |> List.tryHead)
     |> Option.map _.Name
 
+let private leadPhoto (catalog: Catalog) (place: Place) =
+    catalog.Photos
+    |> List.filter (fun photo -> photo.PlaceSlug = place.Slug)
+    |> List.sortBy _.Sort
+    |> List.tryHead
+    |> Option.map (fun photo -> {
+        Url = Routes.mediaUrl photo.FilePath
+        Alt = photo.Alt
+        Credit = photo.Credit
+        Licence = photo.Licence
+        SourceUrl = photo.SourceUrl
+    })
+
 let private toStop (catalog: Catalog) request (stop: RoutedStop) : TripStop =
     let family =
         catalog.Families |> List.find (fun item -> item.Slug = stop.Place.FamilySlug)
@@ -107,6 +121,7 @@ let private toStop (catalog: Catalog) request (stop: RoutedStop) : TripStop =
         }
         Access = ContractMapping.access stop.Place.Gate
         StayArea = stayArea request stop.Place
+        Photo = leadPhoto catalog stop.Place
         Plans = plansFor stop.Place stop.Days
         Arrival =
             stop.Arrival
@@ -138,6 +153,25 @@ let private swaps profile (request: TripRequest) (places: Place list) (stops: Ro
         })
     | _ -> []
 
+let private interestName (catalog: Catalog) (slug: string) =
+    catalog.Interests
+    |> List.tryFind (fun interest -> interest.Slug = slug)
+    |> Option.map _.Name
+    |> Option.defaultValue slug
+
+/// The strongest interests, each as a percentage of the strongest.
+let private mix (catalog: Catalog) profile =
+    let top = profile.Interests |> List.truncate 3
+
+    match top with
+    | [] -> []
+    | (_, strongest) :: _ ->
+        top
+        |> List.map (fun (slug, score) -> {
+            Name = interestName catalog slug
+            Share = score * 100 / strongest
+        })
+
 let private leftOut (catalog: Catalog) profile (stops: RoutedStop list) =
     let covered =
         stops |> List.collect _.Place.Interests |> List.map _.InterestSlug |> Set.ofList
@@ -146,11 +180,7 @@ let private leftOut (catalog: Catalog) profile (stops: RoutedStop list) =
 
     kept
     |> List.filter (fun slug -> not (covered.Contains slug))
-    |> List.map (fun slug ->
-        catalog.Interests
-        |> List.tryFind (fun interest -> interest.Slug = slug)
-        |> Option.map _.Name
-        |> Option.defaultValue slug)
+    |> List.map (interestName catalog)
 
 let private notices (catalog: Catalog) (stops: RoutedStop list) =
     let forPlace (place: Place) =
@@ -218,6 +248,7 @@ let private assemble catalog profile (request: TripRequest) places stops : Trip 
         |> baseFamily profile.Collected
     Stops = stops |> List.map (toStop catalog request)
     Swaps = swaps profile request places stops
+    Mix = mix catalog profile
     LeftOut = leftOut catalog profile stops
     Notices = notices catalog stops
     BestMonths = bestMonths stops
