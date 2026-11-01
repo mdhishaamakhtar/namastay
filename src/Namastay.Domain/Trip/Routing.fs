@@ -23,6 +23,13 @@ let private fastestLink (links: TransportLink list) (request: TripRequest) (from
     |> List.sortBy (fun link -> link.MinutesMin, link.Slug)
     |> List.tryHead
 
+/// The quickest link by any mode, for routes a traveller chose themselves.
+let linkBetween (links: TransportLink list) (from: string) (target: string) =
+    links
+    |> List.filter (fun link -> link.FromSlug = from && link.ToSlug = target)
+    |> List.sortBy (fun link -> link.MinutesMin, link.Slug)
+    |> List.tryHead
+
 let private regionOf (catalog: Catalog) (place: Place) =
     catalog.Clusters
     |> List.tryFind (fun cluster -> cluster.Slug = place.ClusterSlug)

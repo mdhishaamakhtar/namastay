@@ -13,11 +13,13 @@ let private ensure (name: string) (fallback: unit -> JsonNode) (node: JsonObject
 /// Fills fields added after the trip was saved.
 let private upgrade (trip: JsonObject) =
     ensure "mix" (fun () -> JsonArray()) trip
+    ensure "month" (fun () -> null) trip
 
     match trip["stops"] with
     | :? JsonArray as stops ->
         for stop in stops do
             ensure "photo" (fun () -> null) (stop.AsObject())
+            ensure "custom" (fun () -> JsonValue.Create false) (stop.AsObject())
     | _ -> ()
 
 let read (text: string) : Trip option =

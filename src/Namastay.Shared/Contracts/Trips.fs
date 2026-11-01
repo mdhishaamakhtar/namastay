@@ -45,6 +45,7 @@ type TripStop = {
     Plans: TripDay list
     Arrival: TravelLeg option
     Retired: bool
+    Custom: bool
 }
 
 type TripSwap = {
@@ -70,7 +71,22 @@ type Trip = {
     Mix: MixShare list
     LeftOut: string list
     Notices: TripNotice list
+    Month: int option
     BestMonths: int list
     Budget: BudgetLevel
     DataVersion: int
 }
+
+type StopEdit = {
+    PlaceSlug: string option
+    CustomName: string option
+    Days: int
+}
+
+type TripEdit = {
+    Title: string
+    Month: int option
+    Stops: StopEdit list
+}
+
+type EditedTrip = { Trip: Trip; Warnings: string list }

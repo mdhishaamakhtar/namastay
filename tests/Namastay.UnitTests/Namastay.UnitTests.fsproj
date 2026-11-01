@@ -6,6 +6,7 @@
     <Compile Include="Catalog/ValidationTests.fs" />
     <Compile Include="Catalog/ContractMappingTests.fs" />
     <Compile Include="Trip/TripBuilderTests.fs" />
+    <Compile Include="Trip/EditingTests.fs" />
   </ItemGroup>
 
   <ItemGroup>

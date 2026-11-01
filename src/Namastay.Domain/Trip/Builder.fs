@@ -20,7 +20,7 @@ type FamilyDays = {
     Family: string
 }
 
-let private spareDay = "A free day to rest or explore at your own pace."
+let spareDay = "A free day to rest or explore at your own pace."
 
 /// The family with the most days leads. Ties go to the first one collected.
 let baseFamily (collected: string list) (stops: FamilyDays list) =
@@ -38,7 +38,7 @@ let baseFamily (collected: string list) (stops: FamilyDays list) =
     |> List.minBy (fun (family, days) -> -days, order family)
     |> fst
 
-let private monthName (month: int) =
+let monthName (month: int) =
     CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName month
 
 let private isGated (profile: TravellerProfile) (place: Place) =
@@ -81,13 +81,13 @@ let private plansFor (place: Place) days =
             }
     ]
 
-let private stayArea (request: TripRequest) (place: Place) =
+let private stayArea (budget: BudgetLevel) (place: Place) =
     let verified =
         place.StayAreas
         |> List.filter (fun area -> area.Evidence.Status <> FactStatus.Unverified)
 
     verified
-    |> List.tryFind (fun area -> area.CostLevel = ContractMapping.costLevel request.Budget)
+    |> List.tryFind (fun area -> area.CostLevel = ContractMapping.costLevel budget)
     |> Option.orElse (verified |> List.tryHead)
     |> Option.map _.Name
 
@@ -104,7 +104,7 @@ let private leadPhoto (catalog: Catalog) (place: Place) =
         SourceUrl = photo.SourceUrl
     })
 
-let private toStop (catalog: Catalog) request (stop: RoutedStop) : TripStop =
+let toStop (catalog: Catalog) budget (stop: RoutedStop) : TripStop =
     let family =
         catalog.Families |> List.find (fun item -> item.Slug = stop.Place.FamilySlug)
 
@@ -120,7 +120,7 @@ let private toStop (catalog: Catalog) request (stop: RoutedStop) : TripStop =
             TextOnDeep = family.TextOnDeep
         }
         Access = ContractMapping.access stop.Place.Gate
-        StayArea = stayArea request stop.Place
+        StayArea = stayArea budget stop.Place
         Photo = leadPhoto catalog stop.Place
         Plans = plansFor stop.Place stop.Days
         Arrival =
@@ -132,6 +132,7 @@ let private toStop (catalog: Catalog) request (stop: RoutedStop) : TripStop =
                 ComfortNote = link.ComfortNote
             })
         Retired = false
+        Custom = false
     }
 
 let private swaps profile (request: TripRequest) (places: Place list) (stops: RoutedStop list) =
@@ -182,7 +183,7 @@ let private leftOut (catalog: Catalog) profile (stops: RoutedStop list) =
     |> List.filter (fun slug -> not (covered.Contains slug))
     |> List.map (interestName catalog)
 
-let private notices (catalog: Catalog) (stops: RoutedStop list) =
+let notices (catalog: Catalog) (stops: RoutedStop list) =
     let forPlace (place: Place) =
         catalog.Notices
         |> List.filter (fun notice ->
@@ -211,7 +212,7 @@ let private notices (catalog: Catalog) (stops: RoutedStop list) =
 
     stops |> List.collect (fun stop -> forPlace stop.Place @ permit stop.Place)
 
-let private bestMonths (stops: RoutedStop list) = [
+let bestMonths (stops: RoutedStop list) = [
     for month in 1..12 do
         if
             stops
@@ -246,11 +247,12 @@ let private assemble catalog profile (request: TripRequest) places stops : Trip 
             Family = stop.Place.FamilySlug
         })
         |> baseFamily profile.Collected
-    Stops = stops |> List.map (toStop catalog request)
+    Stops = stops |> List.map (toStop catalog request.Budget)
     Swaps = swaps profile request places stops
     Mix = mix catalog profile
     LeftOut = leftOut catalog profile stops
     Notices = notices catalog stops
+    Month = request.Month
     BestMonths = bestMonths stops
     Budget = request.Budget
     DataVersion = 1

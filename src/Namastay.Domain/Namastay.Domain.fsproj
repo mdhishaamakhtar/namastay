@@ -16,6 +16,8 @@
     <Compile Include="Trip/Routing.fs" />
     <Compile Include="Trip/RequestRules.fs" />
     <Compile Include="Trip/Builder.fs" />
+    <Compile Include="Trip/Rules.fs" />
+    <Compile Include="Trip/Editing.fs" />
   </ItemGroup>
 
   <ItemGroup>
