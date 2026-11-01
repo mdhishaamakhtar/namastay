@@ -133,3 +133,9 @@ let swipeCard (label: string) =
             prop.children [ bone "bone-input"; bone "bone-input" ]
         ]
     ]
+
+/// The feeling tiles on the home page.
+let feelings (label: string) =
+    waiting label "moods" [
+        for index in 1..12 -> Html.div [ prop.key (string index); prop.className "mood bone" ]
+    ]

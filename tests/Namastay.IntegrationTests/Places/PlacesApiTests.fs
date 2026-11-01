@@ -360,6 +360,30 @@ type PlacesApiTests(postgres: PostgresFixture) =
             Assert.Equal(ErrorCode.NotFound, error.Code)
         }
 
+    [<Fact>]
+    member _.``feelings come from the data and open their places``() =
+        task {
+            let! http, _ = start catalog
+
+            let! feelings =
+                http.GetFromJsonAsync<Feeling list>(Routes.feelings.Template, Json.options)
+
+            let first = feelings.Head
+            let url = Route.url [ "slug", first.Slug ] [] Routes.feelingPlaces
+            let! places = http.GetFromJsonAsync<PlaceSummary list>(url, Json.options)
+            Assert.NotEmpty first.Places
+            Assert.Contains(places, (fun place -> place.Name = first.Places.Head))
+        }
+
+    [<Fact>]
+    member _.``an unknown feeling has no places``() =
+        task {
+            let! http, _ = start catalog
+            let url = Route.url [ "slug", "not-a-feeling" ] [] Routes.feelingPlaces
+            let! places = http.GetFromJsonAsync<PlaceSummary list>(url, Json.options)
+            Assert.Empty places
+        }
+
     interface IDisposable with
         member _.Dispose() = (scope :> IDisposable).Dispose()
 

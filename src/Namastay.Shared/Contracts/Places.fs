@@ -49,6 +49,13 @@ type PlaceSummary = {
     Published: bool
 }
 
+type Feeling = {
+    Slug: string
+    Name: string
+    Places: string list
+    Colour: string
+}
+
 [<RequireQualifiedAccess>]
 type MonthRating =
     | Best

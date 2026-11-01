@@ -265,6 +265,10 @@ button:focus-visible {
   font: 400 14px/1.3 Mukta, system-ui, sans-serif;
 }
 
+.mood.bone {
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
 .mood strong {
   font-family: "Yatra One", Mukta, serif;
   font-size: 22px;
@@ -846,9 +850,13 @@ button:focus-visible {
 }
 
 .stop-warning {
-  padding: 12px;
-  background: var(--warning);
-  color: #ffffff;
+  padding: 10px 12px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+}
+
+.stop-more {
+  font-size: 15px;
 }
 
 .stop-guide {

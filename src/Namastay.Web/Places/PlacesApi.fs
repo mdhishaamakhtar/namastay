@@ -57,6 +57,27 @@ let private guide (data: DataCache) (context: HttpContext) : Task<Result<PlaceGu
             | None -> Error(ApiError.notFound "We don't have a guide for that place yet.")
     }
 
+let private feelings (data: DataCache) (_: HttpContext) =
+    task {
+        let! all = DataCache.getOrLoad data "feelings" (fun () -> Feelings.all data.Source)
+        return Ok all
+    }
+
+let private feelingPlaces (data: DataCache) (context: HttpContext) =
+    task {
+        let slug = string context.Request.RouteValues["slug"]
+
+        if Input.isSlug slug then
+            let! places =
+                DataCache.getOrLoad data $"feeling:{slug}" (fun () -> Feelings.places data.Source slug)
+
+            return Ok places
+        else
+            return Ok []
+    }
+
 let map (app: IEndpointRouteBuilder) (data: DataCache) =
+    Endpoint.mapData app data Routes.feelings (feelings data)
+    Endpoint.mapData app data Routes.feelingPlaces (feelingPlaces data)
     Endpoint.mapGet app Routes.searchPlaces (search data)
     Endpoint.mapData app data Routes.placeGuide (guide data)

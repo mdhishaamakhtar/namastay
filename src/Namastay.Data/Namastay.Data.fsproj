@@ -15,6 +15,7 @@
     <Compile Include="Catalog/Decode.fs" />
     <Compile Include="Places/Rows.fs" />
     <Compile Include="Places/Search.fs" />
+    <Compile Include="Places/Feelings.fs" />
     <Compile Include="Places/Guide.fs" />
     <Compile Include="Catalog/Rows.fs" />
     <Compile Include="Catalog/Read.fs" />

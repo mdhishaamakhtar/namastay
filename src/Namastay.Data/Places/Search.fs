@@ -26,17 +26,17 @@ let private searchSql =
      order by score desc, name
      limit 8"
 
+let toSummary (row: SummaryRow) = {
+    Slug = row.Slug
+    Name = row.Name
+    Region = row.Region
+    FamilyDeep = row.FamilyDeep
+    Published = row.Published
+}
+
 let run (source: NpgsqlDataSource) (query: string) : Task<PlaceSummary list> =
     task {
         let! rows = Namastay.Data.Sql.query<SummaryRow> source searchSql {| query = query |}
 
-        return
-            rows
-            |> List.map (fun row -> {
-                Slug = row.Slug
-                Name = row.Name
-                Region = row.Region
-                FamilyDeep = row.FamilyDeep
-                Published = row.Published
-            })
+        return rows |> List.map toSummary
     }

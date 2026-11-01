@@ -44,12 +44,6 @@ let private icon (size: string) (path: XmlNode list) =
 let private backIcon = icon "20" [ voidTag "path" [ attr "d" "M12.5 4l-6 6l6 6" ] ]
 let private openIcon = icon "20" [ voidTag "path" [ attr "d" "M4 7l6 6l6 -6" ] ]
 
-let private warningIcon =
-    icon "22" [
-        voidTag "path" [ attr "d" "M10 3L18 17H2Z" ]
-        voidTag "path" [ attr "d" "M10 8v4M10 14v1.5" ]
-    ]
-
 let private shell (pageTitle: string) (description: string) (colours: string) (content: XmlNode list) =
     html [ _lang "en" ] [
         head [] [
@@ -77,6 +71,7 @@ let private costName =
 let private cost (place: PlaceGuide) =
     match place.CostLow, place.CostHigh with
     | Some low, Some high when low = high -> costName low
+    | Some low, Some high when low = high -> costName low
     | Some low, Some high -> $"{costName low} to {(costName high).ToLowerInvariant()}"
     | _ -> "Not confirmed"
 
@@ -90,9 +85,15 @@ let private travellerName =
 let private fact (value: string) (label: string) =
     div [] [ strong [] [ str value ]; span [] [ str label ] ]
 
+let private stayLength (place: PlaceGuide) =
+    match place.DaysMin, place.DaysMax with
+    | 1, 1 -> "1 day"
+    | shortest, longest when shortest = longest -> $"{shortest} days"
+    | shortest, longest -> $"{shortest} to {longest} days"
+
 let private facts (place: PlaceGuide) =
     div [ _class "facts" ] [
-        fact $"{place.DaysMin} to {place.DaysMax} days" "How long to stay"
+        fact (stayLength place) "How long to stay"
         fact (cost place) "Rough cost"
         fact (String.Join(", ", place.Suits |> List.map travellerName)) "Who it suits"
         fact place.State place.Region
@@ -128,12 +129,9 @@ let private intro (place: PlaceGuide) =
         months place
     ]
 
-let private spot index (experience: GuideExperience) =
-    details [
-        if index = 0 then
-            attr "open" ""
-    ] [
-        summary [] [ str experience.Name; openIcon ]
+let private spot (experience: GuideExperience) =
+    article [ _class "spot" ] [
+        h3 [] [ str experience.Name ]
         p [] [ str experience.Description ]
         yield! hedge experience.Hedged
     ]
@@ -142,12 +140,16 @@ let private experiences (place: PlaceGuide) =
     match place.Experiences with
     | [] -> []
     | items -> [
-        section [] [ h2 [] [ str "What to do" ]; div [ _class "spots" ] (items |> List.mapi spot) ]
+        section [] [ h2 [] [ str "What to do" ]; div [ _class "spots" ] (items |> List.map spot) ]
       ]
 
-let private galleryPhoto (photo: GuidePhoto) =
+let private photoAddress index = $"#photo-{index + 1}"
+
+let private galleryPhoto index (photo: GuidePhoto) =
     figure [] [
-        img [ _src photo.Url; _alt photo.Alt; attr "loading" "lazy" ]
+        a [ _href (photoAddress index); attr "aria-label" $"See larger: {photo.Alt}" ] [
+            img [ _src photo.Url; _alt photo.Alt; attr "loading" "lazy" ]
+        ]
         figcaption [] [ str $"{photo.Credit}, "; a [ _href photo.SourceUrl ] [ str photo.Licence ] ]
     ]
 
@@ -155,7 +157,35 @@ let private gallery (place: PlaceGuide) =
     match place.Photos with
     | []
     | [ _ ] -> []
-    | _ :: rest -> [ div [ _class "gallery" ] (rest |> List.map galleryPhoto) ]
+    | _ :: rest -> [
+        div [ _class "gallery"; _id "gallery" ] (rest |> List.mapi (fun index photo -> galleryPhoto (index + 1) photo))
+      ]
+
+let private stepLink (label: string) (className: string) index =
+    a [
+        _class $"lightbox-step {className}"
+        _href (photoAddress index)
+        attr "aria-label" label
+    ] []
+
+/// A full-size photo, opened by following its link. Going back closes it, with no script needed.
+let private lightbox (count: int) index (photo: GuidePhoto) =
+    div [ _class "lightbox"; _id (photoAddress index).[1..] ] [
+        a [ _class "lightbox-close"; _href "#gallery"; attr "aria-label" "Close photo" ] []
+        figure [] [
+            img [ _src photo.Url; _alt photo.Alt; attr "loading" "lazy" ]
+            figcaption [] [
+                str $"{photo.Alt}. {photo.Credit}, "
+                a [ _href photo.SourceUrl ] [ str photo.Licence ]
+            ]
+        ]
+        if count > 1 then
+            stepLink "Previous photo" "lightbox-previous" ((index + count - 1) % count)
+            stepLink "Next photo" "lightbox-next" ((index + 1) % count)
+    ]
+
+let private lightboxes (place: PlaceGuide) =
+    place.Photos |> List.mapi (lightbox place.Photos.Length)
 
 let private stayArea (area: GuideStay) = [
     p [] [
@@ -177,15 +207,39 @@ let private logistics (place: PlaceGuide) =
         ]
     ]
 
-let private notices (place: PlaceGuide) =
-    match place.Notices with
+let private shownNotices = 3
+
+let private kindName kind =
+    match kind with
+    | GuideNoticeKind.Closure -> "Opening"
+    | GuideNoticeKind.Safety -> "Safety"
+    | GuideNoticeKind.Legal -> "Rules"
+    | GuideNoticeKind.Permit -> "Permit"
+
+let private noticeRow (item: GuideNotice) =
+    div [ _class "notice" ] [
+        strong [] [ str (kindName item.Kind) ]
+        div [] [ p [] [ str item.Body ]; yield! hedge item.Hedged ]
+    ]
+
+let private moreNotices (rest: GuideNotice list) =
+    match rest with
     | [] -> []
     | items -> [
-        div [ _class "warning"; attr "role" "note" ] [
-            h2 [] [ warningIcon; str "Worth knowing" ]
-            for item in items do
-                p [] [ str item.Body ]
-                yield! hedge item.Hedged
+        details [ _class "more-notices" ] [
+            summary [] [ str $"{items.Length} more to know"; openIcon ]
+            div [] (items |> List.map noticeRow)
+        ]
+      ]
+
+let private notices (place: PlaceGuide) =
+    match NoticeOrder.split _.Severity shownNotices place.Notices with
+    | [], _ -> []
+    | shown, rest -> [
+        section [ _class "notices"; attr "role" "note" ] [
+            h2 [] [ str "Worth knowing" ]
+            yield! shown |> List.map noticeRow
+            yield! moreNotices rest
         ]
       ]
 
@@ -207,7 +261,11 @@ let private heroLabel (place: PlaceGuide) =
     | photo :: _ -> [
         div [ _class "label" ] [
             div [ _class "frame" ] [
-                div [ _class "hero" ] [ img [ _src photo.Url; _alt photo.Alt ] ]
+                div [ _class "hero" ] [
+                    a [ _href (photoAddress 0); attr "aria-label" $"See larger: {photo.Alt}" ] [
+                        img [ _src photo.Url; _alt photo.Alt ]
+                    ]
+                ]
                 p [ _class "credit" ] [ str $"{photo.Credit}, "; a [ _href photo.SourceUrl ] [ str photo.Licence ] ]
             ]
             yield!
@@ -242,6 +300,7 @@ let private content (place: PlaceGuide) =
 let render (trip: string option) (place: PlaceGuide) =
     shell $"{place.Name} travel guide | Namastay" place.Summary (GuideStyles.colours place.Colours) [
         div [ _class "guide" ] [ panel trip place; content place ]
+        yield! lightboxes place
     ]
     |> RenderView.AsString.htmlDocument
 

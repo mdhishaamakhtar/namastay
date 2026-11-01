@@ -122,20 +122,29 @@ type GuidePageTests(postgres: PostgresFixture) =
         }
 
     [<Fact>]
-    member _.``notice renders in warning box``() =
+    member _.``each photo opens full size``() =
         task {
             let! http, _ = start ()
             let! html = page http "/places/kasol"
-            Assert.Contains("class=\"warning\"", html)
+            Assert.Contains("href=\"#photo-1\"", html)
+            Assert.Contains("id=\"photo-1\"", html)
+        }
+
+    [<Fact>]
+    member _.``notice renders in worth knowing``() =
+        task {
+            let! http, _ = start ()
+            let! html = page http "/places/kasol"
+            Assert.Contains("class=\"notices\"", html)
             Assert.Contains("Camping is banned here.", html)
         }
 
     [<Fact>]
-    member _.``expandable sections use native details``() =
+    member _.``things to do are all visible``() =
         task {
             let! http, _ = start ()
             let! html = page http "/places/kasol"
-            Assert.Contains("<details", html)
+            Assert.Contains("class=\"spot\"", html)
         }
 
     [<Fact>]

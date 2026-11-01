@@ -8,6 +8,7 @@
     <Compile Include="Contracts/Trips.fs" />
     <Compile Include="Contracts/Journey.fs" />
     <Compile Include="Contracts/Accounts.fs" />
+    <Compile Include="NoticeOrder.fs" />
     <Compile Include="Routes.fs" />
     <Compile Include="JourneyPath.fs" />
   </ItemGroup>

@@ -40,16 +40,25 @@ let private photo (stop: TripStop) =
         ]
     | None -> Html.none
 
+let private shownNotices = 2
+
 let private notices (trip: Trip) (stop: TripStop) =
-    trip.Notices
-    |> List.filter (fun notice -> notice.PlaceSlug = Some stop.PlaceSlug)
-    |> List.map (fun notice ->
-        Html.p [
-            prop.key notice.Body
-            prop.className "stop-warning"
-            prop.custom ("role", "note")
-            prop.text notice.Body
-        ])
+    let shown, rest =
+        trip.Notices
+        |> List.filter (fun notice -> notice.PlaceSlug = Some stop.PlaceSlug)
+        |> NoticeOrder.split _.Severity shownNotices
+
+    [
+        for notice in shown do
+            Html.p [
+                prop.key notice.Body
+                prop.className "stop-warning"
+                prop.custom ("role", "note")
+                prop.text notice.Body
+            ]
+        if not rest.IsEmpty then
+            Html.p [ prop.className "stop-more"; prop.text $"{rest.Length} more in the guide." ]
+    ]
 
 let private guideLink token (stop: TripStop) =
     let url = Route.url [ "slug", stop.PlaceSlug ] [ "trip", token ] Routes.guidePage

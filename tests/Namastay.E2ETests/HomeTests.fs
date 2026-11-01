@@ -50,15 +50,6 @@ type HomeTests(browser: BrowserFixture) =
         }
 
     [<Fact>]
-    member _.``feeling tile fills search``() =
-        task {
-            let! page = openHome ()
-            do! page.GetByRole(AriaRole.Button, PageGetByRoleOptions(Name = "Beaches")).ClickAsync()
-            let! value = page.GetByRole(AriaRole.Searchbox).InputValueAsync()
-            Assert.Equal("Goa", value)
-        }
-
-    [<Fact>]
     member _.``unpublished result says guide coming``() =
         task {
             let! page = openHome ()
@@ -69,6 +60,14 @@ type HomeTests(browser: BrowserFixture) =
                 page.GetByRole(AriaRole.Link, PageGetByRoleOptions(Name = "Example Island")).CountAsync()
 
             Assert.Equal(0, links)
+        }
+
+    [<Fact>]
+    member _.``choosing a feeling shows its places``() =
+        task {
+            let! page = openHome ()
+            do! page.Locator(".mood:not(.bone)").First.ClickAsync()
+            do! page.Locator(".result").First.WaitForAsync()
         }
 
     [<Fact>]

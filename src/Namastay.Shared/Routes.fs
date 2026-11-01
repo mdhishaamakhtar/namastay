@@ -20,6 +20,11 @@ let ready: Route<NoBody, HealthStatus> = Route.get "/ready"
 let health: Route<NoBody, HealthStatus> = Route.get "/health"
 let searchPlaces: Route<NoBody, PlaceSummary list> = Route.get "/api/places"
 let placeGuide: Route<NoBody, PlaceGuide> = Route.get "/api/places/{slug}"
+let feelings: Route<NoBody, Feeling list> = Route.get "/api/feelings"
+
+let feelingPlaces: Route<NoBody, PlaceSummary list> =
+    Route.get "/api/feelings/{slug}/places"
+
 let journeyStart: Route<NoBody, JourneyGraph> = Route.get "/api/journey/start"
 let createItinerary: Route<TripRequest, SavedTrip> = Route.post "/api/itineraries"
 

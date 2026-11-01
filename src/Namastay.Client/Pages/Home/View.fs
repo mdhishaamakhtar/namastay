@@ -70,24 +70,28 @@ let private searchBox (model: Model) dispatch =
         ]
     ]
 
-let private moodTile dispatch (mood: Mood) =
+let private moodTile dispatch (feeling: Feeling) =
     Html.button [
-        prop.key mood.Name
+        prop.key feeling.Slug
         prop.className "mood press"
-        prop.style [ style.backgroundColor mood.Colour ]
-        prop.onClick (fun _ -> dispatch (QueryChanged mood.Search))
-        prop.children [ Html.strong mood.Name; Html.span mood.Examples ]
+        prop.style [ style.backgroundColor feeling.Colour ]
+        prop.onClick (fun _ -> dispatch (ChooseFeeling feeling))
+        prop.children [ Html.strong feeling.Name; Html.span (String.concat ", " feeling.Places) ]
     ]
 
-let private moodSection dispatch =
+let private moodSection (model: Model) dispatch =
     Html.section [
         prop.className "home-moods"
         prop.children [
             Html.h2 [ prop.className "home-heading"; prop.text "Or start with a feeling" ]
-            Html.div [
-                prop.className "moods"
-                prop.children (moods |> List.map (moodTile dispatch))
-            ]
+            match model.Feelings with
+            | Remote.Loading -> Skeletons.feelings "Finding feelings"
+            | Remote.Failed error -> States.failed error (fun () -> dispatch LoadFeelings)
+            | Remote.Loaded feelings ->
+                Html.div [
+                    prop.className "moods reveal"
+                    prop.children (feelings |> List.map (moodTile dispatch))
+                ]
         ]
     ]
 
@@ -129,7 +133,7 @@ let view (model: Model) dispatch (navigate: string -> unit) =
             hero navigate
             Html.main [
                 prop.className "home-find"
-                prop.children [ searchBox model dispatch; moodSection dispatch ]
+                prop.children [ searchBox model dispatch; moodSection model dispatch ]
             ]
         ]
     ]
