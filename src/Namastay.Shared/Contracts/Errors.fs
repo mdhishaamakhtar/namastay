@@ -7,6 +7,8 @@ type ErrorCode =
     | Forbidden
     | NotFound
     | Conflict
+    /// This account signs in with Google and has no password yet.
+    | UseGoogle
     | MethodNotAllowed
     | UnsupportedMedia
     | TooLarge

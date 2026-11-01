@@ -50,6 +50,7 @@ let getItinerary: Route<NoBody, SavedTrip> =
 let signUp: Route<Credentials, Account> = Route.post "/api/auth/sign-up"
 let signIn: Route<Credentials, Account> = Route.post "/api/auth/sign-in"
 let issueToken: Route<Credentials, TokenGrant> = Route.post "/api/auth/token"
+let setPassword: Route<NewPassword, Account> = Route.post "/api/auth/password"
 let signOut: Route<NoBody, NoBody> = Route.post "/api/auth/sign-out"
 let me: Route<NoBody, Account> = Route.get "/api/me"
 let googleSignIn: Route<NoBody, string> = Route.get "/auth/google"

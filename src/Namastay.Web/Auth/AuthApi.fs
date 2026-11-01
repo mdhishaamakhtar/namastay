@@ -35,21 +35,27 @@ let private isEmail (text: string) =
     && not (text.Contains ' ')
     && text.LastIndexOf '.' > text.LastIndexOf '@'
 
+let private checkPassword (password: string) = [
+    if password.Length < minPassword || password.Length > maxPassword then
+        {
+            Field = "password"
+            Message = $"Please use {minPassword} to {maxPassword} characters."
+        }
+]
+
 let private check (credentials: Credentials) = [
     if not (isEmail credentials.Email) then
         {
             Field = "email"
             Message = "Please enter a valid email address."
         }
-    if
-        credentials.Password.Length < minPassword
-        || credentials.Password.Length > maxPassword
-    then
-        {
-            Field = "password"
-            Message = $"Please use {minPassword} to {maxPassword} characters."
-        }
+    yield! checkPassword credentials.Password
 ]
+
+let private useGoogle =
+    ApiError.create
+        ErrorCode.UseGoogle
+        "You signed in with Google last time. Continue with Google, and you can add a password from My trips."
 
 let private toAccount (user: Users.UserRow) : Account = {
     Email = user.Email
@@ -58,7 +64,12 @@ let private toAccount (user: Users.UserRow) : Account = {
             SignInProvider.Google
         else
             SignInProvider.Password
+    HasPassword = user.PasswordHash.IsSome
 }
+
+/// Only a Google account has no password, so this is that account's way in.
+let private needsGoogle (user: Users.UserRow option) =
+    user |> Option.exists _.PasswordHash.IsNone
 
 let private siteOf (context: HttpContext) =
     context.RequestServices.GetRequiredService<Tokens.Site>()
@@ -89,7 +100,13 @@ let private signUp source (context: HttpContext) (credentials: Credentials) : Ta
             | Some user ->
                 startSession context user
                 return Ok(toAccount user)
-            | None -> return Error(ApiError.create ErrorCode.Conflict "That email already has an account.")
+            | None ->
+                let! existing = Users.tryFindByEmail source (credentials.Email.Trim())
+
+                if needsGoogle existing then
+                    return Error useGoogle
+                else
+                    return Error(ApiError.create ErrorCode.Conflict "That email already has an account.")
         | fields -> return Error(ApiError.validation fields)
     }
 
@@ -97,7 +114,9 @@ let private signIn source (context: HttpContext) (credentials: Credentials) : Ta
     task {
         let! user = Users.tryFindByEmail source (credentials.Email.Trim())
 
-        if matches user credentials.Password then
+        if needsGoogle user then
+            return Error useGoogle
+        elif matches user credentials.Password then
             startSession context user.Value
             return Ok(toAccount user.Value)
         else
@@ -109,7 +128,9 @@ let private issueToken source (context: HttpContext) (credentials: Credentials) 
     task {
         let! user = Users.tryFindByEmail source (credentials.Email.Trim())
 
-        if matches user credentials.Password then
+        if needsGoogle user then
+            return Error useGoogle
+        elif matches user credentials.Password then
             return
                 Ok {
                     Token = Tokens.create (siteOf context) user.Value.Id
@@ -129,6 +150,23 @@ let currentUser source (context: HttpContext) : Task<Users.UserRow option> =
         match Guid.TryParse(context.User.FindFirstValue JwtRegisteredClaimNames.Sub) with
         | true, id -> return! Users.tryFindById source id
         | _ -> return None
+    }
+
+let private setPassword source (context: HttpContext) (body: NewPassword) : Task<Result<Account, ApiError>> =
+    task {
+        let! user = currentUser source context
+
+        match user, checkPassword body.Password with
+        | None, _ -> return Error(ApiError.create ErrorCode.Unauthorized "Please sign in.")
+        | Some _, (_ :: _ as fields) -> return Error(ApiError.validation fields)
+        | Some found, [] ->
+            let! saved =
+                Users.trySetPassword source found.Id (hasher.HashPassword("", body.Password))
+
+            return
+                match saved with
+                | Some updated -> Ok(toAccount updated)
+                | None -> Error(ApiError.create ErrorCode.Conflict "This account already has a password.")
     }
 
 let private me source (context: HttpContext) : Task<Result<Account, ApiError>> =
@@ -157,6 +195,9 @@ let map (app: IEndpointRouteBuilder) (source: NpgsqlDataSource) =
     |> ignore
 
     (Endpoint.mapBody app Routes.issueToken (issueToken source)).RequireRateLimiting Limits.signInPolicy
+    |> ignore
+
+    (Endpoint.mapBody app Routes.setPassword (setPassword source)).RequireRateLimiting Limits.signInPolicy
     |> ignore
 
     app.MapPost(Routes.signOut.Template, RequestDelegate signOut) |> ignore

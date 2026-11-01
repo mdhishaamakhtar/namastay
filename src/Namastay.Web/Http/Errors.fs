@@ -10,7 +10,8 @@ let statusCode code =
     | ErrorCode.Unauthorized -> StatusCodes.Status401Unauthorized
     | ErrorCode.Forbidden -> StatusCodes.Status403Forbidden
     | ErrorCode.NotFound -> StatusCodes.Status404NotFound
-    | ErrorCode.Conflict -> StatusCodes.Status409Conflict
+    | ErrorCode.Conflict
+    | ErrorCode.UseGoogle -> StatusCodes.Status409Conflict
     | ErrorCode.MethodNotAllowed -> StatusCodes.Status405MethodNotAllowed
     | ErrorCode.UnsupportedMedia -> StatusCodes.Status415UnsupportedMediaType
     | ErrorCode.TooLarge -> StatusCodes.Status413PayloadTooLarge
