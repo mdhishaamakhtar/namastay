@@ -915,6 +915,22 @@ button:focus-visible {
   font-weight: 400;
 }
 
+/* Every word gets the width of the longest, so the marks form a straight column. */
+.region-card .diet-label {
+  width: 84px;
+}
+
+.listing-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.listing-head .diet-label {
+  padding-top: 5px;
+}
+
 .diet-note {
   display: flex;
   align-items: center;
