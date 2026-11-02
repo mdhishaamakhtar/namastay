@@ -27,4 +27,21 @@ A free trip planner for first-time foreign visitors to India. F# everywhere: ASP
 
 ## Production data
 
-Restore `data/` by importing locally, then streaming `pg_dump` through a `railway ssh` tunnel. Row-by-row imports over the tunnel are far too slow. See `docs/deploy.md`.
+The site is in alpha, so a brief break around a deploy is fine. Saved and shared trips must keep opening, so add new trip fields to `TripSnapshot.fs`.
+
+- **Small changes:** import locally, then send only the changed rows through a `railway ssh` tunnel in one transaction. Insert a committed row into `import_batches` so the API reloads its data, then run `railway cdn purge all --service api`.
+- **`make publish`:** rewrites all content row by row, so it takes 20 minutes or more. It keeps accounts and trips. See issue #10.
+- **`pg_dump` streaming:** fast, but it wipes accounts and saved trips. Never use it unless the owner chooses that. See `docs/deploy.md`.
+
+Only the importer runs migrations, so a new column reaches production before the code that reads it merges. Importer changes need `data/core/places.json` updated as well as `data/places/*.json`, because both are parsed even though place files win. Never change production, wipe data or merge without saying what will happen first.
+
+## Food
+
+- A dish needs a `photoSlug` to appear on the Food page or have a dish page. Guides and itineraries show every dish.
+- `vegan` means vegan as usually made, or with one simple request that the description spells out.
+- Trips store their food when they're built, so older trips don't gain new dishes.
+- Giraffe's `voidTag` leaves SVG shapes unclosed, so use `tag "rect" [ ... ] []` for shapes with siblings.
+
+## Checking the site
+
+Run `make test-e2e` for browser checks. The desktop app's Browser pane pauses animations while hidden, so swipes stall there. After a deploy, check the live site in a fresh browser, because an open tab keeps the old version.
