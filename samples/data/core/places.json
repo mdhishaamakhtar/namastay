@@ -206,6 +206,7 @@
         "name": "Example soup",
         "description": "A hot bowl for trying out the food pages.",
         "vegetarian": true,
+        "vegan": false,
         "evidence": {
           "status": "editorial",
           "lastChecked": "2026-01-01",

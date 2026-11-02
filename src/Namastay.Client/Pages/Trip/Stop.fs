@@ -209,6 +209,66 @@ let private dayRow firstDay (first, last, plan: string) =
 
     row (string first) label (Html.span plan)
 
+let private dishRow (showWord: bool) (dish: TripDish) =
+    Html.div [
+        prop.key dish.Name
+        prop.children [
+            Html.strong [
+                prop.className "stop-dish"
+                prop.children [
+                    DietMark.mark dish.Kind
+                    Html.span dish.Name
+                    if showWord then
+                        Html.small (DishKinds.name dish.Kind)
+                ]
+            ]
+            Html.p dish.Description
+        ]
+    ]
+
+let private eateries diet (found: TripEatery list) =
+    let heading =
+        if diet = Diet.Everything then
+            "Places to try"
+        else
+            "All-vegetarian kitchens"
+
+    match found with
+    | [] -> Html.none
+    | _ ->
+        Html.div [
+            prop.children [
+                Html.strong heading
+                yield!
+                    found
+                    |> List.map (fun place -> Html.p [ prop.key place.Name; prop.text $"{place.Name}, {place.Area}" ])
+            ]
+        ]
+
+let private dietTip diet (dishes: TripDish list) =
+    match diet, dishes with
+    | Diet.Vegan, [] ->
+        Html.p
+            "Few dishes here are vegan as usually made. Ask for dal, rice and vegetables with no ghee, butter or curd."
+    | Diet.Vegan, _ -> Html.p "Ask for no ghee, butter or curd."
+    | Diet.Vegetarian, [] -> Html.p "Ask for dal and vegetable dishes. Most kitchens here will have them."
+    | _ -> Html.none
+
+let private eat (trip: Trip) (food: StopFood) =
+    let diet = trip.Diet |> Option.defaultValue Diet.Everything
+
+    row
+        "eat"
+        "Eat"
+        (Html.div [
+            prop.className "stop-eat"
+            prop.children [
+                yield! food.Dishes |> List.map (dishRow (diet = Diet.Everything))
+                eateries diet food.Eateries
+                dietTip diet food.Dishes
+            ]
+        ])
+
 let private details token (trip: Trip) firstDay (stop: TripStop) =
     Html.div [
         prop.className (
@@ -225,6 +285,9 @@ let private details token (trip: Trip) firstDay (stop: TripStop) =
                     yield! stop.Plans |> PlanDays.group |> List.map (dayRow firstDay)
                     match stop.StayArea with
                     | Some area -> row "stay" "Stay" (Html.span area)
+                    | None -> Html.none
+                    match stop.Food with
+                    | Some food -> eat trip food
                     | None -> Html.none
                     notices trip stop
                     guideLink token stop

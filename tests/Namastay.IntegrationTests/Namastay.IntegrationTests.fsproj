@@ -15,6 +15,7 @@
     <Compile Include="Auth/SavedTripsTests.fs" />
     <Compile Include="Web/SettingsTests.fs" />
     <Compile Include="Web/WiringTests.fs" />
+    <Compile Include="Web/TripSnapshotTests.fs" />
     <Compile Include="Data/ImporterTests.fs" />
   </ItemGroup>
 

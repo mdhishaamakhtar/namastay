@@ -20,6 +20,29 @@ let chevron (flipped: bool) =
         ]
     ]
 
+let private lineIcon (paths: string list) =
+    Svg.svg [
+        svg.width 18
+        svg.height 18
+        svg.viewBox (0, 0, 24, 24)
+        svg.custom ("aria-hidden", "true")
+        svg.children (
+            paths
+            |> List.map (fun path ->
+                Svg.path [
+                    svg.d path
+                    svg.fill "none"
+                    svg.stroke "currentColor"
+                    svg.strokeWidth 2.2
+                    svg.strokeLineCap "round"
+                    svg.strokeLineJoin "round"
+                ])
+        )
+    ]
+
+let undo = lineIcon [ "M9 7L4 12l5 5"; "M4 12h11a5 5 0 0 1 5 5v1" ]
+let back = lineIcon [ "M15 6l-6 6 6 6" ]
+
 /// The Google mark, in Google's own colours, as their brand rules ask.
 let google =
     let part (colour: string) (path: string) =

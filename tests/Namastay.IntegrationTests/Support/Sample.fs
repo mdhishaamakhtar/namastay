@@ -33,6 +33,7 @@ let place: Place = {
             Name = "River trout"
             Description = "Fried and served with rice."
             Vegetarian = false
+            Vegan = false
             PhotoSlug = Some "any-photo"
             Rank = None
             Evidence = evidence

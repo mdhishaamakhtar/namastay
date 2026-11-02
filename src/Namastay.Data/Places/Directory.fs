@@ -24,6 +24,8 @@ type DishRow = {
     Region: string
     Colour: string option
     Dish: string
+    Vegetarian: bool
+    Vegan: bool
     Place: string
     PlaceSlug: string
     FilePath: string option
@@ -43,7 +45,7 @@ let private placesSql =
      order by r.sort nulls last, r.name, p.name"
 
 let private dishesSql =
-    "select r.slug as region_slug, r.name as region, r.colour, d.name as dish, p.name as place, p.slug as place_slug,
+    "select r.slug as region_slug, r.name as region, r.colour, d.name as dish, d.vegetarian, d.vegan, p.name as place, p.slug as place_slug,
             ph.file_path, ph.alt, ph.credit, ph.licence, ph.source_url
      from dishes d
      left join photos ph on ph.slug = d.photo_slug
@@ -84,6 +86,7 @@ let private toFoodRegion (rows: DishRow list) = {
         |> List.map (fun row -> {
             Slug = PlaceName.slug row.Dish
             Name = row.Dish
+            Kind = DishKinds.ofFlags row.Vegetarian row.Vegan
             Place = PlaceName.plain row.Place
             PlaceSlug = row.PlaceSlug
         })

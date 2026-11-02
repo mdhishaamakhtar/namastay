@@ -56,21 +56,24 @@ let private mix (graph: JourneyGraph) (model: Model) =
         ]
     ]
 
-let private finish (answered: int) dispatch =
-    Html.div [
-        prop.className "journey-finish"
-        prop.children [
-            match JourneyPath.cheer answered with
-            | Some line -> Html.p [ prop.key line; prop.className "reveal"; prop.text line ]
-            | None -> Html.none
-            if answered > 0 then
-                Html.button [
-                    prop.className "journey-build press"
-                    prop.onClick (fun _ -> dispatch FinishEarly)
-                    prop.text "Build my trip now"
-                ]
+let private cheer (answered: int) =
+    match JourneyPath.cheer answered with
+    | Some line ->
+        Html.div [
+            prop.className "journey-finish"
+            prop.children [ Html.p [ prop.key line; prop.className "reveal"; prop.text line ] ]
         ]
-    ]
+    | None -> Html.none
+
+let private buildNow (answered: int) dispatch =
+    if answered > 0 then
+        Html.button [
+            prop.className "journey-build press"
+            prop.onClick (fun _ -> dispatch FinishEarly)
+            prop.text "Build my trip now"
+        ]
+    else
+        Html.none
 
 let private swiping graph (model: Model) dispatch =
     let current =
@@ -91,24 +94,35 @@ let private swiping graph (model: Model) dispatch =
                     else
                         "journey-stage"
                 )
-                prop.children [ mix graph model; SwipeCard.SwipeCard(card, Decided >> dispatch) ]
+                prop.children [
+                    mix graph model
+                    SwipeCard.SwipeCard(
+                        card,
+                        not model.Answers.IsEmpty,
+                        Decided >> dispatch,
+                        (fun () -> dispatch Undone),
+                        buildNow model.Answers.Length dispatch
+                    )
+                ]
             ]
-            finish model.Answers.Length dispatch
+            cheer model.Answers.Length
         ]
     | None ->
         shell "" [
             Html.main [ States.message "The journey isn't ready yet. Please come back soon." ]
         ]
 
-let private optionButton dispatch (compact: bool) (option': Questions.Option') =
+let private optionButton dispatch (compact: bool) (chosen: bool) (option': Questions.Option') =
     Html.button [
         prop.key option'.Name
-        prop.className (
+        prop.className [
+            "choice press"
             if compact then
-                "choice choice-compact press"
-            else
-                "choice press"
-        )
+                "choice-compact"
+            if chosen then
+                "choice-chosen"
+        ]
+        prop.custom ("aria-pressed", chosen)
         prop.onClick (fun _ -> dispatch (Chose option'.Choice))
         prop.children [
             Html.strong option'.Name
@@ -117,8 +131,11 @@ let private optionButton dispatch (compact: bool) (option': Questions.Option') =
         ]
     ]
 
-let private question index dispatch =
+let private question (model: Model) index dispatch =
     let item = Questions.all[index]
+
+    let chosen (option': Questions.Option') =
+        index < model.Furthest && isChosen model.Plan option'.Choice
 
     Html.div [
         prop.key item.Title
@@ -130,6 +147,11 @@ let private question index dispatch =
                     Html.div [
                         prop.className "card-frame question-frame"
                         prop.children [
+                            Html.button [
+                                prop.className "journey-back press"
+                                prop.onClick (fun _ -> dispatch WentBack)
+                                prop.children [ Icons.back; Html.span "Back" ]
+                            ]
                             Html.h1 item.Title
                             Html.p item.Line
                             Html.div [
@@ -139,7 +161,11 @@ let private question index dispatch =
                                     else
                                         "choices"
                                 )
-                                prop.children (item.Options |> List.map (optionButton dispatch item.Compact))
+                                prop.children (
+                                    item.Options
+                                    |> List.map (fun option' ->
+                                        optionButton dispatch item.Compact (chosen option') option')
+                                )
                             ]
                         ]
                     ]
@@ -148,21 +174,21 @@ let private question index dispatch =
         ]
     ]
 
-let private asking index dispatch =
+let private asking model index dispatch =
     let progress =
         if index + 1 = State.questionCount then
             "Last one"
         else
             "Nearly there"
 
-    shell progress [ question index dispatch ]
+    shell progress [ question model index dispatch ]
 
 let view (model: Model) dispatch =
     match model.Graph, model.Step with
     | Remote.Loading, _ -> shell "" [ Skeletons.swipeCard "Getting your cards ready" ]
     | Remote.Failed error, _ -> shell "" [ Html.main [ States.failed error (fun () -> dispatch LoadGraph) ] ]
     | Remote.Loaded graph, Step.Swiping -> swiping graph model dispatch
-    | Remote.Loaded _, Step.Asking index -> asking index dispatch
+    | Remote.Loaded _, Step.Asking index -> asking model index dispatch
     | Remote.Loaded _, Step.Building -> Skeletons.trip "Building your trip" 3
     | Remote.Loaded _, Step.Failed error ->
         shell "" [ Html.main [ States.failed error (fun () -> dispatch BuildTrip) ] ]

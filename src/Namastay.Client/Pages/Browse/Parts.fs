@@ -96,7 +96,13 @@ let listing (href: Listing -> string) (item: Listing) =
             ]
             Html.span [
                 prop.className "listing-text"
-                prop.children [ Html.strong item.Name; Html.span item.Line ]
+                prop.children [
+                    Html.strong item.Name
+                    Html.span item.Line
+                    match item.Kind with
+                    | Some kind -> DietMark.label kind
+                    | None -> Html.none
+                ]
             ]
         ]
     ]

@@ -18,6 +18,8 @@ type Model = {
     Target: Browse
     Content: Remote<Content>
     Query: string
+    /// Only the Food page offers this.
+    Diet: Diet
 }
 
 type Msg =
@@ -25,6 +27,7 @@ type Msg =
     | Loaded of Result<Content, Client.ClientError>
     | Refreshed of Result<Content, Client.ClientError>
     | QueryChanged of string
+    | DietChanged of Diet
 
 let private bySlug (slug: string) route = Route.url [ "slug", slug ] [] route
 
@@ -71,6 +74,7 @@ let init target =
         Target = target
         Content = content
         Query = ""
+        Diet = Diet.Everything
     }
 
     match fromSeed target with
@@ -100,3 +104,4 @@ let update msg (model: Model) =
         Cmd.none
     | Refreshed(Error _) -> model, Cmd.none
     | QueryChanged query -> { model with Query = query }, Cmd.none
+    | DietChanged diet -> { model with Diet = diet }, Cmd.none

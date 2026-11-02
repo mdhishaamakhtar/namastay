@@ -15,6 +15,7 @@ let private dishLine (dish: FoodDish) =
                 prop.href (Route.url [ "slug", dish.Slug ] [] Routes.dishPage)
                 prop.text dish.Name
             ]
+            DietMark.label dish.Kind
         ]
     ]
 
@@ -60,15 +61,58 @@ let private foodCard (card: LandingCard) =
 /// One card per region would bury the regions, so only the first few lead.
 let private leadingFood = 3
 
-let private matchingDishes (query: string) (region: FoodRegion) = {
+let private matchingDishes (model: Model) (region: FoodRegion) = {
     region with
-        Dishes = region.Dishes |> List.filter (fun dish -> matches query dish.Name)
+        Dishes =
+            region.Dishes
+            |> List.filter (fun dish -> matches model.Query dish.Name && DishKinds.suits model.Diet dish.Kind)
 }
+
+let private dietButton (model: Model) dispatch (diet: Diet, name: string) =
+    Html.button [
+        prop.key name
+        prop.className (
+            if model.Diet = diet then
+                "diet-choice diet-chosen"
+            else
+                "diet-choice"
+        )
+        prop.custom ("aria-pressed", (model.Diet = diet))
+        prop.onClick (fun _ -> dispatch (DietChanged diet))
+        prop.text name
+    ]
+
+let private dietSwitch (model: Model) dispatch =
+    Html.div [
+        prop.className "diet-switch"
+        prop.role "group"
+        prop.ariaLabel "What you eat"
+        prop.children (
+            [
+                Diet.Everything, "Everything"
+                Diet.Vegetarian, "Vegetarian"
+                Diet.Vegan, "Vegan"
+            ]
+            |> List.map (dietButton model dispatch)
+        )
+    ]
+
+let private dietNote (diet: Diet) =
+    let note (kind: DishKind) (text: string) =
+        Html.p [
+            prop.className "diet-note"
+            prop.children [ DietMark.mark kind; Html.span text ]
+        ]
+
+    match diet with
+    | Diet.Everything -> Html.none
+    | Diet.Vegetarian -> note DishKind.Vegetarian "Look for this mark on menus. It means no meat, fish or eggs."
+    | Diet.Vegan -> note DishKind.Vegan "Vegan as usually made. Ghee can slip in, so ask for no ghee, butter or curd."
 
 let private foodResults (model: Model) (page: FoodPage) =
     let shown =
         page.Regions
-        |> List.map (matchingDishes model.Query)
+        |> List.map (matchingDishes model)
         |> List.filter (fun region -> not region.Dishes.IsEmpty)
 
     if shown.IsEmpty then
@@ -115,8 +159,15 @@ let page (model: Model) dispatch (page: FoodPage) =
                     Html.section [
                         prop.className "browse-body"
                         prop.children [
-                            searchBox "Find a dish" "Find a dish: thukpa, dosa, kachori" model dispatch
-                            if model.Query.Trim() = "" then
+                            Html.div [
+                                prop.className "food-tools"
+                                prop.children [
+                                    searchBox "Find a dish" "Find a dish: thukpa, dosa, kachori" model dispatch
+                                    dietSwitch model dispatch
+                                ]
+                            ]
+                            dietNote model.Diet
+                            if model.Query.Trim() = "" && model.Diet = Diet.Everything then
                                 yield! foodBrowsing page
                             else
                                 foodResults model page

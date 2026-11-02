@@ -85,6 +85,7 @@ type DishRow = {
     Name: string
     Description: string
     Vegetarian: bool
+    Vegan: bool
 }
 
 [<CLIMutable>]

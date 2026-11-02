@@ -115,7 +115,41 @@ let private leadPhoto (catalog: Catalog) (place: Place) =
         SourceUrl = photo.SourceUrl
     })
 
-let toStop (catalog: Catalog) budget (stop: RoutedStop) : TripStop =
+let private dishesShown = 3
+let private eateriesShown = 2
+
+let private tripDish (dish: Dish) : TripDish = {
+    Name = dish.Name
+    Description = dish.Description
+    Kind = DishKinds.ofFlags dish.Vegetarian dish.Vegan
+}
+
+/// The best-known dishes come first, and a diet only sees kitchens it can trust.
+let private food (diet: Diet) (place: Place) =
+    let dishes =
+        place.Dishes
+        |> List.map (fun dish -> dish, tripDish dish)
+        |> List.filter (fun (_, shown) -> DishKinds.suits diet shown.Kind)
+        |> List.sortBy (fun (dish, _) -> dish.Rank |> Option.defaultValue Int32.MaxValue)
+        |> List.map snd
+        |> List.truncate dishesShown
+
+    let eateries =
+        place.Eateries
+        |> List.filter (fun eatery -> diet = Diet.Everything || eatery.VegetarianOnly)
+        |> List.truncate eateriesShown
+        |> List.map (fun eatery -> {
+            Name = eatery.Name
+            Area = eatery.Area
+            VegetarianOnly = eatery.VegetarianOnly
+        })
+
+    if place.Dishes.IsEmpty && place.Eateries.IsEmpty then
+        None
+    else
+        Some { Dishes = dishes; Eateries = eateries }
+
+let toStop (catalog: Catalog) budget diet (stop: RoutedStop) : TripStop =
     let family =
         catalog.Families |> List.find (fun item -> item.Slug = stop.Place.FamilySlug)
 
@@ -134,6 +168,7 @@ let toStop (catalog: Catalog) budget (stop: RoutedStop) : TripStop =
         StayArea = stayArea budget stop.Place
         Photo = leadPhoto catalog stop.Place
         Plans = plansFor stop.Place stop.Days stop.Arrival
+        Food = food diet stop.Place
         Arrival = stop.Arrival |> Option.map toLeg
         Retired = false
         Custom = false
@@ -287,7 +322,9 @@ let private assemble catalog profile (request: TripRequest) places stops : Trip 
         |> baseFamily profile.Collected
     Arrive = arrive catalog stops
     Depart = depart catalog stops
-    Stops = stops |> List.map (toStop catalog request.Budget)
+    Stops =
+        stops
+        |> List.map (toStop catalog request.Budget (Option.defaultValue Diet.Everything request.Diet))
     Swaps = swaps profile request places stops
     Mix = mix catalog profile
     LeftOut = leftOut catalog profile stops
@@ -295,6 +332,7 @@ let private assemble catalog profile (request: TripRequest) places stops : Trip 
     Month = request.Month
     BestMonths = bestMonths stops
     Budget = request.Budget
+    Diet = request.Diet
     DataVersion = 1
 }
 
