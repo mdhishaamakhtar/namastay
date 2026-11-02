@@ -113,7 +113,7 @@ let private dishPage (page: DishPage) =
         | Some _ ->
             Html.div [
                 prop.className "browse-photo"
-                prop.children [ Label.view "#A8201A" page.Photo page.Name [] ]
+                prop.children [ Label.withBadge (DietMark.badge page.Kind) "#A8201A" page.Photo page.Name [] ]
             ]
         | None -> drawing "#A8201A" "/feelings/food.svg"
 
@@ -132,7 +132,6 @@ let private dishPage (page: DishPage) =
                 ]
             }
             head Menu.Section.Food (Some("All food", Routes.foodPage.Template)) page.Name page.Description plan art
-            Html.p [ prop.className "dish-kind"; prop.children [ DietMark.label page.Kind ] ]
             Html.main [ prop.children [ listed "Where to have it" guideUrl page.Places ] ]
         ]
     ]

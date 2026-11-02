@@ -140,6 +140,8 @@ type LandingCard = {
     Title: string
     Colour: string
     Food: bool
+    /// Only a card for a dish has one.
+    Kind: DishKind option
     Photo: GuidePhoto
 }
 

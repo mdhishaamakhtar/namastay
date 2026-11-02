@@ -54,3 +54,7 @@ let label kind =
         prop.className "diet-label"
         prop.children [ mark kind; Html.span (DishKinds.name kind) ]
     ]
+
+/// The same label on a paper chip, to sit on a photo.
+let badge kind =
+    Html.span [ prop.className "diet-badge"; prop.children [ label kind ] ]

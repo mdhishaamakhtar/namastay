@@ -38,6 +38,7 @@ let private toCard (row: LandingRow) = {
     Title = row.Title
     Colour = row.Colour
     Food = row.Food
+    Kind = None
     Photo = {
         Url = Routes.mediaUrl row.FilePath
         Alt = row.Alt

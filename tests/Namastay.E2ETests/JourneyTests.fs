@@ -90,6 +90,22 @@ type JourneyTests(browser: BrowserFixture) =
         }
 
     [<Fact>]
+    member _.``a limited trip's note lines up with the logo``() =
+        task {
+            let! page = browser.NewPage()
+            let! _ = page.GotoAsync(browser.BaseUrl + "/journey?label=North%20India")
+            do! page.Locator(".journey-scope").WaitForAsync()
+
+            let! brand =
+                page.EvaluateAsync<float> "document.querySelector('.journey-top').getBoundingClientRect().left"
+
+            let! note =
+                page.EvaluateAsync<float> "document.querySelector('.journey-scope').getBoundingClientRect().left"
+
+            Assert.Equal(brand, note)
+        }
+
+    [<Fact>]
     member _.``undo brings back the last card``() =
         task {
             let! page = openJourney ()
