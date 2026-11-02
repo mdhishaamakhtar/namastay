@@ -25,7 +25,7 @@ type Msg =
     | SignedOut of Result<unit, Client.ClientError>
 
 let private load () =
-    Cmd.OfPromise.perform (fun url -> Client.held (Client.get<Account> url)) Routes.me.Template Loaded
+    Cmd.OfPromise.perform (fun url -> Client.held (Client.get url)) (Route.address Routes.me) Loaded
 
 let init () =
     {
@@ -58,7 +58,7 @@ let update msg (model: Model) =
     | SavePassword ->
         { model with Problem = None },
         Cmd.OfPromise.perform
-            (fun password -> Client.post<NewPassword, Account> Routes.setPassword.Template { Password = password })
+            (fun password -> Client.post (Route.address Routes.setPassword) { Password = password })
             model.NewPassword
             PasswordAnswered
     | PasswordAnswered(Ok account) ->

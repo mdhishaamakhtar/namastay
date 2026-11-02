@@ -92,6 +92,14 @@ let update msg model =
         // Pages reached from here are new, so they can fade in. The saved one never replays it.
         Browser.Dom.document.documentElement.removeAttribute "data-seeded"
         showFresh segments
+    | JourneyMsg(Journey.State.TripBuilt(Ok saved)), Screen.Journey _ ->
+        let trip, command = Trip.State.opened saved
+
+        { Screen = Screen.Trip trip },
+        Cmd.batch [
+            Cmd.ofEffect (fun _ -> Browser.showAddress (Route.url [ "shareToken", saved.ShareToken ] [] Routes.trip))
+            Cmd.map TripMsg command
+        ]
     | HomeMsg inner, Screen.Home home ->
         let updated, command = Home.State.update inner home
         { Screen = Screen.Home updated }, Cmd.map HomeMsg command

@@ -5,6 +5,7 @@ open Fable.Core
 open Fable.Core.JsInterop
 open Fetch
 open Thoth.Json
+open Namastay.Shared
 open Namastay.Shared.Contracts
 
 [<RequireQualifiedAccess>]
@@ -20,8 +21,13 @@ let apiUrl: string = jsNative
 /// The full address of something the API serves, such as a photo or a guide.
 let fromApi (path: string) = apiUrl + path
 
+/// Thoth builds a decoder from the type once, then reuses it for every answer.
+let inline decode<'Value> (text: string) =
+    let decoder = Decode.Auto.generateDecoderCached<'Value>(caseStrategy = CamelCase)
+    Decode.fromString decoder text
+
 let readError (status: int) (text: string) =
-    match Decode.Auto.fromString<ApiError>(text, caseStrategy = CamelCase) with
+    match decode<ApiError> text with
     | Ok error -> ClientError.Server error
     | Error _ -> ClientError.Unreadable $"The server answered {status} in an unknown format."
 
@@ -34,15 +40,8 @@ let private seedText (url: string) : string = jsNative
 let private rememberAnswer (url: string) (text: string) : unit = jsNative
 
 /// Personal answers are never kept, so they can't outlive signing out.
-let private isPublic (url: string) =
-    not (
-        url.StartsWith "/api/my"
-        || url.StartsWith "/api/me"
-        || url.StartsWith "/api/itineraries"
-    )
-
 let keepAnswer (url: string) (text: string) =
-    if isPublic url then
+    if Routes.isPublicAnswer url then
         rememberAnswer url text
 
 [<Emit("(() => { try { return localStorage.getItem('namastay-signed-in') === 'yes'; } catch { return false; } })()")>]
@@ -58,9 +57,7 @@ let inline decodeBody<'Response> (url: string) (response: Response) =
         if response.Ok then
             keepAnswer url text
 
-            return
-                Decode.Auto.fromString<'Response>(text, caseStrategy = CamelCase)
-                |> Result.mapError ClientError.Unreadable
+            return decode<'Response> text |> Result.mapError ClientError.Unreadable
         else
             return Error(readError response.Status text)
     }
@@ -71,36 +68,28 @@ let withSignIn = RequestProperties.Credentials RequestCredentials.Include
 let jsonHeaders =
     requestHeaders [ HttpRequestHeaders.ContentType "application/json" ]
 
-let inline send<'Response> (url: string) (properties: RequestProperties list) =
+let inline send (address: Address<'Request, 'Response>) (properties: RequestProperties list) =
     promise {
         try
-            let! response = fetchUnsafe (fromApi url) (withSignIn :: properties)
-            return! decodeBody<'Response> url response
+            let! response = fetchUnsafe (fromApi address.Url) (withSignIn :: properties)
+            return! decodeBody<'Response> address.Url response
         with _ ->
             return Error ClientError.Network
     }
 
-let inline get<'Response> (url: string) : JS.Promise<Result<'Response, ClientError>> = send<'Response> url []
+let inline get (address: Address<NoBody, 'Response>) : JS.Promise<Result<'Response, ClientError>> = send address []
 
-let inline post<'Request, 'Response> (url: string) (body: 'Request) : JS.Promise<Result<'Response, ClientError>> =
+let inline private sendJson (method: HttpMethod) (address: Address<'Request, 'Response>) (body: 'Request) =
     let json =
         Encode.Auto.toString (0, body, caseStrategy = CamelCase, skipNullField = false)
 
-    send<'Response> url [
-        RequestProperties.Method HttpMethod.POST
-        jsonHeaders
-        RequestProperties.Body !^json
-    ]
+    send address [ RequestProperties.Method method; jsonHeaders; RequestProperties.Body !^json ]
 
-let inline put<'Request, 'Response> (url: string) (body: 'Request) : JS.Promise<Result<'Response, ClientError>> =
-    let json =
-        Encode.Auto.toString (0, body, caseStrategy = CamelCase, skipNullField = false)
+let inline post (address: Address<'Request, 'Response>) (body: 'Request) : JS.Promise<Result<'Response, ClientError>> =
+    sendJson HttpMethod.POST address body
 
-    send<'Response> url [
-        RequestProperties.Method HttpMethod.PUT
-        jsonHeaders
-        RequestProperties.Body !^json
-    ]
+let inline put (address: Address<'Request, 'Response>) (body: 'Request) : JS.Promise<Result<'Response, ClientError>> =
+    sendJson HttpMethod.PUT address body
 
 /// A request whose answer has nothing to read, so only success matters.
 let action (method: HttpMethod) (url: string) : JS.Promise<Result<unit, ClientError>> =
@@ -129,12 +118,10 @@ let isSignedOut =
     | _ -> false
 
 /// What's already known about `url`, so it needn't wait for the API.
-let inline seeded<'Response> (url: string) : 'Response option =
-    match seedText url with
+let inline seeded (address: Address<NoBody, 'Response>) : 'Response option =
+    match seedText address.Url with
     | null -> None
-    | text ->
-        Decode.Auto.fromString<'Response>(text, caseStrategy = CamelCase)
-        |> Result.toOption
+    | text -> decode<'Response> text |> Result.toOption
 
 let private shortestSkeleton = 350
 

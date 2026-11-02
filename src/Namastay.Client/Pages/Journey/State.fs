@@ -75,8 +75,11 @@ let private scopeInAddress () =
 
 let private loadGraph () =
     Cmd.OfPromise.perform
-        (fun url -> Client.held (Client.get<JourneyGraph> url))
-        (Routes.journeyStart.Template + window.location.search)
+        (fun url -> Client.held (Client.get url))
+        {
+            Route.address Routes.journeyStart with
+                Url = Routes.journeyStart.Template + window.location.search
+        }
         GraphLoaded
 
 let init () =
@@ -129,7 +132,7 @@ let private build (model: Model) =
     Cmd.batch [
         Cmd.ofEffect (fun _ -> Theme.neutral ())
         Cmd.OfPromise.perform
-            (fun request -> Client.held (Client.post<TripRequest, SavedTrip> Routes.createItinerary.Template request))
+            (fun request -> Client.held (Client.post (Route.address Routes.createItinerary) request))
             (tripRequest model)
             TripBuilt
     ]
@@ -228,8 +231,8 @@ let update msg (model: Model) =
         },
         Cmd.none
     | BuildTrip, _, _ -> build model
-    | TripBuilt(Ok saved), _, _ ->
-        model, Cmd.ofEffect (fun _ -> Browser.navigate (Route.url [ "shareToken", saved.ShareToken ] [] Routes.trip))
+    // App.fs takes a finished trip straight to its page.
+    | TripBuilt(Ok _), _, _ -> model, Cmd.none
     | TripBuilt(Error error), _, _ -> { model with Step = Step.Failed error }, Cmd.none
     | Decided _, _, _
     | Undone, _, _

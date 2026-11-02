@@ -1,5 +1,6 @@
 module Namastay.Data.Places.Search
 
+open System.Threading
 open System.Threading.Tasks
 open Npgsql
 open Namastay.Data.Places.Rows
@@ -34,9 +35,10 @@ let toSummary (row: SummaryRow) = {
     Published = row.Published
 }
 
-let run (source: NpgsqlDataSource) (query: string) : Task<PlaceSummary list> =
+let run (cancel: CancellationToken) (source: NpgsqlDataSource) (query: string) : Task<PlaceSummary list> =
     task {
-        let! rows = Namastay.Data.Sql.query<SummaryRow> source searchSql {| query = query |}
+        let! rows =
+            Namastay.Data.Sql.queryUntil<SummaryRow> cancel source searchSql {| query = query |}
 
         return rows |> List.map toSummary
     }

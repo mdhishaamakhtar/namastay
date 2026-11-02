@@ -29,7 +29,7 @@ type Msg =
     | QueryChanged of string
     | DietChanged of Diet
 
-let private bySlug (slug: string) route = Route.url [ "slug", slug ] [] route
+let private bySlug (slug: string) route = Route.at [ "slug", slug ] [] route
 
 let private held (load: Fable.Core.JS.Promise<Result<'Page, Client.ClientError>>) (wrap: 'Page -> Content) =
     promise {
@@ -39,34 +39,24 @@ let private held (load: Fable.Core.JS.Promise<Result<'Page, Client.ClientError>>
 
 let private loader target =
     match target with
-    | Browse.Places -> held (Client.get<DirectoryRegion list> Routes.directory.Template) Content.Places
-    | Browse.Food -> held (Client.get<FoodPage> Routes.food.Template) Content.Food
-    | Browse.Region slug -> held (Client.get<BrowsePage>(bySlug slug Routes.regionDetail)) Content.Listed
-    | Browse.FoodRegion slug -> held (Client.get<BrowsePage>(bySlug slug Routes.foodRegionDetail)) Content.Listed
-    | Browse.Feeling slug -> held (Client.get<BrowsePage>(bySlug slug Routes.feelingDetail)) Content.Listed
-    | Browse.Dish slug -> held (Client.get<DishPage>(bySlug slug Routes.dishDetail)) Content.Dish
+    | Browse.Places -> held (Client.get (Route.address Routes.directory)) Content.Places
+    | Browse.Food -> held (Client.get (Route.address Routes.food)) Content.Food
+    | Browse.Region slug -> held (Client.get (bySlug slug Routes.regionDetail)) Content.Listed
+    | Browse.FoodRegion slug -> held (Client.get (bySlug slug Routes.foodRegionDetail)) Content.Listed
+    | Browse.Feeling slug -> held (Client.get (bySlug slug Routes.feelingDetail)) Content.Listed
+    | Browse.Dish slug -> held (Client.get (bySlug slug Routes.dishDetail)) Content.Dish
 
 let private load target =
     Cmd.OfPromise.perform loader target Loaded
 
 let private fromSeed target =
     match target with
-    | Browse.Places ->
-        Client.seeded<DirectoryRegion list> Routes.directory.Template
-        |> Option.map Content.Places
-    | Browse.Food -> Client.seeded<FoodPage> Routes.food.Template |> Option.map Content.Food
-    | Browse.Region slug ->
-        Client.seeded<BrowsePage>(bySlug slug Routes.regionDetail)
-        |> Option.map Content.Listed
-    | Browse.FoodRegion slug ->
-        Client.seeded<BrowsePage>(bySlug slug Routes.foodRegionDetail)
-        |> Option.map Content.Listed
-    | Browse.Feeling slug ->
-        Client.seeded<BrowsePage>(bySlug slug Routes.feelingDetail)
-        |> Option.map Content.Listed
-    | Browse.Dish slug ->
-        Client.seeded<DishPage>(bySlug slug Routes.dishDetail)
-        |> Option.map Content.Dish
+    | Browse.Places -> Client.seeded (Route.address Routes.directory) |> Option.map Content.Places
+    | Browse.Food -> Client.seeded (Route.address Routes.food) |> Option.map Content.Food
+    | Browse.Region slug -> Client.seeded (bySlug slug Routes.regionDetail) |> Option.map Content.Listed
+    | Browse.FoodRegion slug -> Client.seeded (bySlug slug Routes.foodRegionDetail) |> Option.map Content.Listed
+    | Browse.Feeling slug -> Client.seeded (bySlug slug Routes.feelingDetail) |> Option.map Content.Listed
+    | Browse.Dish slug -> Client.seeded (bySlug slug Routes.dishDetail) |> Option.map Content.Dish
 
 /// A saved page shows straight away, then quietly catches up with the API.
 let init target =

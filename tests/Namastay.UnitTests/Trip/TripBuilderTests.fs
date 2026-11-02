@@ -2,6 +2,8 @@ module Namastay.UnitTests.Trip.TripBuilderTests
 
 open System
 open Xunit
+open FsCheck
+open FsCheck.Xunit
 open Namastay.Domain.Catalog
 open Namastay.Domain.Trip
 open Namastay.Shared.Contracts
@@ -1668,3 +1670,24 @@ let ``the diet is kept on the trip`` () =
     }
 
     Assert.Equal(Some Diet.Vegan, (build (foodWorld menu kitchens) asked).Diet)
+
+[<Property>]
+let ``any trip that can be built fills exactly the days asked for``
+    (PositiveInt seed, hills: bool, beach: bool, forts: bool)
+    =
+    let days = 5 + seed % 17
+    let month = Some(1 + seed % 12)
+
+    let answers =
+        liked [
+            if hills then
+                "likes-hills"
+            if beach then
+                "likes-beach"
+            if forts then
+                "likes-forts"
+        ]
+
+    match Builder.build catalog (request answers days month) with
+    | Ok trip -> trip.Stops |> List.sumBy _.Days = days
+    | Error _ -> true

@@ -30,19 +30,12 @@ let main args =
     |> Option.iter (GoogleSignIn.configure (builder.Services.AddAuthentication()))
 
     let app = builder.Build()
-    Server.useForwardedHeaders app
-    Server.useSecurityHeaders app
-    Server.useCompression app
-    Server.useWebsiteAccess app
-    Server.useErrorHandling app
-    app.UseStaticFiles() |> ignore
-    Server.useRateLimits app
-    Server.useSessions app
+    Server.usePipeline app
 
     MediaRoute.map app (MediaStore.create settings.Media)
     use database = NpgsqlDataSource.Create settings.Database
     Server.mapHealth app database
-    use data = DataCache.create database
+    use data = DataCache.create DataCache.versionLifetime database
     PlacesApi.map app data
     JourneyApi.map app data
     TripsApi.map app data

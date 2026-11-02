@@ -2,6 +2,7 @@ module Namastay.Data.Sql
 
 open System
 open System.Data
+open System.Threading
 open System.Threading.Tasks
 open Dapper
 open Npgsql
@@ -37,13 +38,26 @@ let exec (transaction: NpgsqlTransaction) (sql: string) (parameters: obj) =
     setup.Force()
     transaction.Connection.Execute(sql, parameters, transaction)
 
+/// Runs a read that stops if `cancel` fires, filling `'Row` by column name.
+let queryUntil<'Row> (cancel: CancellationToken) (source: NpgsqlDataSource) (sql: string) (parameters: obj) =
+    task {
+        setup.Force()
+        use! connection = source.OpenConnectionAsync cancel
+        let command = CommandDefinition(sql, parameters, cancellationToken = cancel)
+        let! rows = connection.QueryAsync<'Row> command
+        return List.ofSeq rows
+    }
+
 /// Runs a read, filling `'Row` by column name.
 let query<'Row> (source: NpgsqlDataSource) (sql: string) (parameters: obj) : Task<'Row list> =
+    queryUntil<'Row> CancellationToken.None source sql parameters
+
+/// Runs a write and returns how many rows it changed.
+let execute (source: NpgsqlDataSource) (sql: string) (parameters: obj) : Task<int> =
     task {
         setup.Force()
         use! connection = source.OpenConnectionAsync()
-        let! rows = connection.QueryAsync<'Row>(sql, parameters)
-        return List.ofSeq rows
+        return! connection.ExecuteAsync(sql, parameters)
     }
 
 /// Replaces the sources recorded for one row of a table.

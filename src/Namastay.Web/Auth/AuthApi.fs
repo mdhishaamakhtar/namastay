@@ -188,6 +188,8 @@ let mapOptions (app: IEndpointRouteBuilder) source (google: bool) =
         })
 
 let map (app: IEndpointRouteBuilder) (source: NpgsqlDataSource) =
+    let signedIn = Endpoint.signedIn app
+
     (Endpoint.mapBody app Routes.signUp (signUp source)).RequireRateLimiting Limits.signInPolicy
     |> ignore
 
@@ -197,8 +199,8 @@ let map (app: IEndpointRouteBuilder) (source: NpgsqlDataSource) =
     (Endpoint.mapBody app Routes.issueToken (issueToken source)).RequireRateLimiting Limits.signInPolicy
     |> ignore
 
-    (Endpoint.mapBody app Routes.setPassword (setPassword source)).RequireRateLimiting Limits.signInPolicy
+    (Endpoint.mapBody signedIn Routes.setPassword (setPassword source)).RequireRateLimiting Limits.signInPolicy
     |> ignore
 
     app.MapPost(Routes.signOut.Template, RequestDelegate signOut) |> ignore
-    Endpoint.mapGet app Routes.me (me source)
+    Endpoint.mapGet signedIn Routes.me (me source)

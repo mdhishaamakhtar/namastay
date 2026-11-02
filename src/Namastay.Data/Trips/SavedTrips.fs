@@ -51,11 +51,11 @@ let tryFind (source: NpgsqlDataSource) (userId: Guid) (id: Guid) : Task<SavedRow
 /// Changes only this user's copy. The shared itinerary is untouched.
 let tryUpdate (source: NpgsqlDataSource) (userId: Guid) (id: Guid) (title: string) (trip: string) : Task<bool> =
     task {
-        let! rows =
-            query<int>
+        let! changed =
+            execute
                 source
                 "update saved_trips set title = @title, trip = @trip::jsonb
-                 where id = @id and user_id = @userId returning 1"
+                 where id = @id and user_id = @userId"
                 {|
                     id = id
                     userId = userId
@@ -63,17 +63,14 @@ let tryUpdate (source: NpgsqlDataSource) (userId: Guid) (id: Guid) (title: strin
                     trip = trip
                 |}
 
-        return not rows.IsEmpty
+        return changed > 0
     }
 
 /// True when a trip of this user's was removed. The shared itinerary is untouched.
 let delete (source: NpgsqlDataSource) (userId: Guid) (id: Guid) : Task<bool> =
     task {
-        let! rows =
-            query<int> source "delete from saved_trips where id = @id and user_id = @userId returning 1" {|
-                id = id
-                userId = userId
-            |}
+        let! removed =
+            execute source "delete from saved_trips where id = @id and user_id = @userId" {| id = id; userId = userId |}
 
-        return not rows.IsEmpty
+        return removed > 0
     }

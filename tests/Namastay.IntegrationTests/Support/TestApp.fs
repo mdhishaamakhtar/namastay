@@ -1,5 +1,6 @@
 namespace Namastay.IntegrationTests.Support
 
+open System
 open System.Net.Http
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
@@ -34,13 +35,9 @@ module TestApp =
             builder.WebHost.UseTestServer() |> ignore
             Server.configureServices testSite builder.Services
             let app = scope.Own(builder.Build())
-            Server.useForwardedHeaders app
-            Server.useCompression app
-            Server.useWebsiteAccess app
-            Server.useErrorHandling app
-            Server.useRateLimits app
-            Server.useSessions app
-            mapRoutes app (scope.Own(DataCache.create (scope.Own(NpgsqlDataSource.Create db))))
+            Server.usePipeline app
+            let source = scope.Own(NpgsqlDataSource.Create db)
+            mapRoutes app (scope.Own(DataCache.create TimeSpan.Zero source))
             do! app.StartAsync()
             let client: HttpClient = app.GetTestClient()
             return client, db

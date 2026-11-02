@@ -27,6 +27,8 @@ eval "$(RAILWAY_TUNNEL_PORT=$tunnel_port python3 scripts/publish_settings.py)"
 
 make import
 make media-sync
+# The API remembers the data version for 5 seconds, and the CDN must not keep the old answer.
+sleep 6
 railway cdn purge all --service api
 sleep 15
 railway variables --service website --set "CONTENT_STAMP=$(date -u +%Y%m%d%H%M%S)"

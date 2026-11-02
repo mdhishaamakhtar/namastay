@@ -6,11 +6,10 @@ open Namastay.Data.Sql
 
 /// Stores the resolved trip, so a shared link never changes with the data.
 let save (source: NpgsqlDataSource) (token: string) (title: string) (trip: string) (version: int) : Task =
-    query<int>
+    execute
         source
         "insert into itineraries (share_token, title, trip, data_version)
-         values (@token, @title, @trip::jsonb, @version)
-         returning 1"
+         values (@token, @title, @trip::jsonb, @version)"
         {|
             token = token
             title = title
