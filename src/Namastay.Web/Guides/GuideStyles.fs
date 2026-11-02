@@ -77,7 +77,8 @@ details p{padding:0 12px 12px}
 .lightbox-next::after{content:"\203A";right:16px}
 .gallery a img,.hero a img{cursor:zoom-in}
 .food-intro{margin-bottom:12px}
-.veg{font-size:14px;font-weight:600;color:var(--deep)}
+.spot-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.veg{display:inline-flex;flex:none;align-items:center;gap:6px;padding-top:6px;font-size:14px;color:inherit}
 .eateries-title{margin:20px 0 4px;font-family:"Yatra One",Mukta,serif;font-size:22px;font-weight:400}
 .eatery{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 16px;padding:12px 0;border-top:1px solid color-mix(in srgb,var(--deep) 25%,transparent)}
 .eatery>div{display:flex;flex-wrap:wrap;gap:0 8px;align-items:baseline}

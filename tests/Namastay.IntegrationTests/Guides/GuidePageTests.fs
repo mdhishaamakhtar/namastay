@@ -81,6 +81,16 @@ type GuidePageTests(postgres: PostgresFixture) =
         }
 
     [<Fact>]
+    member _.``guide labels each dish with its mark and word``() =
+        task {
+            let! http, _ = start ()
+            let! html = page http "/places/kasol"
+            Assert.Contains("class=\"spot-head\"", html)
+            Assert.Contains("Non-veg", html)
+            Assert.Contains("<svg width=\"14\"", html)
+        }
+
+    [<Fact>]
     member _.``guide has title and description``() =
         task {
             let! http, _ = start ()

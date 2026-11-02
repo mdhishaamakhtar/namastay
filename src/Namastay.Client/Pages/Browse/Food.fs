@@ -55,7 +55,14 @@ let private foodCard (card: LandingCard) =
         prop.key card.Title
         prop.className "label-link"
         prop.href (Route.url [ "slug", PlaceName.slug card.Title ] [] Routes.dishPage)
-        prop.children [ Label.view card.Colour (Some card.Photo) card.Title [ heading card.Place ] ]
+        prop.children [
+            Label.withBadge
+                (card.Kind |> Option.map DietMark.badge |> Option.defaultValue Html.none)
+                card.Colour
+                (Some card.Photo)
+                card.Title
+                [ heading card.Place ]
+        ]
     ]
 
 /// One card per region would bury the regions, so only the first few lead.

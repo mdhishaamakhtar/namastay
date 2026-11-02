@@ -913,6 +913,19 @@ button:focus-visible {
   gap: 6px;
   font-size: 14px;
   font-weight: 400;
+  line-height: 20px;
+}
+
+/* Every word gets the width of the longest, so the marks form a straight column. */
+.region-card .diet-label {
+  width: 84px;
+}
+
+.listing-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .diet-note {
@@ -924,9 +937,16 @@ button:focus-visible {
   line-height: 1.3;
 }
 
-.dish-kind {
-  margin: 0;
-  padding: 16px 22px 0;
+.diet-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 1;
+  display: inline-flex;
+  padding: 4px 8px;
+  border-radius: 2px;
+  background: var(--paper);
+  color: var(--ink);
 }
 
 .trip-diet {
@@ -2019,6 +2039,7 @@ button:focus-visible {
 }
 
 .label-frame {
+  position: relative;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -3081,7 +3102,7 @@ button:focus-visible {
   border-radius: 2px;
   background: var(--paper);
   color: var(--ink);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -3180,8 +3201,7 @@ button:focus-visible {
   align-items: center;
   gap: 8px;
   margin: 0;
-  padding: 0 16px 8px;
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .mood {

@@ -104,6 +104,7 @@ let private signature (rows: DishRow list) : LandingCard option =
                 Title = row.Dish
                 Colour = row.Colour |> Option.defaultValue plainColour
                 Food = true
+                Kind = Some(DishKinds.ofFlags row.Vegetarian row.Vegan)
                 Photo = {
                     Url = Routes.mediaUrl path
                     Alt = alt

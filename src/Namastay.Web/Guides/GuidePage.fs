@@ -222,11 +222,56 @@ let private lightbox (count: int) index (photo: GuidePhoto) =
 let private lightboxes (place: PlaceGuide) =
     place.Photos |> List.mapi (lightbox place.Photos.Length)
 
+/// The marks printed on Indian menus, matching the ones on the rest of the site.
+let private dietMark (kind: DishKind) =
+    let frame (fill: string) (colour: string) =
+        tag "rect" [
+            attr "x" "1"
+            attr "y" "1"
+            attr "width" "14"
+            attr "height" "14"
+            attr "fill" fill
+            attr "stroke" colour
+            attr "stroke-width" "2"
+        ] []
+
+    let inside =
+        match kind with
+        | DishKind.Vegan -> [
+            frame "#1F7A3D" "#1F7A3D"
+            tag "path" [
+                attr "d" "M4 11C4 6 8 4 12 4c0 4-2 8-6.5 7.5M5 11l4-4"
+                attr "fill" "none"
+                attr "stroke" "#FFFFFF"
+                attr "stroke-width" "1.5"
+            ] []
+          ]
+        | DishKind.Vegetarian -> [
+            frame "#FFFFFF" "#1F7A3D"
+            tag "circle" [ attr "cx" "8"; attr "cy" "8"; attr "r" "3.6"; attr "fill" "#1F7A3D" ] []
+          ]
+        | DishKind.NonVeg -> [
+            frame "#FFFFFF" "#7A3E12"
+            tag "path" [ attr "d" "M8 4l4.5 8h-9z"; attr "fill" "#7A3E12" ] []
+          ]
+
+    tag
+        "svg"
+        [
+            attr "width" "14"
+            attr "height" "14"
+            attr "viewBox" "0 0 16 16"
+            attr "aria-hidden" "true"
+        ]
+        inside
+
 let private dish (item: GuideDish) =
     article [ _class "spot" ] [
-        h3 [] [ str item.Name ]
+        div [ _class "spot-head" ] [
+            h3 [] [ str item.Name ]
+            span [ _class "veg" ] [ dietMark item.Kind; span [] [ str (DishKinds.name item.Kind) ] ]
+        ]
         p [] [ str item.Description ]
-        p [ _class "veg" ] [ str (DishKinds.name item.Kind) ]
     ]
 
 let private eatery (item: GuideEatery) =

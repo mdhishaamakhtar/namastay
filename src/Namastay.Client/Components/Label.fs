@@ -5,7 +5,8 @@ open Feliz
 open Namastay.Client.Api
 open Namastay.Shared.Contracts
 
-let view (colour: string) (photo: GuidePhoto option) (name: string) (lines: string list) =
+/// `badge` sits on the photo's corner, for what a card needs to say at a glance.
+let withBadge (badge: ReactElement) (colour: string) (photo: GuidePhoto option) (name: string) (lines: string list) =
     Html.div [
         prop.className "label"
         prop.children [
@@ -13,6 +14,7 @@ let view (colour: string) (photo: GuidePhoto option) (name: string) (lines: stri
                 prop.className "label-frame"
                 prop.style [ style.borderColor colour ]
                 prop.children [
+                    badge
                     match photo with
                     | Some item ->
                         Html.img [
@@ -36,3 +38,6 @@ let view (colour: string) (photo: GuidePhoto option) (name: string) (lines: stri
             ]
         ]
     ]
+
+let view colour photo name lines =
+    withBadge Html.none colour photo name lines
