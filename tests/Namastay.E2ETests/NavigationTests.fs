@@ -46,6 +46,18 @@ type NavigationTests(browser: BrowserFixture) =
         }
 
     [<Fact>]
+    member _.``footer sits at the bottom of a short page``() =
+        task {
+            let! page = browser.NewPage()
+            do! page.SetViewportSizeAsync(1400, 1600)
+            let! _ = page.GotoAsync(browser.BaseUrl + "/contact")
+            let footer = page.Locator ".site-foot"
+            do! footer.WaitForAsync()
+            let! box = footer.BoundingBoxAsync()
+            Assert.Equal(1600f, box.Y + box.Height, 1f)
+        }
+
+    [<Fact>]
     member _.``trip json decodes in the browser``() =
         task {
             let! page = browser.NewPage()

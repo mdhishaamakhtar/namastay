@@ -2384,6 +2384,17 @@ button:focus-visible {
   }
 }
 
+.with-foot {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.with-foot > :first-child {
+  flex: 1 0 auto;
+  min-height: 0;
+}
+
 .site-foot {
   display: flex;
   flex-direction: column;
@@ -2413,9 +2424,12 @@ button:focus-visible {
   text-decoration: none;
 }
 
-.browse .lost {
+.browse .lost,
+.my-page .lost {
   display: grid;
   gap: 28px;
+  max-width: none;
+  margin: 0;
   padding: 22px;
 }
 
@@ -2451,12 +2465,11 @@ button:focus-visible {
 
 .lost-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 12px;
 }
 
 .lost-actions .button {
-  flex: 1 1 auto;
   background: var(--brand);
   color: var(--ink);
   text-decoration: none;
@@ -2515,7 +2528,8 @@ button:focus-visible {
     padding: 40px max(64px, calc((100% - 1240px) / 2));
   }
 
-  .browse .lost {
+  .browse .lost,
+  .my-page .lost {
     grid-template-columns: 520px minmax(0, 1fr);
     gap: 56px;
     align-items: center;
@@ -2526,8 +2540,8 @@ button:focus-visible {
     font-size: 46px;
   }
 
-  .lost-actions .button {
-    flex: 0 0 auto;
+  .lost-actions {
+    flex-direction: row;
   }
 
   .browse .account-body {

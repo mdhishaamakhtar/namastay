@@ -190,6 +190,7 @@ type AccountTests(browser: BrowserFixture) =
             do! (button page "Delete").ClickAsync()
             do! (button page "Delete this trip?").ClickAsync()
             do! page.GetByText("No trips yet").WaitForAsync()
+            do! page.GetByText("Your India starts with a few swipes").WaitForAsync()
         }
 
     [<Fact>]

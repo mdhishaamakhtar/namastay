@@ -10,6 +10,7 @@
     <Compile Include="Components/States.fs" />
     <Compile Include="Components/Menu.fs" />
     <Compile Include="Components/Footer.fs" />
+    <Compile Include="Components/Scene.fs" />
     <Compile Include="Components/NotFound.fs" />
     <Compile Include="Components/Skeletons.fs" />
     <Compile Include="Components/Icons.fs" />

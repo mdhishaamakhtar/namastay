@@ -39,13 +39,10 @@ let private card (model: Model) dispatch (trip: SavedTripSummary) =
     ]
 
 let private trips (model: Model) dispatch (saved: SavedTripSummary list) =
-    match saved with
-    | [] -> Html.none
-    | items ->
-        Html.ul [
-            prop.className "my-trips reveal"
-            prop.children (items |> List.map (card model dispatch))
-        ]
+    Html.ul [
+        prop.className "my-trips reveal"
+        prop.children (saved |> List.map (card model dispatch))
+    ]
 
 let private count (model: Model) =
     match model.Trips with
@@ -64,40 +61,50 @@ let private header (model: Model) dispatch =
                 prop.children [
                     Html.h1 "My trips"
                     count model
-                    Html.div [
-                        prop.className "browse-plan my-actions"
-                        prop.children [
-                            Html.a [
-                                prop.className "button press"
-                                prop.href Routes.journey.Template
-                                prop.text (
-                                    match model.Trips with
-                                    | Remote.Loaded [] -> "Plan your first trip"
-                                    | _ -> "Plan a new trip"
-                                )
+                    match model.Trips with
+                    | Remote.Loaded [] -> Html.none
+                    | _ ->
+                        Html.div [
+                            prop.className "browse-plan my-actions"
+                            prop.children [
+                                Html.a [
+                                    prop.className "button press"
+                                    prop.href Routes.journey.Template
+                                    prop.text "Plan a new trip"
+                                ]
                             ]
                         ]
-                    ]
                 ]
             ]
         ]
     ]
 
+let private noTrips =
+    Scene.view
+        "/empty-trips.svg"
+        "Your India starts with a few swipes"
+        "Swipe through the places you like and we'll turn them into a day-by-day trip. It's free, and you can change it whenever you like."
+        "Plan your first trip"
+        Routes.journey.Template
+
+let private content (model: Model) dispatch =
+    match model.Trips with
+    | Remote.Loaded [] -> noTrips
+    | _ ->
+        Html.main [
+            prop.children [
+                match model.Trips with
+                | Remote.Loading -> Skeletons.myTrips "Finding your trips"
+                | Remote.Failed error -> States.failed error (fun () -> dispatch Load)
+                | Remote.Loaded saved -> trips model dispatch saved
+                match model.Problem with
+                | Some text -> Html.p [ prop.className "form-error"; prop.role "alert"; prop.text text ]
+                | None -> Html.none
+            ]
+        ]
+
 let view (model: Model) dispatch =
     Html.div [
         prop.className "my-page"
-        prop.children [
-            header model dispatch
-            Html.main [
-                prop.children [
-                    match model.Trips with
-                    | Remote.Loading -> Skeletons.myTrips "Finding your trips"
-                    | Remote.Failed error -> States.failed error (fun () -> dispatch Load)
-                    | Remote.Loaded saved -> trips model dispatch saved
-                    match model.Problem with
-                    | Some text -> Html.p [ prop.className "form-error"; prop.role "alert"; prop.text text ]
-                    | None -> Html.none
-                ]
-            ]
-        ]
+        prop.children [ header model dispatch; content model dispatch ]
     ]

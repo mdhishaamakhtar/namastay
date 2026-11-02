@@ -27,3 +27,7 @@ let view =
             ]
         ]
     ]
+
+/// Holds the footer to the bottom of the window, however short the page is.
+let around (page: ReactElement) =
+    Html.div [ prop.className "with-foot"; prop.children [ page; view ] ]

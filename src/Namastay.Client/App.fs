@@ -136,8 +136,7 @@ let private personal (title: string) (page: ReactElement) =
     ]
 
 /// A page people read gets the site's footer. Tasks like swiping keep the screen to themselves.
-let private withFooter (page: ReactElement) =
-    Html.div [ prop.style [ style.display.contents ]; prop.children [ page; Footer.view ] ]
+let private withFooter = Footer.around
 
 let view model dispatch =
     match model.Screen with
