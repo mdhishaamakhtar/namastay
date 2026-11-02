@@ -913,6 +913,7 @@ button:focus-visible {
   gap: 6px;
   font-size: 14px;
   font-weight: 400;
+  line-height: 20px;
 }
 
 /* Every word gets the width of the longest, so the marks form a straight column. */
@@ -922,13 +923,9 @@ button:focus-visible {
 
 .listing-head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
-}
-
-.listing-head .diet-label {
-  padding-top: 5px;
 }
 
 .diet-note {
