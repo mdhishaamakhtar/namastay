@@ -49,3 +49,7 @@ let view =
             ]
         ]
     ]
+
+/// For a task page that has no footer of its own.
+let withFooter =
+    Html.div [ prop.style [ style.display.contents ]; prop.children [ view; Footer.view ] ]
