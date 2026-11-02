@@ -168,25 +168,25 @@ let private tripButtons (source: Source) =
     | Source.Shared _ -> 3
 
 let view (model: Model) dispatch =
-    withMenu model
-    <| match model.Trip with
-       | Remote.Loading -> Skeletons.trip "Finding your trip" (tripButtons model.Source)
-       | Remote.Failed error when Client.isNotFound error -> NotFound.view
-       | Remote.Failed error -> Html.main [ States.failed error (fun () -> dispatch Load) ]
-       | Remote.Loaded saved ->
-           Html.div [
-               prop.className "trip reveal"
-               prop.children [
-                   panel model saved.Trip dispatch
-                   Html.div [
-                       prop.className "trip-content"
-                       prop.children [
-                           swaps saved.Trip
-                           bestMonths saved.Trip
-                           yield! hardMonths saved.Trip
-                           stops model saved dispatch
-                           leftOut saved.Trip
-                       ]
-                   ]
-               ]
-           ]
+    match model.Trip with
+    | Remote.Loading -> withMenu model (Skeletons.trip "Finding your trip" (tripButtons model.Source))
+    | Remote.Failed error when Client.isNotFound error -> NotFound.withFooter
+    | Remote.Failed error -> withMenu model (Html.main [ States.failed error (fun () -> dispatch Load) ])
+    | Remote.Loaded saved ->
+        withMenu model
+        <| Html.div [
+            prop.className "trip reveal"
+            prop.children [
+                panel model saved.Trip dispatch
+                Html.div [
+                    prop.className "trip-content"
+                    prop.children [
+                        swaps saved.Trip
+                        bestMonths saved.Trip
+                        yield! hardMonths saved.Trip
+                        stops model saved dispatch
+                        leftOut saved.Trip
+                    ]
+                ]
+            ]
+        ]

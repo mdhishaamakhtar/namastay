@@ -62,6 +62,10 @@ type NavigationTests(browser: BrowserFixture) =
             let! page = browser.NewPage()
             let! _ = page.GotoAsync(browser.BaseUrl + "/trip/AAAAAAAAAAAA")
             do! page.GetByText("This road doesn't go anywhere").WaitForAsync()
+            let! menus = page.Locator(".menu").CountAsync()
+            let! footers = page.Locator(".site-foot").CountAsync()
+            Assert.Equal(1, menus)
+            Assert.Equal(1, footers)
         }
 
     [<Fact>]
