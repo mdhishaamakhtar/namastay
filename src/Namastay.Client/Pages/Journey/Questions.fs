@@ -89,4 +89,14 @@ let all = [
             option' "Keep me on the ground" "Trains and roads only" (Choice.Travel TransportComfort.NoFlights)
         ]
     }
+    {
+        Title = "How do you eat?"
+        Line = "We'll pick out what to try at every stop."
+        Compact = false
+        Options = [
+            option' "I eat everything" "Nothing to plan around" (Choice.Eat Diet.Everything)
+            option' "Vegetarian" "No meat, fish or eggs" (Choice.Eat Diet.Vegetarian)
+            option' "Vegan" "No dairy either, and that includes ghee" (Choice.Eat Diet.Vegan)
+        ]
+    }
 ]

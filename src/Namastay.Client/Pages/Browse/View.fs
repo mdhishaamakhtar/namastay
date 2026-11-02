@@ -132,6 +132,7 @@ let private dishPage (page: DishPage) =
                 ]
             }
             head Menu.Section.Food (Some("All food", Routes.foodPage.Template)) page.Name page.Description plan art
+            Html.p [ prop.className "dish-kind"; prop.children [ DietMark.label page.Kind ] ]
             Html.main [ prop.children [ listed "Where to have it" guideUrl page.Places ] ]
         ]
     ]

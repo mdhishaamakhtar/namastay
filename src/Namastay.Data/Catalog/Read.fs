@@ -29,6 +29,8 @@ let private loadPlaces source =
         let! fits = query<FitRow> source (ofPlace "traveller_fit") null
         let! days = query<DayRow> source (ofPlace "day_plans") null
         let! stays = query<StayRow> source (ofPlace "stay_areas") null
+        let! dishes = query<DishRow> source (ofPlace "dishes") null
+        let! eateries = query<EateryRow> source (ofPlace "eateries") null
 
         return
             places
@@ -51,8 +53,29 @@ let private loadPlaces source =
                 Airport = place.Airport
                 Hub = place.Hub
                 FoodIntro = None
-                Dishes = []
-                Eateries = []
+                Dishes =
+                    matching place.Slug dishes _.PlaceSlug
+                    |> List.filter (fun row -> row.Status <> "unverified")
+                    |> List.map (fun row -> {
+                        Name = row.Name
+                        Description = row.Description
+                        Vegetarian = row.Vegetarian
+                        Vegan = row.Vegan
+                        PhotoSlug = None
+                        Rank = row.Rank
+                        Evidence = evidence row.Status row.LastChecked
+                    })
+                Eateries =
+                    matching place.Slug eateries _.PlaceSlug
+                    |> List.filter (fun row -> row.Status <> "unverified")
+                    |> List.map (fun row -> {
+                        Name = row.Name
+                        Area = row.Area
+                        GoFor = row.GoFor
+                        CostLevel = Decode.costLevel row.CostLevel
+                        VegetarianOnly = row.VegetarianOnly
+                        Evidence = evidence row.Status row.LastChecked
+                    })
                 Published = place.Published
                 Interests =
                     matching place.Slug interests _.PlaceSlug

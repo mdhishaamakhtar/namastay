@@ -23,6 +23,7 @@ type SavedTripsTests(postgres: PostgresFixture) =
         Travellers = TravellerType.Solo
         Budget = BudgetLevel.Mid
         TransportComfort = TransportComfort.Anything
+        Diet = None
         Scope = None
     }
 

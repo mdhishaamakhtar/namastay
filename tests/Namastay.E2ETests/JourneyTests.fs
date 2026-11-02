@@ -77,8 +77,50 @@ type JourneyTests(browser: BrowserFixture) =
 
     let answerQuestions (page: IPage) =
         task {
-            for choice in [ "Oct"; "About a week"; "Just me"; "Some comfort"; "Whatever is best" ] do
+            for choice in
+                [
+                    "Oct"
+                    "About a week"
+                    "Just me"
+                    "Some comfort"
+                    "Whatever is best"
+                    "I eat everything"
+                ] do
                 do! (button page choice).ClickAsync()
+        }
+
+    [<Fact>]
+    member _.``undo brings back the last card``() =
+        task {
+            let! page = openJourney ()
+            let! first = title page
+            do! Assertions.Expect(button page "Undo").ToBeHiddenAsync()
+            do! (button page "Not for me").ClickAsync()
+            do! waitForCard page 2
+            do! (button page "Undo").ClickAsync()
+            do! waitForCard page 1
+            let! current = title page
+            Assert.Equal(first, current)
+        }
+
+    [<Fact>]
+    member _.``back keeps earlier answers and reaches the card you stopped on``() =
+        task {
+            let! page = openJourney ()
+            do! (button page "Love it").ClickAsync()
+            do! waitForCard page 2
+            let! waiting = title page
+            do! (buildNow page).ClickAsync()
+            do! (button page "Oct").ClickAsync()
+            do! (button page "Two weeks").ClickAsync()
+            do! (button page "Back").ClickAsync()
+            do! Assertions.Expect(button page "Two weeks").ToHaveAttributeAsync("aria-pressed", "true")
+            do! (button page "Back").ClickAsync()
+            do! Assertions.Expect(button page "Oct").ToHaveAttributeAsync("aria-pressed", "true")
+            do! (button page "Back").ClickAsync()
+            do! waitForCard page 2
+            let! current = title page
+            Assert.Equal(waiting, current)
         }
 
     [<Fact>]

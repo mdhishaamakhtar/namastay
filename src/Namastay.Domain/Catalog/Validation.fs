@@ -168,6 +168,12 @@ let private checkCopy (place: Place) =
                 error "places" place.Slug $"visitor copy mentions banned word: {word}"
     ]
 
+let private checkDishes (place: Place) = [
+    for dish in place.Dishes do
+        if dish.Vegan && not dish.Vegetarian then
+            error "places" place.Slug $"{dish.Name} is vegan but not vegetarian"
+]
+
 /// Returns every problem in the catalog, not just the first.
 let check (catalog: Catalog) : ValidationError list =
     let places = catalog.Places |> List.map _.Slug |> Set.ofList
@@ -191,6 +197,7 @@ let check (catalog: Catalog) : ValidationError list =
         yield! catalog.Cards |> List.collect (checkCard cards places illustrations photos)
         yield! catalog.Photos |> List.collect (checkPhoto places)
         yield! catalog.Places |> List.collect checkCopy
+        yield! catalog.Places |> List.collect checkDishes
         yield! checkUnique "places" (catalog.Places |> List.map _.Slug)
         yield! checkUnique "transport_links" (catalog.Links |> List.map _.Slug)
         yield! checkUnique "cards" (catalog.Cards |> List.map _.Slug)

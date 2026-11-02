@@ -68,6 +68,30 @@ type StayRow = {
 }
 
 [<CLIMutable>]
+type DishRow = {
+    PlaceSlug: string
+    Name: string
+    Description: string
+    Vegetarian: bool
+    Vegan: bool
+    Rank: int option
+    Status: string
+    LastChecked: DateTime
+}
+
+[<CLIMutable>]
+type EateryRow = {
+    PlaceSlug: string
+    Name: string
+    Area: string
+    GoFor: string
+    CostLevel: string
+    VegetarianOnly: bool
+    Status: string
+    LastChecked: DateTime
+}
+
+[<CLIMutable>]
 type LinkRow = {
     Slug: string
     FromSlug: string

@@ -14,6 +14,7 @@
     <Compile Include="Components/NotFound.fs" />
     <Compile Include="Components/Skeletons.fs" />
     <Compile Include="Components/Icons.fs" />
+    <Compile Include="Components/DietMark.fs" />
     <Compile Include="Components/Label.fs" />
     <Compile Include="Components/Seo.fs" />
     <Compile Include="Pages/Home/State.fs" />

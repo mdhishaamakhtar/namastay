@@ -5,6 +5,7 @@ open Browser
 open Browser.Types
 open Feliz
 open Namastay.Client.Api
+open Namastay.Client.Components
 open Namastay.Shared.Contracts
 
 [<ImportMember("./swipe.js")>]
@@ -54,7 +55,7 @@ let private label (card: JourneyCard) =
 
 /// `onDecide` runs once, after the card has left the screen.
 [<ReactComponent>]
-let SwipeCard (card: JourneyCard, onDecide: bool -> unit) =
+let SwipeCard (card: JourneyCard, canUndo: bool, onDecide: bool -> unit, onUndo: unit -> unit, extra: ReactElement) =
     let element = React.useElementRef ()
     let leaving = React.useRef false
 
@@ -64,6 +65,11 @@ let SwipeCard (card: JourneyCard, onDecide: bool -> unit) =
             leaving.current <- true
             leave current liked onDecide
         | _ -> ()
+
+    // A card already on its way out still has to land, so nothing undoes over it.
+    let undo () =
+        if not leaving.current then
+            onUndo ()
 
     let setup () : (unit -> unit) =
         let detach =
@@ -78,6 +84,7 @@ let SwipeCard (card: JourneyCard, onDecide: bool -> unit) =
             match (event :?> KeyboardEvent).key with
             | "ArrowRight" -> decide true
             | "ArrowLeft" -> decide false
+            | "Backspace" -> undo ()
             | _ -> ()
 
         window.addEventListener ("keydown", onKey)
@@ -103,9 +110,21 @@ let SwipeCard (card: JourneyCard, onDecide: bool -> unit) =
                     prop.text "Not for me"
                     prop.onClick (fun _ -> decide false)
                 ]
+                Html.button [
+                    prop.className (
+                        if canUndo then
+                            "journey-undo press"
+                        else
+                            "journey-undo journey-undo-idle"
+                    )
+                    prop.disabled (not canUndo)
+                    prop.onClick (fun _ -> undo ())
+                    prop.children [ Icons.undo; Html.span "Undo" ]
+                ]
+                extra
                 Html.p [
                     prop.className "journey-hint"
-                    prop.text "Or drag the card, or press the left and right arrow keys."
+                    prop.text "Or drag the card, or press the left and right arrow keys. Backspace undoes."
                 ]
             ]
         ]

@@ -5,6 +5,7 @@
     <Compile Include="DurationTests.fs" />
     <Compile Include="PlanDaysTests.fs" />
     <Compile Include="NoticeOrderTests.fs" />
+    <Compile Include="DishKindsTests.fs" />
     <Compile Include="JourneyPathTests.fs" />
     <Compile Include="Catalog/ValidationTests.fs" />
     <Compile Include="Catalog/ContractMappingTests.fs" />

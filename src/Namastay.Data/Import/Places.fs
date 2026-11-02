@@ -123,13 +123,14 @@ let private insertFood transaction (place: Place) =
     for dish in place.Dishes do
         exec
             transaction
-            "insert into dishes (place_slug, name, description, vegetarian, photo_slug, rank, status, last_checked)
-             values (@place, @name, @description, @vegetarian, @photo, @rank, @status, @lastChecked)"
+            "insert into dishes (place_slug, name, description, vegetarian, vegan, photo_slug, rank, status, last_checked)
+             values (@place, @name, @description, @vegetarian, @vegan, @photo, @rank, @status, @lastChecked)"
             {|
                 place = place.Slug
                 name = dish.Name
                 description = dish.Description
                 vegetarian = dish.Vegetarian
+                vegan = dish.Vegan
                 photo = dish.PhotoSlug
                 rank = dish.Rank
                 status = Encode.status dish.Evidence.Status

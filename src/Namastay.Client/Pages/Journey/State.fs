@@ -16,6 +16,7 @@ type Choice =
     | Who of TravellerType
     | Spend of BudgetLevel
     | Travel of TransportComfort
+    | Eat of Diet
 
 [<RequireQualifiedAccess>]
 type Step =
@@ -30,6 +31,7 @@ type Plan = {
     Travellers: TravellerType
     Budget: BudgetLevel
     Comfort: TransportComfort
+    Diet: Diet
 }
 
 type Model = {
@@ -38,6 +40,8 @@ type Model = {
     Answers: CardAnswer list
     Plan: Plan
     Step: Step
+    /// Questions before this one have been answered, so going back can show those answers.
+    Furthest: int
     /// What this trip is limited to, and how to say so.
     Scope: TripScope option
     ScopeName: string option
@@ -47,12 +51,14 @@ type Msg =
     | LoadGraph
     | GraphLoaded of Result<JourneyGraph, Client.ClientError>
     | Decided of liked: bool
+    | Undone
     | Chose of Choice
+    | WentBack
     | FinishEarly
     | BuildTrip
     | TripBuilt of Result<SavedTrip, Client.ClientError>
 
-let questionCount = 5
+let questionCount = 6
 
 let private scopeInAddress () =
     let kind =
@@ -84,8 +90,10 @@ let init () =
             Travellers = TravellerType.Solo
             Budget = BudgetLevel.Mid
             Comfort = TransportComfort.Anything
+            Diet = Diet.Everything
         }
         Step = Step.Swiping
+        Furthest = 0
         Scope = scopeInAddress ()
         ScopeName = Browser.queryParam "label"
     },
@@ -113,6 +121,7 @@ let private tripRequest (model: Model) = {
     Budget = model.Plan.Budget
     TransportComfort = model.Plan.Comfort
     Scope = model.Scope
+    Diet = Some model.Plan.Diet
 }
 
 let private build (model: Model) =
@@ -132,6 +141,16 @@ let private apply choice (plan: Plan) =
     | Choice.Who who -> { plan with Travellers = who }
     | Choice.Spend budget -> { plan with Budget = budget }
     | Choice.Travel comfort -> { plan with Comfort = comfort }
+    | Choice.Eat diet -> { plan with Diet = diet }
+
+let isChosen (plan: Plan) choice =
+    match choice with
+    | Choice.Month month -> plan.Month = month
+    | Choice.Days days -> plan.Days = days
+    | Choice.Who who -> plan.Travellers = who
+    | Choice.Spend budget -> plan.Budget = budget
+    | Choice.Travel comfort -> plan.Comfort = comfort
+    | Choice.Eat diet -> plan.Diet = diet
 
 let private decide (graph: JourneyGraph) liked (model: Model) =
     let slug = List.head model.Queue
@@ -147,6 +166,21 @@ let private decide (graph: JourneyGraph) liked (model: Model) =
             Step = step
     },
     Cmd.batch [ settleStage graph answers; preload graph queue ]
+
+/// Takes back the last answer, so its card can be decided again.
+let private undo (graph: JourneyGraph) (model: Model) =
+    match List.rev model.Answers with
+    | [] -> model, Cmd.none
+    | last :: earlier ->
+        let answers = List.rev earlier
+
+        {
+            model with
+                Answers = answers
+                Queue = [ last.Card ]
+                Step = Step.Swiping
+        },
+        settleStage graph answers
 
 let update msg (model: Model) =
     match msg, model.Graph, model.Step with
@@ -167,6 +201,7 @@ let update msg (model: Model) =
         },
         Cmd.none
     | Decided liked, Remote.Loaded graph, Step.Swiping when not model.Queue.IsEmpty -> decide graph liked model
+    | Undone, Remote.Loaded graph, Step.Swiping -> undo graph model
     | FinishEarly, _, Step.Swiping when not model.Answers.IsEmpty -> { model with Step = Step.Asking 0 }, Cmd.none
     | Chose choice, _, Step.Asking index ->
         let chosen = {
@@ -180,12 +215,24 @@ let update msg (model: Model) =
             {
                 chosen with
                     Step = Step.Asking(index + 1)
+                    Furthest = max model.Furthest (index + 1)
             },
             Cmd.none
+    // A visitor who stopped early still has a card waiting, so they go back to that one.
+    | WentBack, _, Step.Asking 0 when not model.Queue.IsEmpty -> { model with Step = Step.Swiping }, Cmd.none
+    | WentBack, Remote.Loaded graph, Step.Asking 0 -> undo graph model
+    | WentBack, _, Step.Asking index ->
+        {
+            model with
+                Step = Step.Asking(index - 1)
+        },
+        Cmd.none
     | BuildTrip, _, _ -> build model
     | TripBuilt(Ok saved), _, _ ->
         model, Cmd.ofEffect (fun _ -> Browser.navigate (Route.url [ "shareToken", saved.ShareToken ] [] Routes.trip))
     | TripBuilt(Error error), _, _ -> { model with Step = Step.Failed error }, Cmd.none
     | Decided _, _, _
+    | Undone, _, _
     | FinishEarly, _, _
-    | Chose _, _, _ -> model, Cmd.none
+    | Chose _, _, _
+    | WentBack, _, _ -> model, Cmd.none

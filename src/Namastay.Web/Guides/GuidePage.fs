@@ -226,8 +226,7 @@ let private dish (item: GuideDish) =
     article [ _class "spot" ] [
         h3 [] [ str item.Name ]
         p [] [ str item.Description ]
-        if item.Vegetarian then
-            p [ _class "veg" ] [ str "Vegetarian" ]
+        p [ _class "veg" ] [ str (DishKinds.name item.Kind) ]
     ]
 
 let private eatery (item: GuideEatery) =

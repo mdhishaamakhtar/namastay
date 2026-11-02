@@ -275,6 +275,39 @@ button:focus-visible {
   display: none;
 }
 
+.journey-undo,
+.journey-back,
+.journey-build {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.journey-undo,
+.journey-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.journey-undo {
+  order: 3;
+  justify-self: start;
+}
+
+.journey-undo-idle {
+  visibility: hidden;
+}
+
+.journey-back {
+  align-self: flex-start;
+}
+
 .journey-finish {
   display: flex;
   flex-direction: column;
@@ -289,15 +322,9 @@ button:focus-visible {
 }
 
 .journey-build {
-  min-height: 44px;
-  padding: 0 16px;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  font-weight: 600;
+  order: 4;
+  justify-self: end;
   text-decoration: underline;
-  cursor: pointer;
 }
 
 .card-label {
@@ -402,7 +429,7 @@ button:focus-visible {
 
 .question-frame {
   gap: 12px;
-  padding: 20px;
+  padding: 8px 20px 20px;
 }
 
 .question-frame h1 {
@@ -462,6 +489,12 @@ button:focus-visible {
 
 .choice:hover {
   background: var(--paper);
+}
+
+.choice-chosen,
+.choice-chosen:hover {
+  background: var(--ink);
+  color: var(--paper);
 }
 
 @media (min-width: 1024px) {
@@ -552,6 +585,13 @@ button:focus-visible {
 
   .journey-hint {
     display: block;
+    order: 5;
+  }
+
+  .journey-undo,
+  .journey-build {
+    justify-content: center;
+    align-self: center;
   }
 }
 
@@ -838,6 +878,92 @@ button:focus-visible {
 .stop-row:first-child {
   padding-top: 0;
   border-top: 0;
+}
+
+.stop-eat {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.stop-eat strong {
+  font-weight: 600;
+}
+
+.stop-dish {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stop-dish small {
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.diet-mark {
+  flex: none;
+}
+
+.diet-label {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.diet-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.dish-kind {
+  margin: 0;
+  padding: 16px 22px 0;
+}
+
+.trip-diet {
+  margin: 0;
+}
+
+.food-tools {
+  display: grid;
+  gap: 14px;
+}
+
+.diet-switch {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+}
+
+.diet-choice {
+  min-height: 48px;
+  border: 0;
+  background: #ffffff;
+  color: var(--ink);
+  font: 600 16px Mukta, system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.diet-chosen {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+@media (min-width: 1024px) {
+  .food-tools {
+    grid-template-columns: minmax(0, 1fr) 390px;
+    gap: 24px;
+  }
 }
 
 .stop-note {
@@ -2841,6 +2967,13 @@ button:focus-visible {
   margin: 0;
   padding: 8px 14px 12px;
   list-style: none;
+}
+
+.region-card li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .region-card li a,

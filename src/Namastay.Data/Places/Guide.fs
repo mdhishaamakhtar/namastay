@@ -41,7 +41,7 @@ let private stayAreasSql =
       where place_slug = @slug and status <> 'unverified' order by name"
 
 let private dishesSql =
-    "select name, description, vegetarian from dishes
+    "select name, description, vegetarian, vegan from dishes
      where place_slug = @slug and status <> 'unverified' order by name"
 
 let private eateriesSql =
@@ -156,7 +156,7 @@ let tryLoad (source: NpgsqlDataSource) (slug: string) : Task<PlaceGuide option> 
                             |> List.map (fun row -> {
                                 Name = row.Name
                                 Description = row.Description
-                                Vegetarian = row.Vegetarian
+                                Kind = DishKinds.ofFlags row.Vegetarian row.Vegan
                             })
                         Eateries =
                             eateries

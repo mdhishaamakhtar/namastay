@@ -55,6 +55,10 @@ Swipes always have button alternatives. Touch targets are at least 44px, text co
 
 Home is a full landing page. A hand of three labels fans out in the hero, then the wall of labels sits on the dark ink colour with the place search beside it. The word India in the closing heading runs through saffron, white and green, and that is the only tricolour on the page.
 
+## Food by diet
+
+Dishes carry the marks printed on Indian menus, always with the word beside them, so the page teaches what to look for: a green dot for vegetarian, a green leaf for vegan and a brown triangle for non-veg. The Food page has a quiet Everything, Vegetarian and Vegan switch. Every stop in an itinerary has an Eat row beside Days and Stay, picked for how the visitor said they eat.
+
 ## Still to design
 
-Desktop question screens; tablet checks; all final illustrations.
+Tablet checks; all final illustrations.

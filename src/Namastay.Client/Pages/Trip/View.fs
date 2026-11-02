@@ -37,6 +37,14 @@ let private panel (model: Model) (trip: Trip) dispatch =
         prop.className "trip-panel"
         prop.children [
             Html.h1 trip.Title
+            match trip.Diet with
+            | Some Diet.Vegetarian ->
+                Html.p [
+                    prop.className "trip-diet"
+                    prop.text "Vegetarian food picked out at every stop."
+                ]
+            | Some Diet.Vegan -> Html.p [ prop.className "trip-diet"; prop.text "Vegan food picked out at every stop." ]
+            | _ -> Html.none
             RouteMap.view trip.Stops
             if not trip.Mix.IsEmpty then
                 Html.div [

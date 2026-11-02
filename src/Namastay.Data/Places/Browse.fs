@@ -25,6 +25,8 @@ type private ItemRow = {
     Name: string
     Line: string
     Colour: string
+    Vegetarian: bool
+    Vegan: bool
 }
 
 [<CLIMutable>]
@@ -33,6 +35,8 @@ type private DishRow = {
     Place: string
     Name: string
     Description: string
+    Vegetarian: bool
+    Vegan: bool
     Colour: string
     FilePath: string option
     Alt: string option
@@ -46,6 +50,7 @@ let private toListing (row: ItemRow) : Listing = {
     Name = PlaceName.plain row.Name
     Line = row.Line
     Colour = row.Colour
+    Kind = None
 }
 
 let private pageFrom (head: HeadRow option) (items: Listing list) =
@@ -109,7 +114,7 @@ let foodRegion (source: NpgsqlDataSource) (slug: string) : Task<BrowsePage optio
         let! rows =
             Sql.query<ItemRow>
                 source
-                "select d.name as slug, d.name, d.description as line, f.deep as colour
+                "select d.name as slug, d.name, d.description as line, f.deep as colour, d.vegetarian, d.vegan
                  from dishes d
                  join places p on p.slug = d.place_slug
                  join clusters c on c.slug = p.cluster_slug
@@ -124,6 +129,7 @@ let foodRegion (source: NpgsqlDataSource) (slug: string) : Task<BrowsePage optio
             |> List.map (fun row -> {
                 toListing row with
                     Slug = PlaceName.slug row.Name
+                    Kind = Some(DishKinds.ofFlags row.Vegetarian row.Vegan)
             })
 
         return pageFrom head dishes
@@ -132,7 +138,7 @@ let foodRegion (source: NpgsqlDataSource) (slug: string) : Task<BrowsePage optio
 let private dishRows (source: NpgsqlDataSource) =
     Sql.query<DishRow>
         source
-        "select p.slug as place_slug, p.name as place, d.name, d.description, f.deep as colour,
+        "select p.slug as place_slug, p.name as place, d.name, d.description, d.vegetarian, d.vegan, f.deep as colour,
                 ph.file_path, ph.alt, ph.credit, ph.licence, ph.source_url
          from dishes d
          join places p on p.slug = d.place_slug
@@ -166,6 +172,7 @@ let dish (source: NpgsqlDataSource) (slug: string) : Task<DishPage option> =
                 Slug = slug
                 Name = first.Name
                 Description = first.Description
+                Kind = DishKinds.ofFlags first.Vegetarian first.Vegan
                 Photo = found |> List.tryPick toPhoto
                 Places =
                     found
@@ -175,6 +182,7 @@ let dish (source: NpgsqlDataSource) (slug: string) : Task<DishPage option> =
                             Name = PlaceName.plain row.Place
                             Line = row.Description
                             Colour = row.Colour
+                            Kind = None
                         }
                         : Listing))
             })

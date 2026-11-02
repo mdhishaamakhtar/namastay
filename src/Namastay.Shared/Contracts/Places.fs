@@ -98,10 +98,23 @@ type GuideNotice = {
     Hedged: bool
 }
 
+/// How a visitor eats, which decides the food a trip picks out.
+[<RequireQualifiedAccess>]
+type Diet =
+    | Everything
+    | Vegetarian
+    | Vegan
+
+[<RequireQualifiedAccess>]
+type DishKind =
+    | NonVeg
+    | Vegetarian
+    | Vegan
+
 type GuideDish = {
     Name: string
     Description: string
-    Vegetarian: bool
+    Kind: DishKind
 }
 
 type GuideEatery = {
@@ -145,6 +158,7 @@ type DirectoryRegion = {
 type FoodDish = {
     Slug: string
     Name: string
+    Kind: DishKind
     Place: string
     PlaceSlug: string
 }
@@ -167,6 +181,8 @@ type Listing = {
     Name: string
     Line: string
     Colour: string
+    /// Only a dish has one.
+    Kind: DishKind option
 }
 
 type BrowsePage = {
@@ -180,6 +196,7 @@ type DishPage = {
     Slug: string
     Name: string
     Description: string
+    Kind: DishKind
     Photo: GuidePhoto option
     Places: Listing list
 }

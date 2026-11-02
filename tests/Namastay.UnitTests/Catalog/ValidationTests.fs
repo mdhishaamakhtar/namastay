@@ -496,3 +496,26 @@ let ``banned word in an unpublished draft still fails`` () =
     }
 
     Assert.True(hasError "banned word" { catalog with Places = [ draft ] })
+
+[<Fact>]
+let ``a vegan dish must also be vegetarian`` () =
+    let dish: Dish = {
+        Name = "Mutton"
+        Description = "Description."
+        Vegetarian = false
+        Vegan = true
+        PhotoSlug = None
+        Rank = None
+        Evidence = {
+            Status = FactStatus.Editorial
+            LastChecked = DateOnly(2026, 10, 1)
+            SourceIds = []
+        }
+    }
+
+    Assert.True(
+        hasError "vegan but not vegetarian" {
+            catalog with
+                Places = [ { place with Dishes = [ dish ] } ]
+        }
+    )

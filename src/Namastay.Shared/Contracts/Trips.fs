@@ -33,6 +33,7 @@ type TripRequest = {
     Budget: BudgetLevel
     TransportComfort: TransportComfort
     Scope: TripScope option
+    Diet: Diet option
 }
 
 type TravelLeg = {
@@ -44,6 +45,24 @@ type TravelLeg = {
 
 type TripDay = { Day: int; Plan: string }
 
+type TripDish = {
+    Name: string
+    Description: string
+    Kind: DishKind
+}
+
+type TripEatery = {
+    Name: string
+    Area: string
+    VegetarianOnly: bool
+}
+
+/// What to try at a stop. Trips saved before food existed have none.
+type StopFood = {
+    Dishes: TripDish list
+    Eateries: TripEatery list
+}
+
 type TripStop = {
     PlaceSlug: string
     Name: string
@@ -54,6 +73,7 @@ type TripStop = {
     StayArea: string option
     Photo: GuidePhoto option
     Plans: TripDay list
+    Food: StopFood option
     Arrival: TravelLeg option
     Retired: bool
     Custom: bool
@@ -95,6 +115,7 @@ type Trip = {
     Month: int option
     BestMonths: int list
     Budget: BudgetLevel
+    Diet: Diet option
     DataVersion: int
 }
 

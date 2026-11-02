@@ -223,6 +223,7 @@ let request answers days month = {
     Travellers = TravellerType.Solo
     Budget = BudgetLevel.Mid
     TransportComfort = TransportComfort.Anything
+    Diet = None
     Scope = None
 }
 
@@ -1574,3 +1575,96 @@ let ``a short trip that can't fit the stop after a major city still ends there``
     let trip = build world (request (liked [ "likes-north"; "likes-south" ]) 6 None)
     Assert.Equal("main", (List.last trip.Stops).PlaceSlug)
     Assert.Equal(6, trip.Stops |> List.sumBy _.Days)
+
+let private dish name vegetarian vegan rank : Dish = {
+    Name = name
+    Description = "Description."
+    Vegetarian = vegetarian
+    Vegan = vegan
+    PhotoSlug = None
+    Rank = rank
+    Evidence = evidence
+}
+
+let private eatery name vegetarianOnly : Eatery = {
+    Name = name
+    Area = "Old town"
+    GoFor = "Lunch."
+    CostLevel = CostLevel.Budget
+    VegetarianOnly = vegetarianOnly
+    Evidence = evidence
+}
+
+let private foodWorld dishes eateries = {
+    catalog with
+        Places = [
+            {
+                place "fed" "c-hills" "pine" "mountains" with
+                    Dishes = dishes
+                    Eateries = eateries
+            }
+        ]
+        Links = []
+        Cards = [ card "likes-fed" "interest:mountains" (Some "fed") ]
+}
+
+let private foodFor diet dishes eateries =
+    let asked = {
+        request (liked [ "likes-fed" ]) 5 None with
+            Diet = diet
+    }
+
+    (build (foodWorld dishes eateries) asked).Stops.Head.Food
+
+let private menu = [
+    dish "Mutton" false false (Some 1)
+    dish "Paneer" true false (Some 2)
+    dish "Dal" true true (Some 3)
+    dish "Chana" true true None
+]
+
+let private kitchens = [ eatery "Grill" false; eatery "Thali house" true ]
+
+let private dishNames (food: StopFood option) = food.Value.Dishes |> List.map _.Name
+
+[<Fact>]
+let ``every trip picks out the best-known dishes and says what they are`` () =
+    let food = foodFor None menu kitchens
+    Assert.Equal<string list>([ "Mutton"; "Paneer"; "Dal" ], dishNames food)
+
+    Assert.Equal<DishKind list>(
+        [ DishKind.NonVeg; DishKind.Vegetarian; DishKind.Vegan ],
+        food.Value.Dishes |> List.map _.Kind
+    )
+
+    Assert.Equal(2, food.Value.Eateries.Length)
+
+[<Fact>]
+let ``a vegetarian trip leaves out meat and mixed kitchens`` () =
+    let food = foodFor (Some Diet.Vegetarian) menu kitchens
+    Assert.Equal<string list>([ "Paneer"; "Dal"; "Chana" ], dishNames food)
+    Assert.Equal<string list>([ "Thali house" ], food.Value.Eateries |> List.map _.Name)
+
+[<Fact>]
+let ``a vegan trip only picks vegan dishes`` () =
+    let food = foodFor (Some Diet.Vegan) menu kitchens
+    Assert.Equal<string list>([ "Dal"; "Chana" ], dishNames food)
+
+[<Fact>]
+let ``a stop with nothing for a diet still has a food row to give advice`` () =
+    let food = foodFor (Some Diet.Vegan) [ dish "Mutton" false false None ] []
+    Assert.True(food.IsSome)
+    Assert.Empty food.Value.Dishes
+
+[<Fact>]
+let ``a place with no food data has no food row`` () =
+    Assert.True((foodFor None [] []).IsNone)
+
+[<Fact>]
+let ``the diet is kept on the trip`` () =
+    let asked = {
+        request (liked [ "likes-fed" ]) 5 None with
+            Diet = Some Diet.Vegan
+    }
+
+    Assert.Equal(Some Diet.Vegan, (build (foodWorld menu kitchens) asked).Diet)

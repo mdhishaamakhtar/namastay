@@ -48,6 +48,7 @@ let private customStop (catalog: Catalog) (original: Trip) family index name day
     StayArea = None
     Photo = None
     Plans = [ for day in 1..days -> { Day = day; Plan = Builder.spareDay } ]
+    Food = None
     Arrival = None
     Retired = false
     Custom = true
@@ -69,13 +70,14 @@ let private rebuild (catalog: Catalog) (original: Trip) (edit: TripEdit) (review
     let legs = route catalog review.Stops
     let routed = legs |> List.choose id
     let family = leadingFamily original routed
+    let diet = original.Diet |> Option.defaultValue Diet.Everything
 
     let stops =
         List.zip review.Stops legs
         |> List.mapi (fun index (stop, leg) ->
             match stop, leg with
             | Unchecked(name, days), _ -> customStop catalog original family index name days
-            | Known _, Some known -> Builder.toStop catalog original.Budget known
+            | Known _, Some known -> Builder.toStop catalog original.Budget diet known
             | Known _, None -> invalidOp "Every known stop has a leg.")
 
     {

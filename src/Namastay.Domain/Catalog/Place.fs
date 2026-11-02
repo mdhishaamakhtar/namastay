@@ -70,6 +70,7 @@ type Dish = {
     Name: string
     Description: string
     Vegetarian: bool
+    Vegan: bool
     /// A photo of this dish, when a food card has one.
     PhotoSlug: string option
     /// Where it comes in its region's best-known dishes, for the few that lead the Food page.
