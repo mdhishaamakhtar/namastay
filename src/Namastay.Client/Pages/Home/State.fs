@@ -40,28 +40,25 @@ type Msg =
     | LandingLoaded of Result<LandingPage, Client.ClientError>
 
 let private loadFeelings () =
-    Cmd.OfPromise.perform
-        (fun url -> Client.held (Client.get<Feeling list> url))
-        Routes.feelings.Template
-        FeelingsLoaded
+    Cmd.OfPromise.perform (fun url -> Client.held (Client.get url)) (Route.address Routes.feelings) FeelingsLoaded
 
 let private loadLanding () =
-    Cmd.OfPromise.perform (fun url -> Client.held (Client.get<LandingPage> url)) Routes.landing.Template LandingLoaded
+    Cmd.OfPromise.perform (fun url -> Client.held (Client.get url)) (Route.address Routes.landing) LandingLoaded
 
 let private loadVisitor () =
-    Cmd.OfPromise.perform Client.get<SavedTripSummary list> Routes.myItineraries.Template VisitorKnown
+    Cmd.OfPromise.perform Client.get (Route.address Routes.myItineraries) VisitorKnown
 
 let private remote (seed: 'Value option) =
     seed |> Option.map Remote.Loaded |> Option.defaultValue Remote.Loading
 
 let init () =
-    let landing = Client.seeded<LandingPage> Routes.landing.Template
+    let landing = Client.seeded (Route.address Routes.landing)
 
     {
         Query = ""
         Attempt = 0
         Results = None
-        Feelings = remote (Client.seeded<Feeling list> Routes.feelings.Template)
+        Feelings = remote (Client.seeded (Route.address Routes.feelings))
         Landing = remote landing
         // A saved page shows the landing at once, unless this visitor has their own home.
         Visitor =
@@ -76,14 +73,13 @@ let private waitForPause attempt =
     Cmd.OfPromise.perform (fun () -> Promise.sleep searchDelay) () (fun () -> PauseEnded attempt)
 
 let private search (model: Model) =
-    let url = Route.url [] [ "query", model.Query.Trim() ] Routes.searchPlaces
+    let url = Route.at [] [ "query", model.Query.Trim() ] Routes.searchPlaces
 
     {
         model with
             Results = Some Remote.Loading
     },
-    Cmd.OfPromise.perform (fun target -> Client.get<PlaceSummary list> target) url (fun result ->
-        Answered(model.Attempt, result))
+    Cmd.OfPromise.perform Client.get url (fun result -> Answered(model.Attempt, result))
 
 let private hasData (remote: Remote<_>) =
     match remote with

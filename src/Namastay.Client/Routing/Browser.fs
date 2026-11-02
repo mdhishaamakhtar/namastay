@@ -4,6 +4,7 @@ open Browser
 open Browser.Types
 open Fable.Core
 open Fable.Core.JsInterop
+open Namastay.Shared
 
 [<Emit("new URLSearchParams($0).get($1)")>]
 let private searchParam (search: string) (name: string) : string option = jsNative
@@ -17,15 +18,19 @@ let currentPath () =
     |> Array.filter (fun part -> part <> "")
     |> Array.toList
 
+/// Changes the address for a page that's already showing, so nothing reloads.
+let showAddress (path: string) =
+    window.history.pushState (null, "", path)
+
 /// Changes the address without a page load, keeping the browser's back stack.
 let navigate (path: string) =
-    window.history.pushState (null, "", path)
+    showAddress path
     window.dispatchEvent (Event.Create changed) |> ignore
 
 /// Sends a signed-out visitor to sign in, then back to where they were.
 let signInThenReturn () =
     let here = window.location.pathname
-    navigate ("/sign-in?next=" + JS.encodeURIComponent here)
+    navigate (Route.url [] [ "next", here ] Routes.signInPage)
 
 /// The page to return to after signing in. Only paths on this site count.
 let afterSignIn (fallback: string) =

@@ -15,6 +15,10 @@ let private respond (context: HttpContext) (result: Result<'Response, ApiError>)
     | Ok body -> context.Response.WriteAsJsonAsync(body, Json.options)
     | Error error -> Errors.write context error
 
+/// Routes mapped here are only for signed-in visitors.
+let signedIn (app: IEndpointRouteBuilder) : IEndpointRouteBuilder =
+    (app.MapGroup "").RequireAuthorization()
+
 /// The route's types make the handler's result match the contract.
 let mapGet
     (app: IEndpointRouteBuilder)

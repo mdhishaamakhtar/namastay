@@ -42,7 +42,7 @@ let private summary (row: SavedTrips.SavedRow) =
         Colours = lead |> Option.map _.Colours
     }
 
-/// Runs `action` for the signed-in user, or answers 401.
+/// Runs `action` for the user behind a signed-in route. A valid token can outlive its account.
 let requireUser source (context: HttpContext) (action: Users.UserRow -> Task<Result<'Value, ApiError>>) =
     task {
         let! user = AuthApi.currentUser source context
@@ -145,10 +145,11 @@ let private edit (data: DataCache) (context: HttpContext) (changes: TripEdit) =
 
 let map (app: IEndpointRouteBuilder) (data: DataCache) =
     let source = data.Source
-    Endpoint.mapAction app Routes.saveItinerary (save source)
-    Endpoint.mapGet app Routes.myItineraries (list source)
-    Endpoint.mapGet app Routes.getMine (fetch source)
-    Endpoint.mapAction app Routes.deleteMine (delete source)
+    let signedIn = Endpoint.signedIn app
+    Endpoint.mapAction signedIn Routes.saveItinerary (save source)
+    Endpoint.mapGet signedIn Routes.myItineraries (list source)
+    Endpoint.mapGet signedIn Routes.getMine (fetch source)
+    Endpoint.mapAction signedIn Routes.deleteMine (delete source)
 
-    (Endpoint.mapBody app Routes.editMine (edit data)).RequireRateLimiting Limits.tripsPolicy
+    (Endpoint.mapBody signedIn Routes.editMine (edit data)).RequireRateLimiting Limits.tripsPolicy
     |> ignore

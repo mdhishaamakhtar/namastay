@@ -6,7 +6,9 @@
     <Compile Include="Support/TestApp.fs" />
     <Compile Include="HealthTests.fs" />
     <Compile Include="Http/ErrorHandlingTests.fs" />
+    <Compile Include="Http/DataCacheTests.fs" />
     <Compile Include="Data/MigrationTests.fs" />
+    <Compile Include="Data/SearchCancellationTests.fs" />
     <Compile Include="Media/MediaTests.fs" />
     <Compile Include="Places/PlacesApiTests.fs" />
     <Compile Include="Journey/JourneyApiTests.fs" />

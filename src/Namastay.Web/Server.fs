@@ -7,6 +7,7 @@ open System.Threading.Tasks
 open Microsoft.AspNetCore.Authentication.JwtBearer
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
+open Microsoft.AspNetCore.HttpLogging
 open Microsoft.AspNetCore.HttpOverrides
 open Microsoft.AspNetCore.ResponseCompression
 open Microsoft.AspNetCore.RateLimiting
@@ -43,6 +44,8 @@ let private configureSessions (site: Tokens.Site) (services: IServiceCollection)
     services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(Tokens.configure site)
     |> ignore
 
+    services.AddAuthorization() |> ignore
+
 /// The website calls this API from the visitor's browser, so only it may read answers
 /// and send the sign-in cookie. Native apps aren't browsers, so this doesn't touch them.
 let private configureWebsiteAccess (site: Tokens.Site) (services: IServiceCollection) =
@@ -61,9 +64,19 @@ let configureServices (site: Tokens.Site) (services: IServiceCollection) =
         options.KnownProxies.Clear())
     |> ignore
 
-    services.AddLogging() |> ignore
     configureSessions site services
     configureWebsiteAccess site services
+
+    // One line per request, leaving out query strings, headers and bodies.
+    services.AddHttpLogging(fun options ->
+        options.CombineLogs <- true
+
+        options.LoggingFields <-
+            HttpLoggingFields.RequestMethod
+            ||| HttpLoggingFields.RequestPath
+            ||| HttpLoggingFields.ResponseStatusCode
+            ||| HttpLoggingFields.Duration)
+    |> ignore
 
     services.AddResponseCompression(fun options ->
         options.EnableForHttps <- true
@@ -101,6 +114,8 @@ let private addSecurityHeaders (context: HttpContext) (next: RequestDelegate) : 
 let useSecurityHeaders (app: WebApplication) =
     app.Use(Func<HttpContext, RequestDelegate, Task>(addSecurityHeaders)) |> ignore
 
+let useRequestLogs (app: WebApplication) = app.UseHttpLogging() |> ignore
+
 let useCompression (app: WebApplication) = app.UseResponseCompression() |> ignore
 
 let useForwardedHeaders (app: WebApplication) = app.UseForwardedHeaders() |> ignore
@@ -119,20 +134,25 @@ let useWebsiteAccess (app: WebApplication) =
 
 let useRateLimits (app: WebApplication) = app.UseRateLimiter() |> ignore
 
-let useSessions (app: WebApplication) = app.UseAuthentication() |> ignore
+let useSessions (app: WebApplication) =
+    app.UseAuthentication().UseAuthorization() |> ignore
 
 let private clientClosedRequest = 499
 
 let private isApi (context: HttpContext) =
     context.Request.Path.StartsWithSegments(PathString "/api")
 
-/// Routing answers unknown addresses and wrong methods with an empty response,
+/// Sign-in checks and routing answer with an empty response,
 /// so API clients get our error shape here. Handlers that wrote their own error have started.
 let private shapeEmptyError (context: HttpContext) =
     if not (isApi context) || context.Response.HasStarted then
         Task.CompletedTask
     else
         match context.Response.StatusCode with
+        | StatusCodes.Status401Unauthorized ->
+            // The handler never ran, so the CDN must hear "no-store" from here.
+            context.Response.Headers.CacheControl <- "no-store"
+            Errors.write context (ApiError.create ErrorCode.Unauthorized "Please sign in.")
         | StatusCodes.Status404NotFound -> Errors.write context (ApiError.notFound "That address doesn't exist.")
         | StatusCodes.Status405MethodNotAllowed ->
             Errors.write context (ApiError.create ErrorCode.MethodNotAllowed "That action isn't allowed here.")
@@ -157,6 +177,18 @@ let guard (logger: ILogger) (context: HttpContext) (next: RequestDelegate) : Tas
 
 let useErrorHandling (app: WebApplication) =
     app.Use(Func<HttpContext, RequestDelegate, Task>(guard app.Logger)) |> ignore
+
+/// Every request's path through the server, in order. The tests run this same list.
+let usePipeline (app: WebApplication) =
+    useForwardedHeaders app
+    useRequestLogs app
+    useSecurityHeaders app
+    useCompression app
+    useWebsiteAccess app
+    useErrorHandling app
+    app.UseStaticFiles() |> ignore
+    useRateLimits app
+    useSessions app
 
 /// Says whether this instance can serve visitors, unlike `/health`, which only says it's running.
 let mapHealth (app: IEndpointRouteBuilder) (source: NpgsqlDataSource) =

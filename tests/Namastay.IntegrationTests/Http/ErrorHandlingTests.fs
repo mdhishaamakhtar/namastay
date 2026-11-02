@@ -167,6 +167,38 @@ let ``unknown api route returns the error shape`` () =
     }
 
 [<Fact>]
+let ``signed-in route turns a visitor away before its handler runs`` () =
+    task {
+        let route: Route<NoBody, PlaceSummary> = Route.get "/api/test/signed-in"
+        let ran = ref false
+        let builder = WebApplication.CreateBuilder()
+        builder.WebHost.UseTestServer() |> ignore
+
+        Server.configureServices
+            {
+                TokenKey = "only-for-tests-and-long-enough-to-sign"
+                Url = "https://site.test"
+            }
+            builder.Services
+
+        let app = builder.Build()
+        Server.useErrorHandling app
+        Server.useSessions app
+
+        Endpoint.mapGet (Endpoint.signedIn app) route (fun _ ->
+            ran.Value <- true
+            Task.FromResult(Ok sample))
+
+        do! app.StartAsync()
+        let http = app.GetTestClient()
+        let! response = http.GetAsync route.Template
+        let! _, json = readJson response
+        Assert.False ran.Value
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode)
+        Assert.Equal("Unauthorized", json.GetProperty("code").GetString())
+    }
+
+[<Fact>]
 let ``real app returns the error shape for unknown api routes`` () =
     task {
         use factory = new WebApplicationFactory<Marker>()

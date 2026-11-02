@@ -23,10 +23,7 @@ type Msg =
     | Deleted of Result<unit, Client.ClientError>
 
 let private load () =
-    Cmd.OfPromise.perform
-        (fun url -> Client.held (Client.get<SavedTripSummary list> url))
-        Routes.myItineraries.Template
-        Loaded
+    Cmd.OfPromise.perform (fun url -> Client.held (Client.get url)) (Route.address Routes.myItineraries) Loaded
 
 let init () =
     {

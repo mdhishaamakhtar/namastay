@@ -1,5 +1,7 @@
 module Namastay.Client.Routing.Page
 
+open Namastay.Shared
+
 /// The pages you browse from, each found by what's in its address.
 [<RequireQualifiedAccess>]
 type Browse =
@@ -31,24 +33,26 @@ type Page =
     | Browse of Browse
     | NotFound
 
+let private (|At|_|) route segments = Route.matches route segments
+
 let parse (segments: string list) =
     match segments with
-    | [] -> Page.Home
-    | [ "journey" ] -> Page.Journey
-    | [ "trip"; token ] -> Page.Trip token
-    | [ "sign-in" ] -> Page.SignIn
-    | [ "my" ] -> Page.MyTrips
-    | [ "account" ] -> Page.Account
-    | [ "privacy" ] -> Page.Reading ReadingPage.Privacy
-    | [ "terms" ] -> Page.Reading ReadingPage.Terms
-    | [ "contact" ] -> Page.Reading ReadingPage.Contact
-    | [ "credits" ] -> Page.Credits
-    | [ "my"; id ] -> Page.MyTrip id
-    | [ "my"; id; "edit" ] -> Page.EditTrip id
-    | [ "explore" ] -> Page.Browse Browse.Places
-    | [ "explore"; slug ] -> Page.Browse(Browse.Region slug)
-    | [ "food" ] -> Page.Browse Browse.Food
-    | [ "food"; slug ] -> Page.Browse(Browse.FoodRegion slug)
-    | [ "feelings"; slug ] -> Page.Browse(Browse.Feeling slug)
-    | [ "dishes"; slug ] -> Page.Browse(Browse.Dish slug)
+    | At Routes.home [] -> Page.Home
+    | At Routes.journey [] -> Page.Journey
+    | At Routes.trip [ token ] -> Page.Trip token
+    | At Routes.signInPage [] -> Page.SignIn
+    | At Routes.myTripsPage [] -> Page.MyTrips
+    | At Routes.accountPage [] -> Page.Account
+    | At Routes.privacyPage [] -> Page.Reading ReadingPage.Privacy
+    | At Routes.termsPage [] -> Page.Reading ReadingPage.Terms
+    | At Routes.contactPage [] -> Page.Reading ReadingPage.Contact
+    | At Routes.creditsPage [] -> Page.Credits
+    | At Routes.myTripPage [ id ] -> Page.MyTrip id
+    | At Routes.editTripPage [ id ] -> Page.EditTrip id
+    | At Routes.explorePage [] -> Page.Browse Browse.Places
+    | At Routes.regionPage [ slug ] -> Page.Browse(Browse.Region slug)
+    | At Routes.foodPage [] -> Page.Browse Browse.Food
+    | At Routes.foodRegionPage [ slug ] -> Page.Browse(Browse.FoodRegion slug)
+    | At Routes.feelingPage [ slug ] -> Page.Browse(Browse.Feeling slug)
+    | At Routes.dishPage [ slug ] -> Page.Browse(Browse.Dish slug)
     | _ -> Page.NotFound

@@ -37,7 +37,7 @@ let private search (data: DataCache) (context: HttpContext) : Task<Result<PlaceS
         elif query = "" then
             return Ok []
         else
-            let! results = Search.run data.Source query
+            let! results = Search.run context.RequestAborted data.Source query
             return Ok results
     }
 

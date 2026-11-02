@@ -3,7 +3,6 @@ module Namastay.Client.Pages.Browse.Parts
 
 open Feliz
 open Namastay.Client.Api
-open Fable.Core
 open Namastay.Client.Components
 open Namastay.Client.Pages.Browse.State
 open Namastay.Client.Routing.Page
@@ -17,9 +16,6 @@ type Plan = {
     Name: string
 }
 
-[<Emit("encodeURIComponent($0)")>]
-let encode (text: string) : string = jsNative
-
 /// Region names read mid-sentence, like "the Himalaya", so a heading capitalises them.
 let heading (text: string) =
     text.Substring(0, 1).ToUpperInvariant() + text.Substring 1
@@ -29,7 +25,7 @@ let shownInCard = 5
 
 let planUrl (plan: Plan) =
     match plan.Scope with
-    | Some scope -> $"{Routes.journey.Template}?scope={scope}&of={plan.Slug}&label={encode plan.Name}"
+    | Some scope -> Route.url [] [ "scope", scope; "of", plan.Slug; "label", plan.Name ] Routes.journey
     | None -> Routes.journey.Template
 
 let planButton (plan: Plan) =

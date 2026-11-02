@@ -48,11 +48,11 @@ type Msg =
 
 let private tripUrl source =
     match source with
-    | Source.Shared token -> Route.url [ "shareToken", token ] [] Routes.getItinerary
-    | Source.Mine id -> Route.url [ "id", id ] [] Routes.getMine
+    | Source.Shared token -> Route.at [ "shareToken", token ] [] Routes.getItinerary
+    | Source.Mine id -> Route.at [ "id", id ] [] Routes.getMine
 
 let private load source =
-    Cmd.OfPromise.perform (fun url -> Client.held (Client.get<SavedTrip> url)) (tripUrl source) Loaded
+    Cmd.OfPromise.perform (fun url -> Client.held (Client.get url)) (tripUrl source) Loaded
 
 let private openFirst (saved: SavedTrip) =
     saved.Trip.Stops |> List.tryHead |> Option.map _.PlaceSlug
@@ -67,14 +67,25 @@ let init source =
     },
     Cmd.batch [ Cmd.ofEffect (fun _ -> Theme.neutral ()); load source ]
 
-let private saveToAccount token =
-    Cmd.OfPromise.perform
-        (fun url -> Client.send<SavedTripSummary> url [ RequestProperties.Method HttpMethod.POST ])
-        (Route.url [ "shareToken", token ] [] Routes.saveItinerary)
-        SavedToAccount
-
 let private applyBase (saved: SavedTrip) =
     Cmd.ofEffect (fun _ -> Theme.ofTrip saved.Trip |> Option.iter Theme.apply)
+
+/// Opens a trip that's just been built, so it needn't be fetched again.
+let opened (saved: SavedTrip) =
+    {
+        Source = Source.Shared saved.ShareToken
+        Trip = Remote.Loaded saved
+        Open = openFirst saved
+        Sharing = Sharing.Idle
+        Problem = None
+    },
+    Cmd.batch [ Cmd.ofEffect (fun _ -> Theme.neutral ()); applyBase saved ]
+
+let private saveToAccount token =
+    Cmd.OfPromise.perform
+        (fun url -> Client.send url [ RequestProperties.Method HttpMethod.POST ])
+        (Route.at [ "shareToken", token ] [] Routes.saveItinerary)
+        SavedToAccount
 
 let private copyLink () : JS.Promise<unit> =
     window?navigator?clipboard?writeText(window.location.href)

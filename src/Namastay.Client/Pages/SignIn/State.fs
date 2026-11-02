@@ -33,7 +33,7 @@ type Msg =
     | Answered of Result<Account, Client.ClientError>
 
 let init () =
-    let saved = Client.seeded<SignInOptions> Routes.signInOptions.Template
+    let saved = Client.seeded (Route.address Routes.signInOptions)
 
     {
         Mode = Mode.SignIn
@@ -46,7 +46,7 @@ let init () =
         UseGoogle = false
         Fields = []
     },
-    Cmd.OfPromise.perform (fun url -> Client.get<SignInOptions> url) Routes.signInOptions.Template OptionsLoaded
+    Cmd.OfPromise.perform Client.get (Route.address Routes.signInOptions) OptionsLoaded
 
 let private submit (model: Model) =
     let credentials = {
@@ -56,10 +56,10 @@ let private submit (model: Model) =
 
     let url =
         match model.Mode with
-        | Mode.SignIn -> Routes.signIn.Template
-        | Mode.SignUp -> Routes.signUp.Template
+        | Mode.SignIn -> Route.address Routes.signIn
+        | Mode.SignUp -> Route.address Routes.signUp
 
-    Cmd.OfPromise.perform (fun body -> Client.post<Credentials, Account> url body) credentials Answered
+    Cmd.OfPromise.perform (fun body -> Client.post url body) credentials Answered
 
 let update msg (model: Model) =
     match msg with

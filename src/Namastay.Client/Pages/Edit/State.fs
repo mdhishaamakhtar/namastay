@@ -61,10 +61,7 @@ type Msg =
     | Saved of Result<EditedTrip, Client.ClientError>
 
 let private load id =
-    Cmd.OfPromise.perform
-        (fun url -> Client.held (Client.get<SavedTrip> url))
-        (Route.url [ "id", id ] [] Routes.getMine)
-        Loaded
+    Cmd.OfPromise.perform (fun url -> Client.held (Client.get url)) (Route.at [ "id", id ] [] Routes.getMine) Loaded
 
 let init id =
     let search, _ = Search.init ()
@@ -124,7 +121,7 @@ let private toEdit (model: Model) : TripEdit = {
 
 let private save (model: Model) =
     Cmd.OfPromise.perform
-        (fun edit -> Client.put<TripEdit, EditedTrip> (Route.url [ "id", model.Id ] [] Routes.editMine) edit)
+        (fun edit -> Client.put (Route.at [ "id", model.Id ] [] Routes.editMine) edit)
         (toEdit model)
         Saved
 

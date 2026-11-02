@@ -70,12 +70,24 @@ let myItineraries: Route<NoBody, SavedTripSummary list> =
 
 let getMine: Route<NoBody, SavedTrip> = Route.get "/api/my/itineraries/{id}"
 
-let editMine: Route<TripEdit, EditedTrip> = {
-    Method = "PUT"
-    Template = "/api/my/itineraries/{id}"
-}
+let editMine: Route<TripEdit, EditedTrip> = Route.put "/api/my/itineraries/{id}"
+let deleteMine: Route<NoBody, NoBody> = Route.delete "/api/my/itineraries/{id}"
 
-let deleteMine: Route<NoBody, NoBody> = {
-    Method = "DELETE"
-    Template = "/api/my/itineraries/{id}"
-}
+/// Personal answers must never be kept, so a new route is personal until it's listed here.
+let isPublicAnswer (url: string) =
+    let path = (url.Split '?')[0]
+
+    let isUnder (route: Route<NoBody, 'Response>) =
+        let prefix = (route.Template.Split '{')[0]
+        path = prefix.TrimEnd '/' || path.StartsWith prefix
+
+    isUnder searchPlaces
+    || isUnder feelings
+    || isUnder landing
+    || isUnder directory
+    || isUnder food
+    || isUnder credits
+    || isUnder regionDetail
+    || isUnder dishDetail
+    || isUnder journeyStart
+    || path = signInOptions.Template
