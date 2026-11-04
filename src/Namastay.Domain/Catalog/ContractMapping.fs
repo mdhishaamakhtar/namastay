@@ -1,6 +1,7 @@
 /// The one place where domain types and API contract types meet.
 module Namastay.Domain.Catalog.ContractMapping
 
+open Namastay.Shared
 open Namastay.Shared.Contracts
 
 let access =
@@ -64,3 +65,91 @@ let costLevel =
     | BudgetLevel.Budget -> CostLevel.Budget
     | BudgetLevel.Mid -> CostLevel.Mid
     | BudgetLevel.Luxury -> CostLevel.Luxury
+
+let private interestPrefix = "interest:"
+
+/// The card's strongest interest, named. Ties go to the first name alphabetically.
+let private cardInterest (interests: Interest list) (card: Card) =
+    card.Signals
+    |> List.choose (fun signal ->
+        interests
+        |> List.tryFind (fun interest -> signal.Signal = interestPrefix + interest.Slug)
+        |> Option.map (fun interest -> interest.Name, signal.Weight))
+    |> List.sortBy (fun (name, weight) -> -weight, name)
+    |> List.tryHead
+    |> Option.map fst
+
+let private placeColours (catalog: Catalog) (place: Place) =
+    catalog.Families
+    |> List.tryFind (fun family -> family.Slug = place.FamilySlug)
+    |> Option.map (fun family -> {
+        Deep = family.Deep
+        Mid = family.Mid
+        Pale = family.Pale
+        TextOnDeep = family.TextOnDeep
+    })
+
+/// A photo fills the card and the illustration becomes its small mark.
+/// Without a photo, the illustration fills the card.
+let private journeyCard (catalog: Catalog) (known: Set<string>) (card: Card) : JourneyCard =
+    let place =
+        card.PlaceSlug
+        |> Option.bind (fun slug -> catalog.Places |> List.tryFind (fun item -> item.Slug = slug))
+
+    let photo =
+        card.PhotoSlug
+        |> Option.bind (fun slug -> catalog.Photos |> List.tryFind (fun item -> item.Slug = slug))
+
+    let mark =
+        card.IllustrationSlug
+        |> Option.bind (fun slug -> catalog.Illustrations |> List.tryFind (fun item -> item.Slug = slug))
+
+    let region =
+        place
+        |> Option.bind (fun item ->
+            catalog.Clusters
+            |> List.tryFind (fun cluster -> cluster.Slug = item.ClusterSlug))
+        |> Option.map _.RegionSlug
+
+    {
+        Slug = card.Slug
+        Title = card.Title
+        Line = card.Line
+        IsStart = card.IsStart
+        ImageUrl =
+            photo
+            |> Option.map _.FilePath
+            |> Option.orElse (mark |> Option.map _.FilePath)
+            |> Option.map Routes.mediaUrl
+        ImageAlt =
+            match photo with
+            | Some found -> Some found.Alt
+            | None -> mark |> Option.map _.Alt
+        ImageCredit = photo |> Option.map _.Credit
+        MarkUrl =
+            if photo.IsSome then
+                mark |> Option.map (_.FilePath >> Routes.mediaUrl)
+            else
+                None
+        Interest = cardInterest catalog.Interests card
+        Colours = place |> Option.bind (placeColours catalog)
+        Branches =
+            card.Branches
+            |> List.filter (fun branch -> known.Contains branch.ToCard)
+            |> List.sortBy (fun branch -> -branch.Priority, branch.ToCard)
+            |> List.map (fun branch -> {
+                OnAnswer = branch.OnAnswer
+                ToCard = branch.ToCard
+                Priority = branch.Priority
+            })
+        Place = card.PlaceSlug
+        Region = region
+    }
+
+/// The swipe deck as the API serves it, from a catalog alone.
+let journeyGraph (catalog: Catalog) : JourneyGraph =
+    let known = catalog.Cards |> List.map _.Slug |> Set.ofList
+
+    {
+        Cards = catalog.Cards |> List.sortBy _.Slug |> List.map (journeyCard catalog known)
+    }

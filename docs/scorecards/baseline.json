@@ -1,0 +1,104 @@
+[
+  {
+    "Group": "variety",
+    "Name": "first cards, open deck",
+    "Value": 1,
+    "Better": "Higher"
+  },
+  {
+    "Group": "variety",
+    "Name": "distinct trips %",
+    "Value": 74.66666666666667,
+    "Better": "Higher"
+  },
+  {
+    "Group": "variety",
+    "Name": "places reached %",
+    "Value": 97.05882352941177,
+    "Better": "Higher"
+  },
+  {
+    "Group": "variety",
+    "Name": "places that open a trip",
+    "Value": 58,
+    "Better": "Higher"
+  },
+  {
+    "Group": "variety",
+    "Name": "top place in trips %",
+    "Value": 44.333333333333336,
+    "Better": "Lower"
+  },
+  {
+    "Group": "direction",
+    "Name": "top interest in trip %",
+    "Value": 73.75,
+    "Better": "Higher"
+  },
+  {
+    "Group": "direction",
+    "Name": "every interest in trip %",
+    "Value": 54.166666666666664,
+    "Better": "Higher"
+  },
+  {
+    "Group": "direction",
+    "Name": "days on taste %",
+    "Value": 60.07936507936507,
+    "Better": "Higher"
+  },
+  {
+    "Group": "direction",
+    "Name": "scope cards shown %",
+    "Value": 51.84404636459431,
+    "Better": "Higher"
+  },
+  {
+    "Group": "direction",
+    "Name": "passed place in trip %",
+    "Value": 48,
+    "Better": "Lower"
+  },
+  {
+    "Group": "comfort",
+    "Name": "travel hours per trip",
+    "Value": 20.77155555555554,
+    "Better": "Lower"
+  },
+  {
+    "Group": "comfort",
+    "Name": "longest leg hours",
+    "Value": 8.939777777777776,
+    "Better": "Lower"
+  },
+  {
+    "Group": "comfort",
+    "Name": "avoid-month stops per trip",
+    "Value": 0.6266666666666667,
+    "Better": "Lower"
+  },
+  {
+    "Group": "comfort",
+    "Name": "free days per trip",
+    "Value": 1.6866666666666668,
+    "Better": "Lower"
+  },
+  {
+    "Group": "comfort",
+    "Name": "city twice %",
+    "Value": 15,
+    "Better": "Zero"
+  },
+  {
+    "Group": "comfort",
+    "Name": "swaps per trip",
+    "Value": 0.25666666666666665,
+    "Better": "Lower"
+  },
+  {
+    "Group": "comfort",
+    "Name": "trips not built",
+    "Value": 0,
+    "Better": "Zero"
+  }
+]

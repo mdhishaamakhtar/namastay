@@ -11,6 +11,12 @@
     <Compile Include="Catalog/ContractMappingTests.fs" />
     <Compile Include="Trip/TripBuilderTests.fs" />
     <Compile Include="Trip/EditingTests.fs" />
+    <Compile Include="Trip/ScopeTests.fs" />
+    <Compile Include="Catalog/JourneyGraphTests.fs" />
+    <Compile Include="Bench/PersonasTests.fs" />
+    <Compile Include="Bench/SwipersTests.fs" />
+    <Compile Include="Bench/SessionTests.fs" />
+    <Compile Include="Bench/MetricsTests.fs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -26,6 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../../src/Namastay.Bench/Namastay.Bench.fsproj" />
     <ProjectReference Include="../../src/Namastay.Domain/Namastay.Domain.fsproj" />
     <ProjectReference Include="../../src/Namastay.Shared/Namastay.Shared.fsproj" />
   </ItemGroup>
