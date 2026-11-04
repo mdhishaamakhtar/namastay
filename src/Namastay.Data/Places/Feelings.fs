@@ -3,11 +3,10 @@ module Namastay.Data.Places.Feelings
 open System.Threading.Tasks
 open Npgsql
 open Namastay.Data.Places.Rows
+open Namastay.Domain.Trip
 open Namastay.Shared
 open Namastay.Shared.Contracts
 
-/// How strongly a place must suit an interest to be offered under it.
-let private strongFit = 3
 let private namedPlaces = 3
 let private shownPlaces = 12
 
@@ -44,7 +43,7 @@ let private toFeeling (rows: FeelingRow list) : Feeling = {
 let all (source: NpgsqlDataSource) : Task<Feeling list> =
     task {
         let! rows =
-            Namastay.Data.Sql.query<FeelingRow> source feelingsSql {| strongFit = strongFit |}
+            Namastay.Data.Sql.query<FeelingRow> source feelingsSql {| strongFit = Scope.strongFit |}
 
         return
             rows
@@ -69,7 +68,7 @@ let places (source: NpgsqlDataSource) (slug: string) : Task<PlaceSummary list> =
         let! rows =
             Namastay.Data.Sql.query<SummaryRow> source placesSql {|
                 slug = slug
-                strongFit = strongFit
+                strongFit = Scope.strongFit
                 limit = shownPlaces
             |}
 

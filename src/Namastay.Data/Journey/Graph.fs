@@ -27,6 +27,20 @@ type private CardRow = {
 }
 
 [<CLIMutable>]
+type private SignalRow = {
+    CardSlug: string
+    Slug: string
+    Weight: int
+}
+
+[<CLIMutable>]
+type private InterestRow = {
+    Slug: string
+    Name: string
+    ParentSlug: string option
+}
+
+[<CLIMutable>]
 type private BranchRow = {
     FromCard: string
     OnAnswer: bool
@@ -66,7 +80,7 @@ let private colours (row: CardRow) =
 
 /// A photo fills the card and the illustration becomes its small mark.
 /// Without a photo, the illustration fills the card.
-let private toCard (branches: BranchRow list) (row: CardRow) : JourneyCard =
+let private toCard (branches: BranchRow list) (signals: SignalRow list) (row: CardRow) : JourneyCard =
     let hasPhoto = row.PhotoPath.IsSome
 
     {
@@ -83,6 +97,13 @@ let private toCard (branches: BranchRow list) (row: CardRow) : JourneyCard =
             else
                 None
         Interest = row.Interest
+        Interests =
+            signals
+            |> List.filter (fun signal -> signal.CardSlug = row.Slug)
+            |> List.map (fun signal -> {
+                Slug = signal.Slug
+                Weight = signal.Weight
+            })
         Colours = colours row
         Place = row.PlaceSlug
         Region = row.Region
@@ -108,7 +129,25 @@ let load (source: NpgsqlDataSource) : Task<JourneyGraph> =
                  order by priority desc, to_card"
                 null
 
+        let! signals =
+            query<SignalRow>
+                source
+                "select signal.card_slug, i.slug, signal.weight from card_signals signal
+                 join interests i on signal.signal = 'interest:' || i.slug
+                 order by signal.weight desc, i.name"
+                null
+
+        let! interests =
+            query<InterestRow> source "select slug, name, parent_slug from interests order by slug" null
+
         return {
-            Cards = cards |> List.map (toCard branches)
+            Cards = cards |> List.map (toCard branches signals)
+            Interests =
+                interests
+                |> List.map (fun interest -> {
+                    Slug = interest.Slug
+                    Name = interest.Name
+                    Parent = interest.ParentSlug
+                })
         }
     }

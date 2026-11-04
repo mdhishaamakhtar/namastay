@@ -45,23 +45,59 @@ let private countOf (value: string option) (selector: JourneyCard -> string opti
     |> List.filter (fun card -> value.IsSome && selector card = value)
     |> List.length
 
-/// A small steady nudge from the slug, so near ties don't always fall in the same order.
-let private nudge (slug: string) = (slug |> Seq.sumBy int) % 5
+/// A start card beats any shuffle, so the opening is always drawn from the curated starts.
+let private startBonus = 12
+let private openingShuffle = 10
+let private leaningShuffle = 5
+
+/// Each visit's own shuffle of near ties. The same seed gives the same deck, so it can be tested.
+let private shuffle (seed: int) (range: int) (slug: string) =
+    let visit = (seed % 1009 + 1009) % 1009 + 1
+    let letters = (slug |> Seq.sumBy int) % 1013 + 1
+    visit * letters % 1021 % range
 
 /// Rewards whatever the visitor hasn't seen yet.
 let private freshness (shown: JourneyCard list) (card: JourneyCard) =
-    let start = if card.IsStart then 2 else 0
+    let start = if card.IsStart then startBonus else 0
 
     start
     - 20 * countOf card.Region _.Region shown
     - 10 * countOf card.Interest _.Interest shown
     - 30 * countOf card.Place _.Place shown
 
-/// Rewards what they've liked, without letting one thing take over.
+/// What the same interest is worth between two cards, and what a parent or child is.
+let private sameKin = 2
+let private closeKin = 1
+
+/// How closely two interests are related: the same, or parent and child.
+let private kinship (interests: JourneyInterest list) (one: string) (other: string) =
+    if one = other then
+        sameKin
+    elif
+        interests
+        |> List.exists (fun interest ->
+            (interest.Slug = one && interest.Parent = Some other)
+            || (interest.Slug = other && interest.Parent = Some one))
+    then
+        closeKin
+    else
+        0
+
+/// How much a card's strongest interest has in common with everything another card speaks for.
+let private shared (interests: JourneyInterest list) (card: JourneyCard) (other: JourneyCard) =
+    card.Interests
+    |> List.truncate 1
+    |> List.sumBy (fun mine ->
+        other.Interests
+        |> List.sumBy (fun theirs -> kinship interests mine.Slug theirs.Slug * min mine.Weight theirs.Weight))
+
+/// Rewards what they've liked and steers away from what they've passed, without
+/// letting one thing take over. A pass on a place counts far more than a like.
 let private leaning (graph: JourneyGraph) (answers: CardAnswer list) (shown: JourneyCard list) (card: JourneyCard) =
     let liked = likedOf graph answers
     let passed = shown |> List.except liked
     let recent = shown |> List.rev |> List.truncate 2
+    let inCommon = shared graph.Interests card
 
     let followsLike =
         liked
@@ -70,18 +106,21 @@ let private leaning (graph: JourneyGraph) (answers: CardAnswer list) (shown: Jou
             |> List.exists (fun branch -> branch.OnAnswer && branch.ToCard = card.Slug))
 
     (if followsLike then 12 else 0)
-    + 6 * countOf card.Interest _.Interest liked
+    + List.sumBy inCommon liked
     + 3 * countOf card.Region _.Region liked
-    - 4 * countOf card.Interest _.Interest passed
-    - 2 * countOf card.Interest _.Interest recent
-    - 8 * countOf card.Place _.Place shown
+    - 2 * List.sumBy inCommon passed / 3
+    - 3 * countOf card.Region _.Region passed
+    - 2 * List.sumBy inCommon recent / 3
+    - 4 * countOf card.Place _.Place liked
+    - 15 * countOf card.Place _.Place passed
 
 let private isWildcard (answered: int) =
     answered % wildcardEvery = wildcardEvery - 1
 
 /// The next card. The first few show how varied India is, then the deck leans towards
 /// what the visitor likes, and every so often it offers something different.
-let next (graph: JourneyGraph) (answers: CardAnswer list) =
+/// The seed is the visit's own, so two visitors don't open with the same cards.
+let next (seed: int) (graph: JourneyGraph) (answers: CardAnswer list) =
     let shown = shownCards graph answers
     let seen = answers |> List.map _.Card
     let last = shown |> List.tryLast |> Option.bind _.Place
@@ -99,9 +138,9 @@ let next (graph: JourneyGraph) (answers: CardAnswer list) =
 
     let score card =
         if answers.Length < openingCards || isWildcard answers.Length then
-            freshness shown card + nudge card.Slug
+            freshness shown card + shuffle seed openingShuffle card.Slug
         else
-            leaning graph answers shown card + nudge card.Slug
+            leaning graph answers shown card + shuffle seed leaningShuffle card.Slug
 
     if answers.Length >= maxCards then
         None

@@ -45,6 +45,8 @@ type Model = {
     /// What this trip is limited to, and how to say so.
     Scope: TripScope option
     ScopeName: string option
+    /// This visit's own shuffle of the deck.
+    Seed: int
 }
 
 type Msg =
@@ -99,6 +101,7 @@ let init () =
         Furthest = 0
         Scope = scopeInAddress ()
         ScopeName = Browser.queryParam "label"
+        Seed = System.Random().Next()
     },
     Cmd.batch [ Cmd.ofEffect (fun _ -> Theme.stage None); loadGraph () ]
 
@@ -158,7 +161,7 @@ let isChosen (plan: Plan) choice =
 let private decide (graph: JourneyGraph) liked (model: Model) =
     let slug = List.head model.Queue
     let answers = model.Answers @ [ { Card = slug; Liked = liked } ]
-    let queue = JourneyPath.next graph answers |> Option.toList
+    let queue = JourneyPath.next model.Seed graph answers |> Option.toList
 
     let step = if queue.IsEmpty then Step.Asking 0 else Step.Swiping
 
@@ -189,7 +192,7 @@ let update msg (model: Model) =
     match msg, model.Graph, model.Step with
     | LoadGraph, _, _ -> { model with Graph = Remote.Loading }, loadGraph ()
     | GraphLoaded(Ok graph), _, _ ->
-        let queue = JourneyPath.next graph [] |> Option.toList
+        let queue = JourneyPath.next model.Seed graph [] |> Option.toList
 
         {
             model with

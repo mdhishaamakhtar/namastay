@@ -7,6 +7,7 @@ A free trip planner for first-time foreign visitors to India. F# everywhere: ASP
 - `make up` starts Postgres (port 5433) and RustFS. `make dev` runs the API on 5080. `make client` runs the site on 5173.
 - `make test-all` runs every suite. `make check-all` adds format, lint and coverage.
 - `make import`, `make media-sync` and `make media-prune` load `data/`.
+- `make bench` scores the planner against `docs/scorecards/baseline.json`. See `docs/scorecard.md`. Any change to the deck or the builder shows its scorecard diff in the PR.
 - After a client change, `cd src/Namastay.Client && dotnet fable . -o build` shows compile errors.
 
 ## Layout

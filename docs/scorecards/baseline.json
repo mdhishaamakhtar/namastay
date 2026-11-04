@@ -1,0 +1,104 @@
+[
+  {
+    "Group": "variety",
+    "Name": "first cards, open deck",
+    "Value": 15,
+    "Better": "Higher"
+  },
+  {
+    "Group": "variety",
+    "Name": "distinct trips %",
+    "Value": 92,
+    "Better": "Higher"
+  },
+  {
+    "Group": "variety",
+    "Name": "places reached %",
+    "Value": 97.05882352941177,
+    "Better": "Higher"
+  },
+  {
+    "Group": "variety",
+    "Name": "places that open a trip",
+    "Value": 61,
+    "Better": "Higher"
+  },
+  {
+    "Group": "variety",
+    "Name": "top place in trips %",
+    "Value": 27.666666666666668,
+    "Better": "Lower"
+  },
+  {
+    "Group": "direction",
+    "Name": "top interest in trip %",
+    "Value": 77.91666666666667,
+    "Better": "Higher"
+  },
+  {
+    "Group": "direction",
+    "Name": "every interest in trip %",
+    "Value": 61.666666666666664,
+    "Better": "Higher"
+  },
+  {
+    "Group": "direction",
+    "Name": "days on taste %",
+    "Value": 66.25198412698414,
+    "Better": "Higher"
+  },
+  {
+    "Group": "direction",
+    "Name": "scope cards shown %",
+    "Value": 72.32845894263217,
+    "Better": "Higher"
+  },
+  {
+    "Group": "direction",
+    "Name": "passed place in trip %",
+    "Value": 26,
+    "Better": "Lower"
+  },
+  {
+    "Group": "comfort",
+    "Name": "travel hours per trip",
+    "Value": 21.816444444444446,
+    "Better": "Lower"
+  },
+  {
+    "Group": "comfort",
+    "Name": "longest leg hours",
+    "Value": 7.683166666666661,
+    "Better": "Lower"
+  },
+  {
+    "Group": "comfort",
+    "Name": "avoid-month stops per trip",
+    "Value": 0.73,
+    "Better": "Lower"
+  },
+  {
+    "Group": "comfort",
+    "Name": "free days per trip",
+    "Value": 1.38,
+    "Better": "Lower"
+  },
+  {
+    "Group": "comfort",
+    "Name": "city twice %",
+    "Value": 2.3333333333333335,
+    "Better": "Zero"
+  },
+  {
+    "Group": "comfort",
+    "Name": "swaps per trip",
+    "Value": 0.26,
+    "Better": "Lower"
+  },
+  {
+    "Group": "comfort",
+    "Name": "trips not built",
+    "Value": 0,
+    "Better": "Zero"
+  }
+]

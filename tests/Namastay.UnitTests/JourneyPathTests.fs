@@ -1,5 +1,6 @@
 module Namastay.UnitTests.JourneyPathTests
 
+open FsCheck.Xunit
 open Xunit
 open Namastay.Shared
 open Namastay.Shared.Contracts
@@ -21,6 +22,13 @@ let card slug start interest deep branches = {
     ImageCredit = None
     MarkUrl = None
     Interest = interest
+    Interests =
+        interest
+        |> Option.map (fun name -> {
+            Slug = name.ToLowerInvariant()
+            Weight = 3
+        })
+        |> Option.toList
     Colours = deep |> Option.map colours
     Branches = branches
     Place = Some slug
@@ -41,6 +49,7 @@ let graph = {
         card "d" false (Some "Mountains") (Some "#111") []
         card "e" false (Some "Faith") (Some "#333") []
     ]
+    Interests = []
 }
 
 let answered (slugs: (string * bool) list) =
@@ -62,6 +71,7 @@ let ``a level race keeps the brand colour`` () =
         Cards = [
             for index in 1..6 -> card $"c{index}" false None (Some(if index % 2 = 0 then "#111" else "#222")) []
         ]
+        Interests = []
     }
 
     let answers = answered [ for index in 1..6 -> $"c{index}", true ]
@@ -79,6 +89,7 @@ let ``a new leader takes over`` () =
             for index in 1..3 -> card $"m{index}" false None (Some "#111") []
             for index in 1..6 -> card $"f{index}" false None (Some "#333") []
         ]
+        Interests = []
     }
 
     let answers =
@@ -98,6 +109,7 @@ let ``mix ranks liked interests as shares of the strongest`` () =
 let ``mix keeps only the top three`` () =
     let world = {
         Cards = [ for name in [ "A"; "B"; "C"; "D" ] -> card name false (Some name) None [] ]
+        Interests = []
     }
 
     let answers = answered [ for name in [ "A"; "B"; "C"; "D" ] -> name, true ]
@@ -120,27 +132,56 @@ let private india = {
                 for place in [ "one"; "two" ] do
                     travelCard $"{region}-{tag}-{place}" $"{region}-{place}" region interest
     ]
+    Interests = []
 }
 
 [<TailCall>]
-let rec private answerCards graph (decide: JourneyCard -> bool) limit answers shown =
-    match JourneyPath.next graph answers with
+let rec private answerCards seed graph (decide: JourneyCard -> bool) limit answers shown =
+    match JourneyPath.next seed graph answers with
     | Some slug when List.length answers < limit ->
         let card = graph.Cards |> List.find (fun item -> item.Slug = slug)
-        answerCards graph decide limit (answers @ [ { Card = slug; Liked = decide card } ]) (shown @ [ card ])
+        answerCards seed graph decide limit (answers @ [ { Card = slug; Liked = decide card } ]) (shown @ [ card ])
     | _ -> shown
 
-let private play graph decide limit = answerCards graph decide limit [] []
+let private playSeeded seed graph decide limit =
+    answerCards seed graph decide limit [] []
+
+let private play graph decide limit = playSeeded 0 graph decide limit
+
+[<Property>]
+let ``the opening cards all come from different regions whatever the seed`` (seed: int) =
+    let regions = playSeeded seed india (fun _ -> false) 6 |> List.choose _.Region
+    regions |> List.distinct |> List.length = 6
+
+[<Property>]
+let ``the opening mixes interests whatever the seed`` (seed: int) =
+    let interests = playSeeded seed india (fun _ -> false) 4 |> List.choose _.Interest
+    interests |> List.distinct |> List.length = 2
 
 [<Fact>]
-let ``the opening cards all come from different regions`` () =
-    let regions = play india (fun _ -> false) 6 |> List.choose _.Region
-    Assert.Equal(6, regions |> List.distinct |> List.length)
+let ``different visits open with different cards`` () =
+    let openers =
+        [ 1..20 ]
+        |> List.choose (fun seed -> JourneyPath.next seed india [])
+        |> List.distinct
+
+    Assert.True(openers.Length >= 4, $"only {openers.Length} different openers")
 
 [<Fact>]
-let ``the opening mixes interests`` () =
-    let interests = play india (fun _ -> false) 4 |> List.choose _.Interest
-    Assert.Equal(2, interests |> List.distinct |> List.length)
+let ``the opening is drawn from the start cards`` () =
+    let starts = {
+        india with
+            Cards =
+                india.Cards
+                |> List.map (fun item -> {
+                    item with
+                        IsStart = item.Slug.EndsWith "-one"
+                })
+    }
+
+    for seed in 1..20 do
+        let opening = playSeeded seed starts (fun _ -> false) 6
+        Assert.All(opening, (fun card -> Assert.True card.IsStart))
 
 [<Fact>]
 let ``the same place never comes twice in a row`` () =
@@ -156,6 +197,7 @@ let ``a place appears no more than twice unless it runs out of others`` () =
             for index in 1..12 do
                 travelCard $"other-{index}" $"place-{index}" $"region-{index}" "Food"
         ]
+        Interests = []
     }
 
     let shown = play many (fun _ -> true) 10 |> List.choose _.Place
@@ -184,10 +226,12 @@ let ``a liked card brings its follow-up soon after the opening`` () =
                 if item.Slug = "north-a-one" then
                     {
                         item with
+                            IsStart = true
                             Branches = [ onLike "coast-b-two" 1 ]
                     }
                 else
                     item)
+        Interests = []
     }
 
     let answers = play linked (fun _ -> true) 9 |> List.map _.Slug
@@ -199,8 +243,8 @@ let ``a card is never shown twice`` () =
     Assert.Equal(shown.Length, shown |> List.distinct |> List.length)
 
 [<Fact>]
-let ``the same answers always give the same next card`` () =
-    Assert.Equal(JourneyPath.next india [], JourneyPath.next india [])
+let ``the same seed and answers always give the same next card`` () =
+    Assert.Equal(JourneyPath.next 7 india [], JourneyPath.next 7 india [])
 
 [<Fact>]
 let ``journey ends at the card limit`` () =
@@ -212,7 +256,8 @@ let ``journey ends when cards run out`` () =
         2,
         (play
             {
-                Cards = india.Cards |> List.truncate 2
+                india with
+                    Cards = india.Cards |> List.truncate 2
             }
             (fun _ -> true)
             100)
@@ -237,3 +282,56 @@ let ``the cheer holds between milestones`` () =
 [<Fact>]
 let ``the last cards say how close the end is`` () =
     Assert.Equal(Some "Just a few to go.", JourneyPath.cheer (JourneyPath.maxCards - 3))
+
+let private withTree = {
+    india with
+        Cards =
+            india.Cards
+            @ [
+                travelCard "coast-quiet" "coast-three" "coast" "Quiet beaches"
+                travelCard "coast-party" "coast-four" "coast" "Party beaches"
+                travelCard "hills-beach" "hills-three" "hills" "Beaches"
+            ]
+        Interests = [
+            {
+                Slug = "beaches"
+                Name = "Beaches"
+                Parent = None
+            }
+            {
+                Slug = "quiet beaches"
+                Name = "Quiet beaches"
+                Parent = Some "beaches"
+            }
+            {
+                Slug = "party beaches"
+                Name = "Party beaches"
+                Parent = Some "beaches"
+            }
+        ]
+}
+
+[<Fact>]
+let ``a liked parent interest pulls in its children`` () =
+    let likes (card: JourneyCard) = card.Slug = "hills-beach"
+    let shown = playSeeded 3 withTree likes 16 |> List.map _.Slug
+    let quiet = List.findIndex ((=) "coast-quiet") shown
+    let party = List.findIndex ((=) "coast-party") shown
+    Assert.True(max quiet party < 12, $"children came at {quiet} and {party}")
+
+[<Fact>]
+let ``passing a place twice keeps its other cards away`` () =
+    let agra = {
+        india with
+            Cards =
+                india.Cards
+                @ [ for index in 1..3 -> travelCard $"taj-{index}" "agra" "north" "Faith" ]
+    }
+
+    let passesAgra (card: JourneyCard) = card.Place <> Some "agra"
+
+    let shown =
+        playSeeded 5 agra passesAgra 20
+        |> List.filter (fun card -> card.Place = Some "agra")
+
+    Assert.True(shown.Length <= 2, $"agra was shown {shown.Length} times")

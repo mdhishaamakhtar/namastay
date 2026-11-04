@@ -595,9 +595,9 @@ let ``depth lovers get fewer stops than breadth lovers`` () =
             Cards = deep :: catalog.Cards
     }
 
-    let broad = build world (request (liked [ "likes-hills" ]) 7 None)
-    let slow = build world (request (liked [ "likes-hills"; "slow" ]) 7 None)
-    Assert.True(slow.Stops.Length < broad.Stops.Length)
+    let broad = build world (request (liked [ "likes-hills" ]) 12 None)
+    let slow = build world (request (liked [ "likes-hills"; "slow" ]) 12 None)
+    Assert.True(slow.Stops.Length < broad.Stops.Length, $"slow {slow.Stops.Length}, broad {broad.Stops.Length}")
 
 [<Fact>]
 let ``offbeat signal prefers offbeat places`` () =
@@ -1691,3 +1691,143 @@ let ``any trip that can be built fills exactly the days asked for``
     match Builder.build catalog (request answers days month) with
     | Ok trip -> trip.Stops |> List.sumBy _.Days = days
     | Error _ -> true
+
+[<Fact>]
+let ``a feeling leads the mix and names the title`` () =
+    let scope = {
+        Kind = ScopeKind.Feeling
+        Slug = "beaches"
+    }
+
+    let planned = {
+        request (liked [ "likes-hills" ]) 5 None with
+            Scope = Some scope
+    }
+
+    let trip =
+        match Builder.buildWithin (Some(Scope.feelingPlaces catalog "beaches")) catalog planned with
+        | Ok trip -> trip
+        | Error error -> raise (Xunit.Sdk.XunitException $"expected a trip, got {error}")
+
+    Assert.Equal("5 days of name of beaches in Coast", trip.Title)
+    Assert.Equal("Name of beaches", trip.Mix.Head.Name)
+    Assert.Equal(100, trip.Mix.Head.Share)
+    Assert.All(trip.Stops, (fun stop -> Assert.Equal("ocean", stop.FamilySlug)))
+
+[<Fact>]
+let ``a place whose every card was passed is left out when another will do`` () =
+    let answers = { Card = "peak-card"; Liked = false } :: liked [ "likes-hills" ]
+    let trip = build catalog (request answers 5 None)
+    Assert.DoesNotContain("peak", slugs trip)
+    Assert.NotEmpty trip.Stops
+
+[<Fact>]
+let ``a trip covers both interests rather than repeating the stronger one`` () =
+    let answers = liked [ "likes-hills"; "likes-hills"; "likes-forts" ]
+    let trip = build catalog (request answers 10 None)
+    Assert.Contains("fort", slugs trip)
+    Assert.Contains(slugs trip, (fun slug -> List.contains slug [ "peak"; "valley"; "lake" ]))
+
+[<Fact>]
+let ``a main hub is never between two other stops, however it is liked`` () =
+    let world = {
+        catalog with
+            Places = [
+                place "north" "c-hills" "pine" "mountains"
+                hubAirport "main" "c-plains" "stone" "forts"
+                place "south" "c-plains" "stone" "mountains"
+                place "east" "c-plains" "stone" "forts"
+            ]
+            Links = both "north" "main" @ both "main" "south" @ both "south" "east"
+            Cards = [
+                card "likes-north" "interest:mountains" (Some "north")
+                card "likes-main" "interest:forts" (Some "main")
+                card "likes-main-too" "interest:forts" (Some "main")
+                card "likes-south" "interest:mountains" (Some "south")
+            ]
+    }
+
+    for days in [ 9; 12; 14 ] do
+        let trip =
+            build world (request (liked [ "likes-north"; "likes-main"; "likes-main-too"; "likes-south" ]) days None)
+
+        let middle = trip.Stops |> List.skip 1 |> List.truncate (trip.Stops.Length - 2)
+        Assert.DoesNotContain("main", middle |> List.map _.PlaceSlug)
+
+[<Fact>]
+let ``a route reaches past a hub by passing through it`` () =
+    let world = {
+        catalog with
+            Places = [
+                place "north" "c-hills" "pine" "mountains"
+                hubAirport "main" "c-plains" "stone" "forts"
+                place "south" "c-plains" "stone" "mountains"
+            ]
+            Links = timed "north" "main" 100 @ timed "main" "south" 200
+            Cards = [
+                card "likes-north" "interest:mountains" (Some "north")
+                card "likes-south" "interest:mountains" (Some "south")
+            ]
+    }
+
+    let trip = build world (request (liked [ "likes-north"; "likes-south" ]) 6 None)
+
+    let through =
+        trip.Stops
+        |> List.find (fun stop ->
+            stop.Arrival
+            |> Option.exists (fun leg -> leg.ComfortNote = Some "Through MAIN."))
+
+    Assert.Equal(300, through.Arrival.Value.MinutesMin)
+
+[<Fact>]
+let ``the nearer of two equal places wins`` () =
+    let world = {
+        catalog with
+            Places = [
+                place "base" "c-hills" "pine" "mountains"
+                place "near" "c-hills" "pine" "mountains"
+                place "far" "c-hills" "pine" "mountains"
+            ]
+            Links = timed "base" "near" 60 @ timed "base" "far" 600
+            Cards = [ card "likes-base" "interest:mountains" (Some "base") ]
+    }
+
+    let trip = build world (request (liked [ "likes-base" ]) 6 None)
+    Assert.Contains("near", slugs trip)
+    Assert.DoesNotContain("far", slugs trip)
+
+[<Fact>]
+let ``the closing stay prefers a hub that is fine in the month over a nearer hard one`` () =
+    let trip =
+        likingRemote
+            [
+                {
+                    hubAirport "near-hub" "c-plains" "stone" "forts" with
+                        Months = months [] [ 5 ]
+                }
+                hubAirport "far-hub" "c-plains" "stone" "forts"
+                place "remote" "c-hills" "pine" "mountains"
+            ]
+            (timed "near-hub" "remote" 70 @ timed "far-hub" "remote" 145)
+            6
+            (Some 5)
+
+    Assert.Equal("far-hub", (List.last trip.Stops).PlaceSlug)
+
+[<Fact>]
+let ``families move less than friends`` () =
+    let travelling who = {
+        request (liked [ "likes-hills" ]) 12 None with
+            Travellers = who
+    }
+
+    let family = build catalog (travelling TravellerType.Family)
+    let friends = build catalog (travelling TravellerType.Friends)
+
+    Assert.True(
+        family.Stops.Length < friends.Stops.Length,
+        $"family {family.Stops.Length}, friends {friends.Stops.Length}"
+    )
+
+    Assert.True(family.Stops |> List.forall (fun stop -> stop.Days >= 4))

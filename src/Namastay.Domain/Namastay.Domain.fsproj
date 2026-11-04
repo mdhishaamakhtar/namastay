@@ -11,6 +11,7 @@
     <Compile Include="Catalog/Catalog.fs" />
     <Compile Include="Catalog/ContractMapping.fs" />
     <Compile Include="Catalog/Validation.fs" />
+    <Compile Include="Trip/Scope.fs" />
     <Compile Include="Trip/Profile.fs" />
     <Compile Include="Trip/Scoring.fs" />
     <Compile Include="Trip/Routing.fs" />

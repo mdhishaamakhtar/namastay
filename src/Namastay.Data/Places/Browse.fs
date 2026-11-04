@@ -4,13 +4,11 @@ module Namastay.Data.Places.Browse
 open System.Threading.Tasks
 open Npgsql
 open Namastay.Data
+open Namastay.Domain.Trip
 open Namastay.Shared
 open Namastay.Shared.Contracts
 
 let private plainColour = "#3A2C0A"
-
-/// How strongly a place must suit a feeling to be listed under it.
-let private strongFit = 3
 
 [<CLIMutable>]
 type private HeadRow = {
@@ -102,7 +100,10 @@ let feeling (source: NpgsqlDataSource) (slug: string) : Task<BrowsePage option> 
                  join colour_families f on f.slug = p.family_slug
                  where pi.interest_slug = @slug and pi.weight >= @strongFit and p.published and p.retired_at is null
                  order by pi.weight desc, p.name"
-                {| slug = slug; strongFit = strongFit |}
+                {|
+                    slug = slug
+                    strongFit = Scope.strongFit
+                |}
 
         return pageFrom (List.tryHead heads) (rows |> List.map toListing)
     }

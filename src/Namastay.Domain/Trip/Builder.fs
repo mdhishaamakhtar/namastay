@@ -62,8 +62,7 @@ let private candidates (catalog: Catalog) profile (allowed: Set<string> option) 
 
 let private rank profile request (places: Place list) =
     places
-    |> List.map (fun place -> place, Scoring.total profile request place)
-    |> List.sortBy (fun (place, score) -> -score, place.Slug)
+    |> List.sortBy (fun place -> -(Scoring.total profile request place), place.Slug)
 
 let private plansFor (place: Place) days (arrival: TransportLink option) =
     let variants = place.DayPlans |> List.groupBy _.Variant |> List.sortBy fst
@@ -174,7 +173,7 @@ let toStop (catalog: Catalog) budget diet (stop: RoutedStop) : TripStop =
         Custom = false
     }
 
-let private swaps profile (request: TripRequest) (places: Place list) (stops: RoutedStop list) =
+let private swaps (profile: TravellerProfile) (request: TripRequest) (places: Place list) (stops: RoutedStop list) =
     match request.Month, stops with
     | Some month, first :: _ when not profile.Interests.IsEmpty ->
         let chosen = stops |> List.map _.Place.Slug
@@ -200,7 +199,7 @@ let private interestName (catalog: Catalog) (slug: string) =
     |> Option.defaultValue slug
 
 /// The strongest interests, each as a percentage of the strongest.
-let private mix (catalog: Catalog) profile =
+let private mix (catalog: Catalog) (profile: TravellerProfile) =
     let top = profile.Interests |> List.truncate 3
 
     match top with
@@ -214,7 +213,7 @@ let private mix (catalog: Catalog) profile =
 
 let private mostLeftOut = 3
 
-let private leftOut (catalog: Catalog) profile (stops: RoutedStop list) =
+let private leftOut (catalog: Catalog) (profile: TravellerProfile) (stops: RoutedStop list) =
     let covered =
         stops |> List.collect _.Place.Interests |> List.map _.InterestSlug |> Set.ofList
 
@@ -290,6 +289,7 @@ let bestMonths (stops: RoutedStop list) = [
             month
 ]
 
+/// "14 days of Hindu temples in Rajasthan and Delhi" for a feeling, else just the places.
 let private title (catalog: Catalog) (request: TripRequest) (stops: RoutedStop list) =
     let names =
         stops
@@ -307,7 +307,12 @@ let private title (catalog: Catalog) (request: TripRequest) (stops: RoutedStop l
         | last :: (_ :: _ as earlier) -> String.Join(", ", List.rev earlier) + " and " + last
         | _ -> String.Join("", names)
 
-    $"{request.Days} days in {joined}"
+    match request.Scope with
+    | Some {
+               Kind = ScopeKind.Feeling
+               Slug = feeling
+           } -> $"{request.Days} days of {(interestName catalog feeling).ToLowerInvariant()} in {joined}"
+    | _ -> $"{request.Days} days in {joined}"
 
 let private assemble catalog profile (request: TripRequest) places stops : Trip = {
     Title = title catalog request stops
@@ -342,7 +347,7 @@ let buildWithin (allowed: Set<string> option) (catalog: Catalog) (request: TripR
     if request.Days < RequestRules.minDays || request.Days > RequestRules.maxDays then
         Error(TripError.InvalidDays request.Days)
     else
-        let profile = Profile.from catalog.Cards request
+        let profile = Profile.from catalog request
         let places = candidates catalog profile allowed
         // Someone who liked a place in a hard month gets it with a warning. Closed is closed.
         let usable =
@@ -356,7 +361,14 @@ let buildWithin (allowed: Set<string> option) (catalog: Catalog) (request: TripR
         | [] -> Error TripError.NoPlaces
         | _ ->
             let stops =
-                Routing.route catalog request (profile.Depth > 0) profile.Collected places (rank profile request usable)
+                Routing.route
+                    catalog
+                    request
+                    (profile.Depth > 0)
+                    profile.Collected
+                    places
+                    (rank profile request usable)
+                    (Scoring.marginal profile request)
 
             Ok(assemble catalog profile request places stops)
 
