@@ -48,21 +48,24 @@ type private Path = {
     Capacity: int
 }
 
-let private start catalog stopDays ((place: Place), score) = {
-    Stops = [
-        {
-            Place = place
-            Days = stopDays place
-            Arrival = None
-        }
-    ]
-    Regions = Set.singleton (regionOf catalog place)
-    Score = score
-    FirstScore = score
-    Planned = stopDays place
-    Minimum = place.DaysMin
-    Capacity = place.DaysMax
-}
+let private start catalog stopDays worthOf (place: Place) =
+    let score = worthOf [] place
+
+    {
+        Stops = [
+            {
+                Place = place
+                Days = stopDays place
+                Arrival = None
+            }
+        ]
+        Regions = Set.singleton (regionOf catalog place)
+        Score = score
+        FirstScore = score
+        Planned = stopDays place
+        Minimum = place.DaysMin
+        Capacity = place.DaysMax
+    }
 
 let private extend
     catalog
@@ -70,16 +73,19 @@ let private extend
     stopDays
     allowsRegions
     days
-    scored
+    (ranked: Place list)
+    (worthOf: Place list -> Place -> int)
     (path: Path)
     =
     let last = path.Stops.Head.Place
+    let sofar = path.Stops |> List.map _.Place
 
     if path.Planned >= days then
         []
     else
-        scored
-        |> List.choose (fun ((place: Place), score) ->
+        ranked
+        |> List.choose (fun place ->
+            let score = worthOf sofar place
             let regions = path.Regions.Add(regionOf catalog place)
             let used = path.Stops |> List.exists (fun stop -> stop.Place.Slug = place.Slug)
 
@@ -290,10 +296,9 @@ let private without (city: Place) (stops: RoutedStop list) =
                 Some stop)
 
 /// Regions holding a place someone liked are always open. The limit stops sprawl into the others.
-let private allowsRegions (catalog: Catalog) (request: TripRequest) liked (scored: (Place * int) list) =
+let private allowsRegions (catalog: Catalog) (request: TripRequest) liked (ranked: Place list) =
     let likedRegions =
-        scored
-        |> List.map fst
+        ranked
         |> List.filter (fun place -> List.contains place.Slug liked)
         |> List.map (regionOf catalog)
         |> Set.ofList
@@ -303,13 +308,15 @@ let private allowsRegions (catalog: Catalog) (request: TripRequest) liked (score
 
 /// Chooses connected stops within the allowed regions, with days adding up exactly.
 /// `closers` are the cities a trip may end in, which a hard month for sightseeing doesn't rule out.
+/// `ranked` are the candidates, best first, and `worthOf` says what one adds after the stops so far.
 let route
     (catalog: Catalog)
     (request: TripRequest)
     prefersDepth
     liked
     (closers: Place list)
-    (scored: (Place * int) list)
+    (ranked: Place list)
+    (worthOf: Place list -> Place -> int)
     : RoutedStop list =
     let stopDays (place: Place) =
         if prefersDepth then
@@ -326,9 +333,9 @@ let route
         |> Map.ofList
 
     let grow =
-        extend catalog links stopDays (allowsRegions catalog request liked scored) request.Days scored
+        extend catalog links stopDays (allowsRegions catalog request liked ranked) request.Days ranked worthOf
 
-    let starts = scored |> List.map (start catalog stopDays)
+    let starts = ranked |> List.map (start catalog stopDays worthOf)
 
     let stops =
         explore grow starts starts

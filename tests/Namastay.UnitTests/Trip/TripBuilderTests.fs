@@ -1720,3 +1720,10 @@ let ``a place whose every card was passed is left out when another will do`` () 
     let trip = build catalog (request answers 5 None)
     Assert.DoesNotContain("peak", slugs trip)
     Assert.NotEmpty trip.Stops
+
+[<Fact>]
+let ``a trip covers both interests rather than repeating the stronger one`` () =
+    let answers = liked [ "likes-hills"; "likes-hills"; "likes-forts" ]
+    let trip = build catalog (request answers 10 None)
+    Assert.Contains("fort", slugs trip)
+    Assert.Contains(slugs trip, (fun slug -> List.contains slug [ "peak"; "valley"; "lake" ]))

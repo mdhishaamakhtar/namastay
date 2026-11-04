@@ -98,3 +98,29 @@ let ``the profile reads likes, declines and the interest tree from the answers``
     Assert.Equal<string list>([ "quiet-beach" ], profile.Declined)
     Assert.Equal(Some "mountains", profile.Parents.TryFind "snow-peaks")
     Assert.Equal(("mountains", 6), profile.Interests.Head)
+
+let private doesEverything = {
+    strongIn "city" with
+        Interests = [
+            {
+                InterestSlug = "mountains"
+                Weight = 5
+            }
+            { InterestSlug = "beaches"; Weight = 5 }
+            { InterestSlug = "forts"; Weight = 5 }
+        ]
+}
+
+[<Fact>]
+let ``a city that does everything counts only for its two best`` () =
+    let profile = wants [ "mountains", 6; "beaches", 6; "forts", 6 ]
+    Assert.Equal(60, taste profile doesEverything)
+
+[<Fact>]
+let ``an interest already covered by a stop counts less`` () =
+    let profile = wants [ "mountains", 6 ]
+    let peak = strongIn "mountains"
+    Assert.Equal(30, Scoring.tasteAfter profile request [] peak)
+    Assert.Equal(15, Scoring.tasteAfter profile request [ peak ] peak)
+    Assert.Equal(10, Scoring.tasteAfter profile request [ peak; peak ] peak)
+    Assert.Equal(30, Scoring.tasteAfter profile request [ strongIn "beaches" ] peak)

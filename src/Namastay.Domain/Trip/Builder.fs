@@ -62,8 +62,7 @@ let private candidates (catalog: Catalog) profile (allowed: Set<string> option) 
 
 let private rank profile request (places: Place list) =
     places
-    |> List.map (fun place -> place, Scoring.total profile request place)
-    |> List.sortBy (fun (place, score) -> -score, place.Slug)
+    |> List.sortBy (fun place -> -(Scoring.total profile request place), place.Slug)
 
 let private plansFor (place: Place) days (arrival: TransportLink option) =
     let variants = place.DayPlans |> List.groupBy _.Variant |> List.sortBy fst
@@ -362,7 +361,14 @@ let buildWithin (allowed: Set<string> option) (catalog: Catalog) (request: TripR
         | [] -> Error TripError.NoPlaces
         | _ ->
             let stops =
-                Routing.route catalog request (profile.Depth > 0) profile.Collected places (rank profile request usable)
+                Routing.route
+                    catalog
+                    request
+                    (profile.Depth > 0)
+                    profile.Collected
+                    places
+                    (rank profile request usable)
+                    (Scoring.marginal profile request)
 
             Ok(assemble catalog profile request places stops)
 
