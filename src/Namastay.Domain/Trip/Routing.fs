@@ -76,80 +76,82 @@ type private Path = {
     Capacity: int
 }
 
-let private start catalog stopDays worthOf (place: Place) =
-    let score = worthOf [] place
+/// What the search knows that doesn't change as a route grows.
+type private Search = {
+    Catalog: Catalog
+    Request: TripRequest
+    Links: Map<string * string, TransportLink>
+    Hubs: Place list
+    /// The candidates, best first.
+    Ranked: Place list
+    /// What a place adds after the stops so far.
+    WorthOf: Place list -> Place -> int
+    StopDays: Place -> int
+    MoveCost: int
+    AllowsRegions: Set<string> -> bool
+}
+
+let private start (search: Search) (place: Place) =
+    let score = search.WorthOf [] place
 
     {
         Stops = [
             {
                 Place = place
-                Days = stopDays place
+                Days = search.StopDays place
                 Arrival = None
             }
         ]
-        Regions = Set.singleton (regionOf catalog place)
+        Regions = Set.singleton (regionOf search.Catalog place)
         Score = score
         FirstScore = score
-        Planned = stopDays place
+        Planned = search.StopDays place
         Minimum = place.DaysMin
         Capacity = place.DaysMax
     }
 
 /// A main hub only starts or ends a route. A route reaches past one by passing through.
-let private extend
-    (catalog: Catalog)
-    (request: TripRequest)
-    (links: Map<string * string, TransportLink>)
-    stopDays
-    moveCost
-    allowsRegions
-    days
-    (ranked: Place list)
-    (worthOf: Place list -> Place -> int)
-    (path: Path)
-    =
+let private extend (search: Search) (path: Path) =
     let last = path.Stops.Head.Place
     let sofar = path.Stops |> List.map _.Place
-
-    let hubs =
-        catalog.Places
-        |> List.filter (fun place -> place.Hub && place.Slug <> last.Slug)
+    let days = search.Request.Days
 
     let through (place: Place) =
-        hubs
+        search.Hubs
+        |> List.filter (fun hub -> hub.Slug <> last.Slug)
         |> List.choose (fun hub ->
-            match links.TryFind(last.Slug, hub.Slug), links.TryFind(hub.Slug, place.Slug) with
+            match search.Links.TryFind(last.Slug, hub.Slug), search.Links.TryFind(hub.Slug, place.Slug) with
             | Some first, Some second -> Some(passing hub first second)
             | _ -> None)
         |> List.sortBy _.MinutesMin
         |> List.tryHead
 
     let reach (place: Place) =
-        links.TryFind(last.Slug, place.Slug) |> Option.orElse (through place)
+        search.Links.TryFind(last.Slug, place.Slug) |> Option.orElse (through place)
 
     if path.Planned >= days || (last.Hub && path.Stops.Length > 1) then
         []
     else
-        ranked
+        search.Ranked
         |> List.choose (fun place ->
-            let score = worthOf sofar place
-            let regions = path.Regions.Add(regionOf catalog place)
+            let score = search.WorthOf sofar place
+            let regions = path.Regions.Add(regionOf search.Catalog place)
             let used = path.Stops |> List.exists (fun stop -> stop.Place.Slug = place.Slug)
 
             match reach place with
-            | Some link when not used && allowsRegions regions && path.Minimum + place.DaysMin <= days ->
+            | Some link when not used && search.AllowsRegions regions && path.Minimum + place.DaysMin <= days ->
                 Some {
                     Stops =
                         {
                             Place = place
-                            Days = stopDays place
+                            Days = search.StopDays place
                             Arrival = Some link
                         }
                         :: path.Stops
                     Regions = regions
-                    Score = path.Score + score - travelCost request link - moveCost
+                    Score = path.Score + score - travelCost search.Request link - search.MoveCost
                     FirstScore = path.FirstScore
-                    Planned = path.Planned + stopDays place
+                    Planned = path.Planned + search.StopDays place
                     Minimum = path.Minimum + place.DaysMin
                     Capacity = path.Capacity + place.DaysMax
                 }
@@ -362,27 +364,25 @@ let route
         |> List.map (fun link -> (link.FromSlug, link.ToSlug), link)
         |> Map.ofList
 
-    let moveCost =
-        if slow then slowStopCost
-        elif quick then quickStopCost
-        else stopCost
+    let search = {
+        Catalog = catalog
+        Request = request
+        Links = links
+        Hubs = catalog.Places |> List.filter _.Hub
+        Ranked = ranked
+        WorthOf = worthOf
+        StopDays = stopDays
+        MoveCost =
+            if slow then slowStopCost
+            elif quick then quickStopCost
+            else stopCost
+        AllowsRegions = allowsRegions catalog request liked ranked
+    }
 
-    let grow =
-        extend
-            catalog
-            request
-            links
-            stopDays
-            moveCost
-            (allowsRegions catalog request liked ranked)
-            request.Days
-            ranked
-            worthOf
-
-    let starts = ranked |> List.map (start catalog stopDays worthOf)
+    let starts = ranked |> List.map (start search)
 
     let stops =
-        explore grow starts starts
+        explore (extend search) starts starts
         |> bestPath request.Days (startCost catalog links)
         |> _.Stops
         |> List.rev

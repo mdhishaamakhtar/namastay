@@ -31,7 +31,6 @@ type private SignalRow = {
     CardSlug: string
     Slug: string
     Weight: int
-    Name: string
 }
 
 [<CLIMutable>]
@@ -133,7 +132,7 @@ let load (source: NpgsqlDataSource) : Task<JourneyGraph> =
         let! signals =
             query<SignalRow>
                 source
-                "select signal.card_slug, i.slug, signal.weight, i.name from card_signals signal
+                "select signal.card_slug, i.slug, signal.weight from card_signals signal
                  join interests i on signal.signal = 'interest:' || i.slug
                  order by signal.weight desc, i.name"
                 null

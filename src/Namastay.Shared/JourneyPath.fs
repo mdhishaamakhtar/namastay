@@ -65,21 +65,25 @@ let private freshness (shown: JourneyCard list) (card: JourneyCard) =
     - 10 * countOf card.Interest _.Interest shown
     - 30 * countOf card.Place _.Place shown
 
+/// What the same interest is worth between two cards, and what a parent or child is.
+let private sameKin = 2
+let private closeKin = 1
+
 /// How closely two interests are related: the same, or parent and child.
 let private kinship (interests: JourneyInterest list) (one: string) (other: string) =
     if one = other then
-        2
+        sameKin
     elif
         interests
         |> List.exists (fun interest ->
             (interest.Slug = one && interest.Parent = Some other)
             || (interest.Slug = other && interest.Parent = Some one))
     then
-        1
+        closeKin
     else
         0
 
-/// How much two cards have in common, over every interest both speak for.
+/// How much a card's strongest interest has in common with everything another card speaks for.
 let private shared (interests: JourneyInterest list) (card: JourneyCard) (other: JourneyCard) =
     card.Interests
     |> List.truncate 1

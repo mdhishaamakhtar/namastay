@@ -15,6 +15,8 @@ let private kinShare = 2
 let private topInterests = 2
 let private bestSeason = 8
 let private unknownSeason = -2
+/// A liked place is still allowed in a hard month, but one in a good month wins.
+let private avoidSeason = -20
 let private fitWeight = 2
 let private offbeatWeight = 1
 let private budgetPenalty = 6
@@ -41,25 +43,30 @@ let private strongIn (profile: TravellerProfile) (slug: string) (place: Place) =
         item.Weight >= Scope.strongFit
         && (item.InterestSlug = slug || related profile.Parents slug item.InterestSlug))
 
+/// Less for each stop already strong in an interest: two thirds, then half, and so on,
+/// so a trip covers the mix instead of repeating its strongest part.
+let private dimmed (covered: int) (value: int) = value * 2 / (2 + covered)
+
 /// What each of the place's interests is worth to the traveller: the interest itself,
-/// or half of a parent or child they liked, and less for each stop already strong in it
-/// (two thirds, then half), so a trip covers the mix instead of repeating its strongest part.
+/// or half of a parent or child they liked, dimmed by the stops so far.
 let private interestScore
     (profile: TravellerProfile)
     (interests: (string * int) list)
     (sofar: Place list)
     (place: Place)
     =
+    let coverage =
+        interests
+        |> List.map (fun (slug, score) -> slug, score, sofar |> List.filter (strongIn profile slug) |> List.length)
+
     place.Interests
     |> List.map (fun item ->
-        interests
-        |> List.map (fun (slug, score) ->
-            let covered = sofar |> List.filter (strongIn profile slug) |> List.length
-
+        coverage
+        |> List.map (fun (slug, score, covered) ->
             if slug = item.InterestSlug then
-                score * item.Weight * 2 / (2 + covered)
+                dimmed covered (score * item.Weight)
             elif related profile.Parents slug item.InterestSlug then
-                score * item.Weight / kinShare * 2 / (2 + covered)
+                dimmed covered (score * item.Weight / kinShare)
             else
                 0)
         |> List.fold max 0)
@@ -136,8 +143,8 @@ let private seasonScore (month: int option) (place: Place) =
         match monthRating month place with
         | Rating.Best -> bestSeason
         | Rating.Unknown -> unknownSeason
+        | Rating.Avoid -> avoidSeason
         | Rating.Ok
-        | Rating.Avoid
         | Rating.Closed -> 0
 
 let total profile (request: TripRequest) place =

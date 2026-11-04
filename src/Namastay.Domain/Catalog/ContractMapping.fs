@@ -109,6 +109,8 @@ let private journeyCard (catalog: Catalog) (known: Set<string>) (card: Card) : J
             |> List.tryFind (fun cluster -> cluster.Slug = item.ClusterSlug))
         |> Option.map _.RegionSlug
 
+    let interests = cardInterests catalog.Interests card
+
     {
         Slug = card.Slug
         Title = card.Title
@@ -129,12 +131,9 @@ let private journeyCard (catalog: Catalog) (known: Set<string>) (card: Card) : J
                 mark |> Option.map (_.FilePath >> Routes.mediaUrl)
             else
                 None
-        Interest =
-            cardInterests catalog.Interests card
-            |> List.tryHead
-            |> Option.map (fst >> _.Name)
+        Interest = interests |> List.tryHead |> Option.map (fst >> _.Name)
         Interests =
-            cardInterests catalog.Interests card
+            interests
             |> List.map (fun (interest, weight) -> {
                 Slug = interest.Slug
                 Weight = weight

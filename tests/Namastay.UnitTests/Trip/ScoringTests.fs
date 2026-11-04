@@ -124,3 +124,25 @@ let ``an interest already covered by a stop counts less`` () =
     Assert.Equal(20, Scoring.tasteAfter profile request [ peak ] peak)
     Assert.Equal(15, Scoring.tasteAfter profile request [ peak; peak ] peak)
     Assert.Equal(30, Scoring.tasteAfter profile request [ strongIn "beaches" ] peak)
+
+[<Fact>]
+let ``a liked place in a good month beats one in a hard month`` () =
+    let profile = {
+        wants [] with
+            Collected = [ "sunny"; "rainy" ]
+            Likes = Map.ofList [ "sunny", 1; "rainy", 1 ]
+    }
+
+    let sunny = {
+        strongIn "sunny" with
+            Months = TripBuilderTests.months [] []
+    }
+
+    let rainy = {
+        strongIn "rainy" with
+            Months = TripBuilderTests.months [] [ 7 ]
+    }
+
+    let july = TripBuilderTests.request [] 7 (Some 7)
+    Assert.True(Scoring.total profile july sunny > Scoring.total profile july rainy)
+    Assert.True(Scoring.total profile july rainy > Scoring.total (wants []) july (strongIn "filler"))

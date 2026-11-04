@@ -21,7 +21,7 @@ let feelingPlaces (catalog: Catalog) (slug: string) =
 let private thinDeck = 12
 
 /// The feeling itself, or one of its children: quiet beaches speak for beaches.
-let speaksFor (interests: JourneyInterest list) (feeling: string) (card: JourneyCard) =
+let private speaksFor (interests: JourneyInterest list) (feeling: string) (card: JourneyCard) =
     card.Interests
     |> List.exists (fun item ->
         item.Slug = feeling
