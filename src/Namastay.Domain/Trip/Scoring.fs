@@ -4,8 +4,13 @@ open Namastay.Domain.Catalog
 open Namastay.Domain.Trip.Profile
 open Namastay.Shared.Contracts
 
-/// Far above any taste score, so a place someone liked always beats a place they only might like.
-let private collectedBonus = 1000
+/// A liked card is worth more than a matching interest, and a second like more still,
+/// but not so much that season, fit and budget stop mattering.
+let private likeBonus = 150
+let private mostLikeBonus = 300
+let private declinedPenalty = 40
+/// A parent or child of a liked interest counts for this share of it.
+let private kinShare = 2
 let private bestSeason = 8
 let private unknownSeason = -2
 let private fitWeight = 2
@@ -24,13 +29,23 @@ let private budgetLevel =
     | BudgetLevel.Mid -> 2
     | BudgetLevel.Luxury -> 3
 
-let private interestScore (interests: (string * int) list) (place: Place) =
+let private related (parents: Map<string, string>) (one: string) (other: string) =
+    parents.TryFind one = Some other || parents.TryFind other = Some one
+
+/// What each of the place's interests is worth to the traveller: the interest itself,
+/// or half of a parent or child they liked.
+let private interestScore (profile: TravellerProfile) (interests: (string * int) list) (place: Place) =
     place.Interests
     |> List.sumBy (fun item ->
         interests
-        |> List.tryFind (fun (slug, _) -> slug = item.InterestSlug)
-        |> Option.map (fun (_, score) -> score * item.Weight)
-        |> Option.defaultValue 0)
+        |> List.map (fun (slug, score) ->
+            if slug = item.InterestSlug then
+                score * item.Weight
+            elif related profile.Parents slug item.InterestSlug then
+                score * item.Weight / kinShare
+            else
+                0)
+        |> List.fold max 0)
 
 let private fitScore (request: TripRequest) (place: Place) =
     place.TravellerFit
@@ -55,14 +70,18 @@ let private popularityScore (profile: TravellerProfile) (place: Place) =
 let taste (profile: TravellerProfile) (request: TripRequest) (place: Place) =
     let kept = profile.Interests |> List.truncate (interestLimit request.Days)
 
-    let collected =
-        if List.contains place.Slug profile.Collected then
-            collectedBonus
+    let liked =
+        profile.Likes.TryFind place.Slug
+        |> Option.map (fun likes -> min mostLikeBonus (likes * likeBonus))
+        |> Option.defaultValue 0
+
+    let declined =
+        if List.contains place.Slug profile.Declined then
+            declinedPenalty
         else
             0
 
-    interestScore kept place
-    + collected
+    interestScore profile kept place + liked - declined
     + fitScore request place
     + budgetScore request place
     + popularityScore profile place

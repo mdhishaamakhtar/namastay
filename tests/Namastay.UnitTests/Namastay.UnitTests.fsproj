@@ -10,6 +10,7 @@
     <Compile Include="Catalog/ValidationTests.fs" />
     <Compile Include="Catalog/ContractMappingTests.fs" />
     <Compile Include="Trip/TripBuilderTests.fs" />
+    <Compile Include="Trip/ScoringTests.fs" />
     <Compile Include="Trip/EditingTests.fs" />
     <Compile Include="Trip/ScopeTests.fs" />
     <Compile Include="Catalog/JourneyGraphTests.fs" />

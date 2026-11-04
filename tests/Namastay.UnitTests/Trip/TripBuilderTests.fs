@@ -1713,3 +1713,10 @@ let ``a feeling leads the mix and names the title`` () =
     Assert.Equal("Name of beaches", trip.Mix.Head.Name)
     Assert.Equal(100, trip.Mix.Head.Share)
     Assert.All(trip.Stops, (fun stop -> Assert.Equal("ocean", stop.FamilySlug)))
+
+[<Fact>]
+let ``a place whose every card was passed is left out when another will do`` () =
+    let answers = { Card = "peak-card"; Liked = false } :: liked [ "likes-hills" ]
+    let trip = build catalog (request answers 5 None)
+    Assert.DoesNotContain("peak", slugs trip)
+    Assert.NotEmpty trip.Stops
