@@ -65,11 +65,35 @@ let private freshness (shown: JourneyCard list) (card: JourneyCard) =
     - 10 * countOf card.Interest _.Interest shown
     - 30 * countOf card.Place _.Place shown
 
-/// Rewards what they've liked, without letting one thing take over.
+/// How closely two interests are related: the same, or parent and child.
+let private kinship (interests: JourneyInterest list) (one: string) (other: string) =
+    if one = other then
+        2
+    elif
+        interests
+        |> List.exists (fun interest ->
+            (interest.Slug = one && interest.Parent = Some other)
+            || (interest.Slug = other && interest.Parent = Some one))
+    then
+        1
+    else
+        0
+
+/// How much two cards have in common, over every interest both speak for.
+let private shared (interests: JourneyInterest list) (card: JourneyCard) (other: JourneyCard) =
+    card.Interests
+    |> List.truncate 1
+    |> List.sumBy (fun mine ->
+        other.Interests
+        |> List.sumBy (fun theirs -> kinship interests mine.Slug theirs.Slug * min mine.Weight theirs.Weight))
+
+/// Rewards what they've liked and steers away from what they've passed, without
+/// letting one thing take over. A pass on a place counts far more than a like.
 let private leaning (graph: JourneyGraph) (answers: CardAnswer list) (shown: JourneyCard list) (card: JourneyCard) =
     let liked = likedOf graph answers
     let passed = shown |> List.except liked
     let recent = shown |> List.rev |> List.truncate 2
+    let inCommon = shared graph.Interests card
 
     let followsLike =
         liked
@@ -78,11 +102,13 @@ let private leaning (graph: JourneyGraph) (answers: CardAnswer list) (shown: Jou
             |> List.exists (fun branch -> branch.OnAnswer && branch.ToCard = card.Slug))
 
     (if followsLike then 12 else 0)
-    + 6 * countOf card.Interest _.Interest liked
+    + List.sumBy inCommon liked
     + 3 * countOf card.Region _.Region liked
-    - 4 * countOf card.Interest _.Interest passed
-    - 2 * countOf card.Interest _.Interest recent
-    - 8 * countOf card.Place _.Place shown
+    - 2 * List.sumBy inCommon passed / 3
+    - 3 * countOf card.Region _.Region passed
+    - 2 * List.sumBy inCommon recent / 3
+    - 4 * countOf card.Place _.Place liked
+    - 15 * countOf card.Place _.Place passed
 
 let private isWildcard (answered: int) =
     answered % wildcardEvery = wildcardEvery - 1

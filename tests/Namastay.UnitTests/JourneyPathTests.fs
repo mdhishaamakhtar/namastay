@@ -22,7 +22,13 @@ let card slug start interest deep branches = {
     ImageCredit = None
     MarkUrl = None
     Interest = interest
-    Interests = []
+    Interests =
+        interest
+        |> Option.map (fun name -> {
+            Slug = name.ToLowerInvariant()
+            Weight = 3
+        })
+        |> Option.toList
     Colours = deep |> Option.map colours
     Branches = branches
     Place = Some slug
@@ -276,3 +282,56 @@ let ``the cheer holds between milestones`` () =
 [<Fact>]
 let ``the last cards say how close the end is`` () =
     Assert.Equal(Some "Just a few to go.", JourneyPath.cheer (JourneyPath.maxCards - 3))
+
+let private withTree = {
+    india with
+        Cards =
+            india.Cards
+            @ [
+                travelCard "coast-quiet" "coast-three" "coast" "Quiet beaches"
+                travelCard "coast-party" "coast-four" "coast" "Party beaches"
+                travelCard "hills-beach" "hills-three" "hills" "Beaches"
+            ]
+        Interests = [
+            {
+                Slug = "beaches"
+                Name = "Beaches"
+                Parent = None
+            }
+            {
+                Slug = "quiet beaches"
+                Name = "Quiet beaches"
+                Parent = Some "beaches"
+            }
+            {
+                Slug = "party beaches"
+                Name = "Party beaches"
+                Parent = Some "beaches"
+            }
+        ]
+}
+
+[<Fact>]
+let ``a liked parent interest pulls in its children`` () =
+    let likes (card: JourneyCard) = card.Slug = "hills-beach"
+    let shown = playSeeded 3 withTree likes 16 |> List.map _.Slug
+    let quiet = List.findIndex ((=) "coast-quiet") shown
+    let party = List.findIndex ((=) "coast-party") shown
+    Assert.True(max quiet party < 12, $"children came at {quiet} and {party}")
+
+[<Fact>]
+let ``passing a place twice keeps its other cards away`` () =
+    let agra = {
+        india with
+            Cards =
+                india.Cards
+                @ [ for index in 1..3 -> travelCard $"taj-{index}" "agra" "north" "Faith" ]
+    }
+
+    let passesAgra (card: JourneyCard) = card.Place <> Some "agra"
+
+    let shown =
+        playSeeded 5 agra passesAgra 20
+        |> List.filter (fun card -> card.Place = Some "agra")
+
+    Assert.True(shown.Length <= 2, $"agra was shown {shown.Length} times")
