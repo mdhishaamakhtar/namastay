@@ -2117,13 +2117,13 @@ button:focus-visible {
 .home-how li {
   display: grid;
   grid-template-columns: 40px 1fr;
+  align-items: baseline;
   padding-top: 12px;
   border-top: 2px solid var(--ink);
   counter-increment: step;
 }
 
 .home-how li::before {
-  grid-row: span 2;
   font-family: "Yatra One", Mukta, serif;
   font-size: 30px;
   line-height: 1;
@@ -2131,8 +2131,13 @@ button:focus-visible {
 }
 
 .home-how h3 {
+  margin: 0;
   font-size: 20px;
   font-weight: 600;
+}
+
+.home-how p {
+  grid-column: 2;
 }
 
 .home-how p,
@@ -2339,6 +2344,7 @@ button:focus-visible {
   }
 
   .home-how h3 {
+    margin: 20px 0;
     font-size: 24px;
   }
 
