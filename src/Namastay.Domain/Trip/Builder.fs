@@ -174,7 +174,7 @@ let toStop (catalog: Catalog) budget diet (stop: RoutedStop) : TripStop =
         Custom = false
     }
 
-let private swaps profile (request: TripRequest) (places: Place list) (stops: RoutedStop list) =
+let private swaps (profile: TravellerProfile) (request: TripRequest) (places: Place list) (stops: RoutedStop list) =
     match request.Month, stops with
     | Some month, first :: _ when not profile.Interests.IsEmpty ->
         let chosen = stops |> List.map _.Place.Slug
@@ -200,7 +200,7 @@ let private interestName (catalog: Catalog) (slug: string) =
     |> Option.defaultValue slug
 
 /// The strongest interests, each as a percentage of the strongest.
-let private mix (catalog: Catalog) profile =
+let private mix (catalog: Catalog) (profile: TravellerProfile) =
     let top = profile.Interests |> List.truncate 3
 
     match top with
@@ -214,7 +214,7 @@ let private mix (catalog: Catalog) profile =
 
 let private mostLeftOut = 3
 
-let private leftOut (catalog: Catalog) profile (stops: RoutedStop list) =
+let private leftOut (catalog: Catalog) (profile: TravellerProfile) (stops: RoutedStop list) =
     let covered =
         stops |> List.collect _.Place.Interests |> List.map _.InterestSlug |> Set.ofList
 

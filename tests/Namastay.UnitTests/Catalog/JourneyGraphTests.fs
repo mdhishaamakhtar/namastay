@@ -48,6 +48,8 @@ let ``journey graph names the strongest interest and keeps only known branches``
     let mapped = graph.Cards |> List.find (fun item -> item.Slug = "two-signals")
     Assert.Equal(catalog.Cards.Length, graph.Cards.Length)
     Assert.Equal(Some "Name of mountains", mapped.Interest)
+    Assert.Equal<string list>([ "mountains"; "beaches" ], mapped.Interests |> List.map _.Slug)
+    Assert.Equal(catalog.Interests.Length, graph.Interests.Length)
     Assert.Equal(Some "peak", mapped.Place)
     Assert.Equal(Some "hills", mapped.Region)
     Assert.Equal(Some "#111111", mapped.Colours |> Option.map _.Deep)

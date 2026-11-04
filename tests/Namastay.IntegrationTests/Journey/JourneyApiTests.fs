@@ -116,6 +116,8 @@ type JourneyApiTests(postgres: PostgresFixture) =
             let first = graph.Cards |> List.find _.IsStart
             Assert.Equal(2, graph.Cards.Length)
             Assert.Equal("next", first.Branches.Head.ToCard)
+            Assert.Equal<CardInterest list>([ { Slug = "mountains"; Weight = 3 } ], first.Interests)
+            Assert.Contains(graph.Interests, (fun interest -> interest.Slug = "mountains"))
             Assert.Equal(Some "/media/illustrations/valley.svg", first.ImageUrl)
             Assert.Equal(Some "#2F5D3A", first.Colours |> Option.map _.Deep)
         }

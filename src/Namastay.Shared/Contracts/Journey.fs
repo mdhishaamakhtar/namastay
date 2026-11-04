@@ -6,6 +6,16 @@ type JourneyBranch = {
     Priority: int
 }
 
+/// An interest a card speaks for, and how strongly.
+type CardInterest = { Slug: string; Weight: int }
+
+/// An interest and its parent, so quiet beaches can count towards beaches.
+type JourneyInterest = {
+    Slug: string
+    Name: string
+    Parent: string option
+}
+
 type JourneyCard = {
     Slug: string
     Title: string
@@ -15,7 +25,9 @@ type JourneyCard = {
     ImageAlt: string option
     ImageCredit: string option
     MarkUrl: string option
+    /// The strongest interest, named, for the label on the card.
     Interest: string option
+    Interests: CardInterest list
     Colours: PlaceColours option
     Branches: JourneyBranch list
     Place: string option
@@ -23,6 +35,9 @@ type JourneyCard = {
 }
 
 /// The whole graph, so swiping never waits on the network.
-type JourneyGraph = { Cards: JourneyCard list }
+type JourneyGraph = {
+    Cards: JourneyCard list
+    Interests: JourneyInterest list
+}
 
 type SavedTrip = { ShareToken: string; Trip: Trip }

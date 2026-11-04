@@ -68,16 +68,14 @@ let costLevel =
 
 let private interestPrefix = "interest:"
 
-/// The card's strongest interest, named. Ties go to the first name alphabetically.
-let private cardInterest (interests: Interest list) (card: Card) =
+/// The interests a card speaks for, strongest first. Ties go to the first name alphabetically.
+let private cardInterests (interests: Interest list) (card: Card) =
     card.Signals
     |> List.choose (fun signal ->
         interests
         |> List.tryFind (fun interest -> signal.Signal = interestPrefix + interest.Slug)
-        |> Option.map (fun interest -> interest.Name, signal.Weight))
-    |> List.sortBy (fun (name, weight) -> -weight, name)
-    |> List.tryHead
-    |> Option.map fst
+        |> Option.map (fun interest -> interest, signal.Weight))
+    |> List.sortBy (fun (interest, weight) -> -weight, interest.Name)
 
 let private placeColours (catalog: Catalog) (place: Place) =
     catalog.Families
@@ -131,7 +129,16 @@ let private journeyCard (catalog: Catalog) (known: Set<string>) (card: Card) : J
                 mark |> Option.map (_.FilePath >> Routes.mediaUrl)
             else
                 None
-        Interest = cardInterest catalog.Interests card
+        Interest =
+            cardInterests catalog.Interests card
+            |> List.tryHead
+            |> Option.map (fst >> _.Name)
+        Interests =
+            cardInterests catalog.Interests card
+            |> List.map (fun (interest, weight) -> {
+                Slug = interest.Slug
+                Weight = weight
+            })
         Colours = place |> Option.bind (placeColours catalog)
         Branches =
             card.Branches
@@ -152,4 +159,11 @@ let journeyGraph (catalog: Catalog) : JourneyGraph =
 
     {
         Cards = catalog.Cards |> List.sortBy _.Slug |> List.map (journeyCard catalog known)
+        Interests =
+            catalog.Interests
+            |> List.map (fun interest -> {
+                Slug = interest.Slug
+                Name = interest.Name
+                Parent = interest.ParentSlug
+            })
     }

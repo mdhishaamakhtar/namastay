@@ -21,6 +21,7 @@ let card slug start interest deep branches = {
     ImageCredit = None
     MarkUrl = None
     Interest = interest
+    Interests = []
     Colours = deep |> Option.map colours
     Branches = branches
     Place = Some slug
@@ -41,6 +42,7 @@ let graph = {
         card "d" false (Some "Mountains") (Some "#111") []
         card "e" false (Some "Faith") (Some "#333") []
     ]
+    Interests = []
 }
 
 let answered (slugs: (string * bool) list) =
@@ -62,6 +64,7 @@ let ``a level race keeps the brand colour`` () =
         Cards = [
             for index in 1..6 -> card $"c{index}" false None (Some(if index % 2 = 0 then "#111" else "#222")) []
         ]
+        Interests = []
     }
 
     let answers = answered [ for index in 1..6 -> $"c{index}", true ]
@@ -79,6 +82,7 @@ let ``a new leader takes over`` () =
             for index in 1..3 -> card $"m{index}" false None (Some "#111") []
             for index in 1..6 -> card $"f{index}" false None (Some "#333") []
         ]
+        Interests = []
     }
 
     let answers =
@@ -98,6 +102,7 @@ let ``mix ranks liked interests as shares of the strongest`` () =
 let ``mix keeps only the top three`` () =
     let world = {
         Cards = [ for name in [ "A"; "B"; "C"; "D" ] -> card name false (Some name) None [] ]
+        Interests = []
     }
 
     let answers = answered [ for name in [ "A"; "B"; "C"; "D" ] -> name, true ]
@@ -120,6 +125,7 @@ let private india = {
                 for place in [ "one"; "two" ] do
                     travelCard $"{region}-{tag}-{place}" $"{region}-{place}" region interest
     ]
+    Interests = []
 }
 
 [<TailCall>]
@@ -156,6 +162,7 @@ let ``a place appears no more than twice unless it runs out of others`` () =
             for index in 1..12 do
                 travelCard $"other-{index}" $"place-{index}" $"region-{index}" "Food"
         ]
+        Interests = []
     }
 
     let shown = play many (fun _ -> true) 10 |> List.choose _.Place
@@ -188,6 +195,7 @@ let ``a liked card brings its follow-up soon after the opening`` () =
                     }
                 else
                     item)
+        Interests = []
     }
 
     let answers = play linked (fun _ -> true) 9 |> List.map _.Slug
@@ -212,7 +220,8 @@ let ``journey ends when cards run out`` () =
         2,
         (play
             {
-                Cards = india.Cards |> List.truncate 2
+                india with
+                    Cards = india.Cards |> List.truncate 2
             }
             (fun _ -> true)
             100)
