@@ -42,8 +42,8 @@ let private strongIn (profile: TravellerProfile) (slug: string) (place: Place) =
         && (item.InterestSlug = slug || related profile.Parents slug item.InterestSlug))
 
 /// What each of the place's interests is worth to the traveller: the interest itself,
-/// or half of a parent or child they liked, and less again for each stop already
-/// strong in it, so a trip covers the mix instead of repeating its strongest part.
+/// or half of a parent or child they liked, and less for each stop already strong in it
+/// (two thirds, then half), so a trip covers the mix instead of repeating its strongest part.
 let private interestScore
     (profile: TravellerProfile)
     (interests: (string * int) list)
@@ -57,9 +57,9 @@ let private interestScore
             let covered = sofar |> List.filter (strongIn profile slug) |> List.length
 
             if slug = item.InterestSlug then
-                score * item.Weight / (1 + covered)
+                score * item.Weight * 2 / (2 + covered)
             elif related profile.Parents slug item.InterestSlug then
-                score * item.Weight / kinShare / (1 + covered)
+                score * item.Weight / kinShare * 2 / (2 + covered)
             else
                 0)
         |> List.fold max 0)

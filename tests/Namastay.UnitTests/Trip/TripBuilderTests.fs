@@ -595,9 +595,9 @@ let ``depth lovers get fewer stops than breadth lovers`` () =
             Cards = deep :: catalog.Cards
     }
 
-    let broad = build world (request (liked [ "likes-hills" ]) 7 None)
-    let slow = build world (request (liked [ "likes-hills"; "slow" ]) 7 None)
-    Assert.True(slow.Stops.Length < broad.Stops.Length)
+    let broad = build world (request (liked [ "likes-hills" ]) 12 None)
+    let slow = build world (request (liked [ "likes-hills"; "slow" ]) 12 None)
+    Assert.True(slow.Stops.Length < broad.Stops.Length, $"slow {slow.Stops.Length}, broad {broad.Stops.Length}")
 
 [<Fact>]
 let ``offbeat signal prefers offbeat places`` () =
@@ -1727,3 +1727,90 @@ let ``a trip covers both interests rather than repeating the stronger one`` () =
     let trip = build catalog (request answers 10 None)
     Assert.Contains("fort", slugs trip)
     Assert.Contains(slugs trip, (fun slug -> List.contains slug [ "peak"; "valley"; "lake" ]))
+
+[<Fact>]
+let ``a main hub is never between two other stops, however it is liked`` () =
+    let world = {
+        catalog with
+            Places = [
+                place "north" "c-hills" "pine" "mountains"
+                hubAirport "main" "c-plains" "stone" "forts"
+                place "south" "c-plains" "stone" "mountains"
+                place "east" "c-plains" "stone" "forts"
+            ]
+            Links = both "north" "main" @ both "main" "south" @ both "south" "east"
+            Cards = [
+                card "likes-north" "interest:mountains" (Some "north")
+                card "likes-main" "interest:forts" (Some "main")
+                card "likes-main-too" "interest:forts" (Some "main")
+                card "likes-south" "interest:mountains" (Some "south")
+            ]
+    }
+
+    for days in [ 9; 12; 14 ] do
+        let trip =
+            build world (request (liked [ "likes-north"; "likes-main"; "likes-main-too"; "likes-south" ]) days None)
+
+        let middle = trip.Stops |> List.skip 1 |> List.truncate (trip.Stops.Length - 2)
+        Assert.DoesNotContain("main", middle |> List.map _.PlaceSlug)
+
+[<Fact>]
+let ``a route reaches past a hub by passing through it`` () =
+    let world = {
+        catalog with
+            Places = [
+                place "north" "c-hills" "pine" "mountains"
+                hubAirport "main" "c-plains" "stone" "forts"
+                place "south" "c-plains" "stone" "mountains"
+            ]
+            Links = timed "north" "main" 100 @ timed "main" "south" 200
+            Cards = [
+                card "likes-north" "interest:mountains" (Some "north")
+                card "likes-south" "interest:mountains" (Some "south")
+            ]
+    }
+
+    let trip = build world (request (liked [ "likes-north"; "likes-south" ]) 6 None)
+
+    let through =
+        trip.Stops
+        |> List.find (fun stop ->
+            stop.Arrival
+            |> Option.exists (fun leg -> leg.ComfortNote = Some "Through MAIN."))
+
+    Assert.Equal(300, through.Arrival.Value.MinutesMin)
+
+[<Fact>]
+let ``the nearer of two equal places wins`` () =
+    let world = {
+        catalog with
+            Places = [
+                place "base" "c-hills" "pine" "mountains"
+                place "near" "c-hills" "pine" "mountains"
+                place "far" "c-hills" "pine" "mountains"
+            ]
+            Links = timed "base" "near" 60 @ timed "base" "far" 600
+            Cards = [ card "likes-base" "interest:mountains" (Some "base") ]
+    }
+
+    let trip = build world (request (liked [ "likes-base" ]) 6 None)
+    Assert.Contains("near", slugs trip)
+    Assert.DoesNotContain("far", slugs trip)
+
+[<Fact>]
+let ``the closing stay prefers a hub that is fine in the month over a nearer hard one`` () =
+    let trip =
+        likingRemote
+            [
+                {
+                    hubAirport "near-hub" "c-plains" "stone" "forts" with
+                        Months = months [] [ 5 ]
+                }
+                hubAirport "far-hub" "c-plains" "stone" "forts"
+                place "remote" "c-hills" "pine" "mountains"
+            ]
+            (timed "near-hub" "remote" 70 @ timed "far-hub" "remote" 145)
+            6
+            (Some 5)
+
+    Assert.Equal("far-hub", (List.last trip.Stops).PlaceSlug)

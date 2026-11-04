@@ -14,7 +14,16 @@ let private beamWidth = 60
 let private unfilledDayPenalty = 10
 let private oneLinkCost = 25
 let private farCost = 70
-let private midTripHubCost = 100
+/// What an hour on the road or rails costs a route, and for someone who avoids flights
+/// and so expects the long way round.
+let private hourCost = 6
+let private groundHourCost = 3
+/// Past this, every hour counts double: a day lost to the road.
+let private longLegMinutes = 480
+/// Packing up and moving on costs something, so a stop has to be worth the move,
+/// and more so for someone who'd rather go deep than far.
+let private stopCost = 20
+let private slowStopCost = 35
 
 let private regionLimit days =
     if days <= 7 then 1
@@ -23,6 +32,24 @@ let private regionLimit days =
 
 let private allowed (request: TripRequest) (link: TransportLink) =
     request.TransportComfort = TransportComfort.Anything || link.Mode <> Mode.Flight
+
+let private travelCost (request: TripRequest) (link: TransportLink) =
+    let perHour =
+        match request.TransportComfort with
+        | TransportComfort.Anything -> hourCost
+        | TransportComfort.NoFlights -> groundHourCost
+
+    (link.MinutesMin + max 0 (link.MinutesMin - longLegMinutes)) * perHour / 60
+
+let private throughNote (city: Place) = $"Through {PlaceName.plain city.Name}."
+
+/// One leg made of two, for a route that passes through a city without staying.
+let private passing (middle: Place) (first: TransportLink) (second: TransportLink) = {
+    second with
+        MinutesMin = first.MinutesMin + second.MinutesMin
+        MinutesMax = first.MinutesMax + second.MinutesMax
+        ComfortNote = Some(throughNote middle)
+}
 
 /// The quickest link by any mode, for routes a traveller chose themselves.
 let linkBetween (links: TransportLink list) (from: string) (target: string) =
@@ -67,10 +94,13 @@ let private start catalog stopDays worthOf (place: Place) =
         Capacity = place.DaysMax
     }
 
+/// A main hub only starts or ends a route. A route reaches past one by passing through.
 let private extend
-    catalog
+    (catalog: Catalog)
+    (request: TripRequest)
     (links: Map<string * string, TransportLink>)
     stopDays
+    moveCost
     allowsRegions
     days
     (ranked: Place list)
@@ -80,7 +110,23 @@ let private extend
     let last = path.Stops.Head.Place
     let sofar = path.Stops |> List.map _.Place
 
-    if path.Planned >= days then
+    let hubs =
+        catalog.Places
+        |> List.filter (fun place -> place.Hub && place.Slug <> last.Slug)
+
+    let through (place: Place) =
+        hubs
+        |> List.choose (fun hub ->
+            match links.TryFind(last.Slug, hub.Slug), links.TryFind(hub.Slug, place.Slug) with
+            | Some first, Some second -> Some(passing hub first second)
+            | _ -> None)
+        |> List.sortBy _.MinutesMin
+        |> List.tryHead
+
+    let reach (place: Place) =
+        links.TryFind(last.Slug, place.Slug) |> Option.orElse (through place)
+
+    if path.Planned >= days || (last.Hub && path.Stops.Length > 1) then
         []
     else
         ranked
@@ -89,7 +135,7 @@ let private extend
             let regions = path.Regions.Add(regionOf catalog place)
             let used = path.Stops |> List.exists (fun stop -> stop.Place.Slug = place.Slug)
 
-            match links.TryFind(last.Slug, place.Slug) with
+            match reach place with
             | Some link when not used && allowsRegions regions && path.Minimum + place.DaysMin <= days ->
                 Some {
                     Stops =
@@ -100,7 +146,7 @@ let private extend
                         }
                         :: path.Stops
                     Regions = regions
-                    Score = path.Score + score
+                    Score = path.Score + score - travelCost request link - moveCost
                     FirstScore = path.FirstScore
                     Planned = path.Planned + stopDays place
                     Minimum = path.Minimum + place.DaysMin
@@ -135,17 +181,10 @@ let private startCost (catalog: Catalog) (links: Map<string * string, TransportL
         else
             farCost
 
-/// The route's taste, less penalties for days it can't honestly fill and for ends nobody can fly to.
+/// The route's taste less its travel, less penalties for days it can't honestly fill
+/// and for ends nobody can fly to.
 let private worth days cost (path: Path) =
-    let midTripHubs =
-        path.Stops
-        |> List.skip 1
-        |> List.truncate (path.Stops.Length - 2)
-        |> List.filter _.Place.Hub
-        |> List.length
-
     path.Score
-    - midTripHubCost * midTripHubs
     - unfilledDayPenalty * max 0 (days - path.Capacity)
     - cost (List.last path.Stops).Place.Slug
     - cost path.Stops.Head.Place.Slug / 2
@@ -205,15 +244,15 @@ let rec private trim excess (stops: RoutedStop list) =
 
 let private planned (stops: RoutedStop list) = stops |> List.sumBy _.Days
 
-let private throughNote (city: Place) = $"Through {PlaceName.plain city.Name}."
-
 /// A week or less leaves one day for the last city, a longer trip two.
 let private closingDays days = if days <= 7 then 1 else 2
 
 /// Where to stay before flying home, if the route doesn't already end somewhere people fly
-/// home from: the nearest main hub, or failing that, the nearest international airport.
+/// home from: the nearest main hub that's fine in the month, else the nearest hub at all,
+/// or failing that, the nearest international airport.
 let private closingCity
     (catalog: Catalog)
+    (request: TripRequest)
     (links: Map<string * string, TransportLink>)
     (closers: Place list)
     (stops: RoutedStop list)
@@ -231,13 +270,7 @@ let private closingCity
 
     let through (city: Place) (middle: Place) =
         match between last.Slug middle.Slug, between middle.Slug city.Slug with
-        | Some first, Some second ->
-            Some {
-                second with
-                    MinutesMin = first.MinutesMin + second.MinutesMin
-                    MinutesMax = first.MinutesMax + second.MinutesMax
-                    ComfortNote = Some(throughNote middle)
-            }
+        | Some first, Some second -> Some(passing middle first second)
         | _ -> None
 
     let reach (city: Place) =
@@ -254,7 +287,7 @@ let private closingCity
         cities
         |> List.filter (fun city -> city.Slug <> last.Slug)
         |> List.choose reach
-        |> List.sortBy (fun (city, link) -> link.MinutesMin, city.Slug)
+        |> List.sortBy (fun (city, link) -> not (Scoring.isUsableIn request.Month city), link.MinutesMin, city.Slug)
         |> List.tryHead
 
     if last.Hub then
@@ -271,15 +304,9 @@ let private without (city: Place) (stops: RoutedStop list) =
     match stops |> List.tryFindIndex (fun stop -> stop.Place.Slug = city.Slug) with
     | None -> stops
     | Some index ->
-        let passing (stop: RoutedStop) (next: RoutedStop) =
+        let onward (stop: RoutedStop) (next: RoutedStop) =
             match stop.Arrival, next.Arrival with
-            | Some first, Some second ->
-                Some {
-                    second with
-                        MinutesMin = first.MinutesMin + second.MinutesMin
-                        MinutesMax = first.MinutesMax + second.MinutesMax
-                        ComfortNote = Some(throughNote city)
-                }
+            | Some first, Some second -> Some(passing city first second)
             | _ -> None
 
         stops
@@ -290,7 +317,7 @@ let private without (city: Place) (stops: RoutedStop list) =
             elif at = index + 1 then
                 Some {
                     stop with
-                        Arrival = passing stops[index] stop
+                        Arrival = onward stops[index] stop
                 }
             else
                 Some stop)
@@ -332,8 +359,19 @@ let route
         |> List.map (fun link -> (link.FromSlug, link.ToSlug), link)
         |> Map.ofList
 
+    let moveCost = if prefersDepth then slowStopCost else stopCost
+
     let grow =
-        extend catalog links stopDays (allowsRegions catalog request liked ranked) request.Days ranked worthOf
+        extend
+            catalog
+            request
+            links
+            stopDays
+            moveCost
+            (allowsRegions catalog request liked ranked)
+            request.Days
+            ranked
+            worthOf
 
     let starts = ranked |> List.map (start catalog stopDays worthOf)
 
@@ -352,7 +390,7 @@ let route
 
     let endsInHub (route: RoutedStop list) = (List.last route).Place.Hub
 
-    match closingCity catalog links closers beforeClosing with
+    match closingCity catalog request links closers beforeClosing with
     // Making room can drop a stop after a hub, and then the hub is the natural end.
     | None when endsInHub beforeClosing -> fitted request.Days beforeClosing
     | None -> fitted request.Days stops

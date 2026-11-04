@@ -121,6 +121,6 @@ let ``an interest already covered by a stop counts less`` () =
     let profile = wants [ "mountains", 6 ]
     let peak = strongIn "mountains"
     Assert.Equal(30, Scoring.tasteAfter profile request [] peak)
-    Assert.Equal(15, Scoring.tasteAfter profile request [ peak ] peak)
-    Assert.Equal(10, Scoring.tasteAfter profile request [ peak; peak ] peak)
+    Assert.Equal(20, Scoring.tasteAfter profile request [ peak ] peak)
+    Assert.Equal(15, Scoring.tasteAfter profile request [ peak; peak ] peak)
     Assert.Equal(30, Scoring.tasteAfter profile request [ strongIn "beaches" ] peak)

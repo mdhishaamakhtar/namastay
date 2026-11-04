@@ -56,14 +56,18 @@ let ``landing where the trip ends is not a city twice`` () =
 
     Assert.Equal(0.0, value "city twice %" [ withTrip ends ])
 
+let private stop (slug: string) = {
+    trip.Stops.Head with
+        PlaceSlug = slug
+        Name = slug.ToUpperInvariant()
+}
+
 [<Fact>]
 let ``landing at a middle stop is a city twice`` () =
-    Assert.True(trip.Stops.Length >= 3, "the fixture trip needs a middle stop")
-    let middle = trip.Stops[1].Name
-
     let twice = {
         trip with
-            Arrive = Some(gateway middle)
+            Stops = [ stop "peak"; stop "valley"; stop "lake" ]
+            Arrive = Some(gateway "VALLEY")
     }
 
     Assert.Equal(100.0, value "city twice %" [ withTrip twice ])
