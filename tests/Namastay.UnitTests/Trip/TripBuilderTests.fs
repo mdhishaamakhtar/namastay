@@ -1691,3 +1691,25 @@ let ``any trip that can be built fills exactly the days asked for``
     match Builder.build catalog (request answers days month) with
     | Ok trip -> trip.Stops |> List.sumBy _.Days = days
     | Error _ -> true
+
+[<Fact>]
+let ``a feeling leads the mix and names the title`` () =
+    let scope = {
+        Kind = ScopeKind.Feeling
+        Slug = "beaches"
+    }
+
+    let planned = {
+        request (liked [ "likes-hills" ]) 5 None with
+            Scope = Some scope
+    }
+
+    let trip =
+        match Builder.buildWithin (Some(Scope.feelingPlaces catalog "beaches")) catalog planned with
+        | Ok trip -> trip
+        | Error error -> raise (Xunit.Sdk.XunitException $"expected a trip, got {error}")
+
+    Assert.Equal("5 days of name of beaches in Coast", trip.Title)
+    Assert.Equal("Name of beaches", trip.Mix.Head.Name)
+    Assert.Equal(100, trip.Mix.Head.Share)
+    Assert.All(trip.Stops, (fun stop -> Assert.Equal("ocean", stop.FamilySlug)))

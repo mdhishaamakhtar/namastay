@@ -290,6 +290,7 @@ let bestMonths (stops: RoutedStop list) = [
             month
 ]
 
+/// "14 days of Hindu temples in Rajasthan and Delhi" for a feeling, else just the places.
 let private title (catalog: Catalog) (request: TripRequest) (stops: RoutedStop list) =
     let names =
         stops
@@ -307,7 +308,12 @@ let private title (catalog: Catalog) (request: TripRequest) (stops: RoutedStop l
         | last :: (_ :: _ as earlier) -> String.Join(", ", List.rev earlier) + " and " + last
         | _ -> String.Join("", names)
 
-    $"{request.Days} days in {joined}"
+    match request.Scope with
+    | Some {
+               Kind = ScopeKind.Feeling
+               Slug = feeling
+           } -> $"{request.Days} days of {(interestName catalog feeling).ToLowerInvariant()} in {joined}"
+    | _ -> $"{request.Days} days in {joined}"
 
 let private assemble catalog profile (request: TripRequest) places stops : Trip = {
     Title = title catalog request stops
@@ -342,7 +348,7 @@ let buildWithin (allowed: Set<string> option) (catalog: Catalog) (request: TripR
     if request.Days < RequestRules.minDays || request.Days > RequestRules.maxDays then
         Error(TripError.InvalidDays request.Days)
     else
-        let profile = Profile.from catalog.Cards request
+        let profile = Profile.from catalog request
         let places = candidates catalog profile allowed
         // Someone who liked a place in a hard month gets it with a warning. Closed is closed.
         let usable =
