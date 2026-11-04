@@ -45,12 +45,20 @@ let private countOf (value: string option) (selector: JourneyCard -> string opti
     |> List.filter (fun card -> value.IsSome && selector card = value)
     |> List.length
 
-/// A small steady nudge from the slug, so near ties don't always fall in the same order.
-let private nudge (slug: string) = (slug |> Seq.sumBy int) % 5
+/// A start card beats any shuffle, so the opening is always drawn from the curated starts.
+let private startBonus = 12
+let private openingShuffle = 10
+let private leaningShuffle = 5
+
+/// Each visit's own shuffle of near ties. The same seed gives the same deck, so it can be tested.
+let private shuffle (seed: int) (range: int) (slug: string) =
+    let visit = (seed % 1009 + 1009) % 1009 + 1
+    let letters = (slug |> Seq.sumBy int) % 1013 + 1
+    visit * letters % 1021 % range
 
 /// Rewards whatever the visitor hasn't seen yet.
 let private freshness (shown: JourneyCard list) (card: JourneyCard) =
-    let start = if card.IsStart then 2 else 0
+    let start = if card.IsStart then startBonus else 0
 
     start
     - 20 * countOf card.Region _.Region shown
@@ -81,7 +89,8 @@ let private isWildcard (answered: int) =
 
 /// The next card. The first few show how varied India is, then the deck leans towards
 /// what the visitor likes, and every so often it offers something different.
-let next (graph: JourneyGraph) (answers: CardAnswer list) =
+/// The seed is the visit's own, so two visitors don't open with the same cards.
+let next (seed: int) (graph: JourneyGraph) (answers: CardAnswer list) =
     let shown = shownCards graph answers
     let seen = answers |> List.map _.Card
     let last = shown |> List.tryLast |> Option.bind _.Place
@@ -99,9 +108,9 @@ let next (graph: JourneyGraph) (answers: CardAnswer list) =
 
     let score card =
         if answers.Length < openingCards || isWildcard answers.Length then
-            freshness shown card + nudge card.Slug
+            freshness shown card + shuffle seed openingShuffle card.Slug
         else
-            leaning graph answers shown card + nudge card.Slug
+            leaning graph answers shown card + shuffle seed leaningShuffle card.Slug
 
     if answers.Length >= maxCards then
         None

@@ -37,7 +37,7 @@ let private request (persona: Persona) answers scope : TripRequest = {
 
 [<TailCall>]
 let rec private swipe random (catalog: Catalog) deck persona answers =
-    match JourneyPath.next deck answers with
+    match JourneyPath.next persona.Seed deck answers with
     | None -> answers
     | Some slug ->
         let card = catalog.Cards |> List.find (fun item -> item.Slug = slug)

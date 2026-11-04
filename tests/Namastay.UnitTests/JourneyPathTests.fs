@@ -1,5 +1,6 @@
 module Namastay.UnitTests.JourneyPathTests
 
+open FsCheck.Xunit
 open Xunit
 open Namastay.Shared
 open Namastay.Shared.Contracts
@@ -129,24 +130,52 @@ let private india = {
 }
 
 [<TailCall>]
-let rec private answerCards graph (decide: JourneyCard -> bool) limit answers shown =
-    match JourneyPath.next graph answers with
+let rec private answerCards seed graph (decide: JourneyCard -> bool) limit answers shown =
+    match JourneyPath.next seed graph answers with
     | Some slug when List.length answers < limit ->
         let card = graph.Cards |> List.find (fun item -> item.Slug = slug)
-        answerCards graph decide limit (answers @ [ { Card = slug; Liked = decide card } ]) (shown @ [ card ])
+        answerCards seed graph decide limit (answers @ [ { Card = slug; Liked = decide card } ]) (shown @ [ card ])
     | _ -> shown
 
-let private play graph decide limit = answerCards graph decide limit [] []
+let private playSeeded seed graph decide limit =
+    answerCards seed graph decide limit [] []
+
+let private play graph decide limit = playSeeded 0 graph decide limit
+
+[<Property>]
+let ``the opening cards all come from different regions whatever the seed`` (seed: int) =
+    let regions = playSeeded seed india (fun _ -> false) 6 |> List.choose _.Region
+    regions |> List.distinct |> List.length = 6
+
+[<Property>]
+let ``the opening mixes interests whatever the seed`` (seed: int) =
+    let interests = playSeeded seed india (fun _ -> false) 4 |> List.choose _.Interest
+    interests |> List.distinct |> List.length = 2
 
 [<Fact>]
-let ``the opening cards all come from different regions`` () =
-    let regions = play india (fun _ -> false) 6 |> List.choose _.Region
-    Assert.Equal(6, regions |> List.distinct |> List.length)
+let ``different visits open with different cards`` () =
+    let openers =
+        [ 1..20 ]
+        |> List.choose (fun seed -> JourneyPath.next seed india [])
+        |> List.distinct
+
+    Assert.True(openers.Length >= 4, $"only {openers.Length} different openers")
 
 [<Fact>]
-let ``the opening mixes interests`` () =
-    let interests = play india (fun _ -> false) 4 |> List.choose _.Interest
-    Assert.Equal(2, interests |> List.distinct |> List.length)
+let ``the opening is drawn from the start cards`` () =
+    let starts = {
+        india with
+            Cards =
+                india.Cards
+                |> List.map (fun item -> {
+                    item with
+                        IsStart = item.Slug.EndsWith "-one"
+                })
+    }
+
+    for seed in 1..20 do
+        let opening = playSeeded seed starts (fun _ -> false) 6
+        Assert.All(opening, (fun card -> Assert.True card.IsStart))
 
 [<Fact>]
 let ``the same place never comes twice in a row`` () =
@@ -191,6 +220,7 @@ let ``a liked card brings its follow-up soon after the opening`` () =
                 if item.Slug = "north-a-one" then
                     {
                         item with
+                            IsStart = true
                             Branches = [ onLike "coast-b-two" 1 ]
                     }
                 else
@@ -207,8 +237,8 @@ let ``a card is never shown twice`` () =
     Assert.Equal(shown.Length, shown |> List.distinct |> List.length)
 
 [<Fact>]
-let ``the same answers always give the same next card`` () =
-    Assert.Equal(JourneyPath.next india [], JourneyPath.next india [])
+let ``the same seed and answers always give the same next card`` () =
+    Assert.Equal(JourneyPath.next 7 india [], JourneyPath.next 7 india [])
 
 [<Fact>]
 let ``journey ends at the card limit`` () =
