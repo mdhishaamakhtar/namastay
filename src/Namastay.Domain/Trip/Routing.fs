@@ -20,10 +20,11 @@ let private hourCost = 6
 let private groundHourCost = 3
 /// Past this, every hour counts double: a day lost to the road.
 let private longLegMinutes = 480
-/// Packing up and moving on costs something, so a stop has to be worth the move,
-/// and more so for someone who'd rather go deep than far.
+/// Packing up and moving on costs something, so a stop has to be worth the move:
+/// more for a family or someone who'd rather go deep than far, less for friends.
 let private stopCost = 20
 let private slowStopCost = 35
+let private quickStopCost = 12
 
 let private regionLimit days =
     if days <= 7 then 1
@@ -345,11 +346,13 @@ let route
     (ranked: Place list)
     (worthOf: Place list -> Place -> int)
     : RoutedStop list =
+    let slow = prefersDepth || request.Travellers = TravellerType.Family
+    let quick = not slow && request.Travellers = TravellerType.Friends
+
     let stopDays (place: Place) =
-        if prefersDepth then
-            place.DaysMax
-        else
-            (place.DaysMin + place.DaysMax + 1) / 2
+        if slow then place.DaysMax
+        elif quick then place.DaysMin
+        else (place.DaysMin + place.DaysMax + 1) / 2
 
     let links =
         catalog.Links
@@ -359,7 +362,10 @@ let route
         |> List.map (fun link -> (link.FromSlug, link.ToSlug), link)
         |> Map.ofList
 
-    let moveCost = if prefersDepth then slowStopCost else stopCost
+    let moveCost =
+        if slow then slowStopCost
+        elif quick then quickStopCost
+        else stopCost
 
     let grow =
         extend

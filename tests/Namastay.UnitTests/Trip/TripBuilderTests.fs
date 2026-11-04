@@ -1814,3 +1814,20 @@ let ``the closing stay prefers a hub that is fine in the month over a nearer har
             (Some 5)
 
     Assert.Equal("far-hub", (List.last trip.Stops).PlaceSlug)
+
+[<Fact>]
+let ``families move less than friends`` () =
+    let travelling who = {
+        request (liked [ "likes-hills" ]) 12 None with
+            Travellers = who
+    }
+
+    let family = build catalog (travelling TravellerType.Family)
+    let friends = build catalog (travelling TravellerType.Friends)
+
+    Assert.True(
+        family.Stops.Length < friends.Stops.Length,
+        $"family {family.Stops.Length}, friends {friends.Stops.Length}"
+    )
+
+    Assert.True(family.Stops |> List.forall (fun stop -> stop.Days >= 4))
