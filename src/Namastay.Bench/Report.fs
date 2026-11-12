@@ -98,6 +98,10 @@ let session (found: Session) =
     let liked = found.Answers |> List.filter _.Liked |> List.map _.Card
     printfn "  liked %s" (String.concat ", " liked)
 
+    match found.Early with
+    | Some finish -> printfn "  settled after %d of %d cards" finish.Cards found.Answers.Length
+    | None -> printfn "  never settled in %d cards" found.Answers.Length
+
     match found.Trip with
     | Error error -> printfn "  no trip: %A" error
     | Ok trip ->

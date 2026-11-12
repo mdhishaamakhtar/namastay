@@ -56,24 +56,33 @@ let private mix (graph: JourneyGraph) (model: Model) =
         ]
     ]
 
-let private cheer (answered: int) =
-    match JourneyPath.cheer answered with
-    | Some line ->
-        Html.div [
-            prop.className "journey-finish"
-            prop.children [ Html.p [ prop.key line; prop.className "reveal"; prop.text line ] ]
-        ]
-    | None -> Html.none
+let private finishLine (line: string) =
+    Html.p [ prop.key line; prop.className "reveal"; prop.text line ]
 
-let private buildNow (answered: int) dispatch =
-    if answered > 0 then
-        Html.button [
-            prop.className "journey-build press"
-            prop.onClick (fun _ -> dispatch FinishEarly)
-            prop.text "Build my trip now"
+let private buildNow dispatch =
+    Html.button [
+        prop.className "journey-build press"
+        prop.onClick (fun _ -> dispatch FinishEarly)
+        prop.text "Build my trip now"
+    ]
+
+/// Once the swipes have settled, the offer to build takes the place of the cheer.
+let private finish (settled: bool) (answered: int) dispatch =
+    let lines (children: ReactElement list) =
+        Html.div [ prop.className "journey-finish"; prop.children children ]
+
+    match settled, JourneyPath.cheer answered with
+    | true, _ ->
+        lines [
+            finishLine JourneyPath.offer
+            Html.button [
+                prop.className "button journey-offer press"
+                prop.onClick (fun _ -> dispatch FinishEarly)
+                prop.text "Build my trip"
+            ]
         ]
-    else
-        Html.none
+    | false, Some line -> lines [ finishLine line ]
+    | false, None -> Html.none
 
 let private swiping graph (model: Model) dispatch =
     let current =
@@ -82,6 +91,7 @@ let private swiping graph (model: Model) dispatch =
         |> Option.bind (fun slug -> graph.Cards |> List.tryFind (fun card -> card.Slug = slug))
 
     let number = model.Answers.Length + 1
+    let settled = JourneyPath.settled graph model.Answers
 
     match current with
     | Some card ->
@@ -101,11 +111,15 @@ let private swiping graph (model: Model) dispatch =
                         not model.Answers.IsEmpty,
                         Decided >> dispatch,
                         (fun () -> dispatch Undone),
-                        buildNow model.Answers.Length dispatch
+                        // The offer below carries the build button once the swipes have settled.
+                        (if model.Answers.IsEmpty || settled then
+                             Html.none
+                         else
+                             buildNow dispatch)
                     )
                 ]
             ]
-            cheer model.Answers.Length
+            finish settled model.Answers.Length dispatch
         ]
     | None ->
         shell "" [
