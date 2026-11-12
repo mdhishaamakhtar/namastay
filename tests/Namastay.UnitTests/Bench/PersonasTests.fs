@@ -32,9 +32,25 @@ let ``every taste wants an interest a card carries`` () =
 let ``random and everything swipers want nothing in particular`` () =
     for persona in travellers |> List.filter (fun persona -> persona.Swiper <> Swiper.Taste) do
         Assert.Empty persona.Interests
-        Assert.False persona.Scoped
+        Assert.Empty persona.Feelings
 
 [<Fact>]
 let ``every kind of traveller is there`` () =
     let kinds = travellers |> List.map _.Swiper |> List.distinct
     Assert.Equal(3, kinds.Length)
+
+let private coastAndHills = Personas.pairs TripBuilderTests.catalog 7
+
+[<Fact>]
+let ``pairs want two different feelings and plan from both`` () =
+    Assert.NotEmpty coastAndHills
+
+    for persona in coastAndHills do
+        Assert.Equal(2, (List.distinct persona.Interests).Length)
+        Assert.Equal<string list>(persona.Interests, persona.Feelings)
+        Assert.Equal(Swiper.Taste, persona.Swiper)
+
+[<Fact>]
+let ``pairs are the same every run and leave the main set alone`` () =
+    Assert.Equal<Persona list>(coastAndHills, Personas.pairs TripBuilderTests.catalog 7)
+    Assert.All(travellers, (fun persona -> Assert.True(persona.Feelings.Length <= 1)))

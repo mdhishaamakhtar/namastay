@@ -38,7 +38,7 @@ let private persona swiper interests = {
     Travellers = TravellerType.Solo
     Budget = BudgetLevel.Mid
     Comfort = TransportComfort.Anything
-    Scoped = false
+    Feelings = []
     Seed = 1
 }
 

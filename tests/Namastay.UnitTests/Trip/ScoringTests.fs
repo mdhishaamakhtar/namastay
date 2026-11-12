@@ -147,3 +147,40 @@ let ``a liked place in a good month beats one in a hard month`` () =
     let july = TripBuilderTests.request [] 7 (Some 7)
     Assert.True(Scoring.total profile july sunny > Scoring.total profile july rainy)
     Assert.True(Scoring.total profile july rainy > Scoring.total (wants []) july (strongIn "filler"))
+
+let private plannedFrom (slugs: string list) days = {
+    TripBuilderTests.request [] days None with
+        Scope =
+            Some {
+                Kind = ScopeKind.Feeling
+                Slugs = slugs
+            }
+}
+
+[<Fact>]
+let ``a short trip still keeps every feeling it was planned from`` () =
+    let profile = wants [ "mountains", 4; "beaches", 4; "forts", 4 ]
+    let fort = strongIn "forts"
+    Assert.Equal(None, Scoring.leadingInterest profile (TripBuilderTests.request [] 5 None) fort)
+
+    Assert.Equal(Some "forts", Scoring.leadingInterest profile (plannedFrom [ "mountains"; "beaches"; "forts" ] 5) fort)
+
+[<Fact>]
+let ``the first stop for a feeling the route lacks is worth a place liked twice`` () =
+    let profile = wants [ "mountains", 4; "beaches", 4 ]
+    let asked = plannedFrom [ "mountains"; "beaches" ] 10
+    let hills = strongIn "mountains"
+    let coast = strongIn "beaches"
+    let lacking = Scoring.tasteAfter profile asked [ hills ] coast
+
+    let covered =
+        Scoring.tasteAfter profile asked [ hills; coast ] { coast with Slug = "second-beach" }
+
+    Assert.True(lacking - covered >= 300, $"lacking {lacking}, covered {covered}")
+
+[<Fact>]
+let ``a trip planned from one feeling owes nothing extra`` () =
+    let profile = wants [ "mountains", 4 ]
+    let hills = strongIn "mountains"
+    let open' = TripBuilderTests.request [] 10 None
+    Assert.Equal(Scoring.taste profile open' hills, Scoring.taste profile (plannedFrom [ "mountains" ] 10) hills)

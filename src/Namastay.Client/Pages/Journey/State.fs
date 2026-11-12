@@ -63,17 +63,7 @@ type Msg =
 let questionCount = 6
 
 let private scopeInAddress () =
-    let kind =
-        match Browser.queryParam "scope" with
-        | Some "region" -> Some ScopeKind.Region
-        | Some "food" -> Some ScopeKind.FoodInRegion
-        | Some "feeling" -> Some ScopeKind.Feeling
-        | Some "dish" -> Some ScopeKind.Dish
-        | _ -> None
-
-    match kind, Browser.queryParam "of" with
-    | Some chosen, Some slug -> Some { Kind = chosen; Slug = slug }
-    | _ -> None
+    TripScopes.ofQuery (Browser.queryParam "scope") (Browser.queryParam "of")
 
 let private loadGraph () =
     Cmd.OfPromise.perform
@@ -158,10 +148,21 @@ let isChosen (plan: Plan) choice =
     | Choice.Travel comfort -> plan.Comfort = comfort
     | Choice.Eat diet -> plan.Diet = diet
 
+/// The feelings the deck was planned from, which it keeps level when there are several.
+let private feelings (model: Model) =
+    match model.Scope with
+    | Some {
+               Kind = ScopeKind.Feeling
+               Slugs = chosen
+           } -> chosen
+    | _ -> []
+
 let private decide (graph: JourneyGraph) liked (model: Model) =
     let slug = List.head model.Queue
     let answers = model.Answers @ [ { Card = slug; Liked = liked } ]
-    let queue = JourneyPath.next model.Seed graph answers |> Option.toList
+
+    let queue =
+        JourneyPath.next model.Seed (feelings model) graph answers |> Option.toList
 
     let step = if queue.IsEmpty then Step.Asking 0 else Step.Swiping
 
@@ -192,7 +193,7 @@ let update msg (model: Model) =
     match msg, model.Graph, model.Step with
     | LoadGraph, _, _ -> { model with Graph = Remote.Loading }, loadGraph ()
     | GraphLoaded(Ok graph), _, _ ->
-        let queue = JourneyPath.next model.Seed graph [] |> Option.toList
+        let queue = JourneyPath.next model.Seed (feelings model) graph [] |> Option.toList
 
         {
             model with

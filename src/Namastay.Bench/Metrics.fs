@@ -51,7 +51,7 @@ let private variety (catalog: Catalog) (sessions: Session list) =
 
     let firstCards =
         sessions
-        |> List.filter (fun session -> not session.Persona.Scoped)
+        |> List.filter (fun session -> session.Persona.Feelings.IsEmpty)
         |> List.choose (fun session -> session.Shown |> List.tryHead)
         |> List.map _.Slug
         |> List.distinct
@@ -129,7 +129,7 @@ let private direction (catalog: Catalog) (sessions: Session list) =
 
     let scopeCards =
         sessions
-        |> List.filter (fun session -> session.Persona.Scoped)
+        |> List.filter (fun session -> not session.Persona.Feelings.IsEmpty)
         |> List.collect (fun session ->
             session.Shown
             |> List.map (fun shown ->
@@ -267,8 +267,54 @@ let private pace (catalog: Catalog) (sessions: Session list) =
         line "pace" "coin flip settles early %" (settledShare (ofSwiper Swiper.Random sessions)) Better.Lower
     ]
 
+let private openingCards = 6
+
+/// The share of the opening cards that speak for the feeling seen least, out of those
+/// that speak for either. Half is an even spread.
+let private lesserShare (catalog: Catalog) (session: Session) =
+    let speaks (feeling: string) (shown: JourneyCard) =
+        catalog.Cards
+        |> List.exists (fun card -> card.Slug = shown.Slug && Swipers.matches catalog [ feeling ] card)
+
+    let opening = session.Shown |> List.truncate openingCards
+
+    let counts =
+        session.Persona.Feelings
+        |> List.map (fun feeling -> opening |> List.filter (speaks feeling) |> List.length)
+
+    percent (List.min counts) (List.sum counts)
+
+/// Travellers who planned from several feelings: whether the deck opens on all of them
+/// and the trip covers each, not whichever the swipes happened to favour.
+let private several (catalog: Catalog) (sessions: Session list) =
+    let trips = built sessions
+
+    let every =
+        trips
+        |> List.filter (fun (session, trip) ->
+            session.Persona.Feelings
+            |> List.forall (fun feeling -> hits catalog [ feeling ] trip))
+        |> List.length
+
+    [
+        line "several" "every feeling in trip %" (percent every trips.Length) Better.Higher
+        line "several" "opening, lesser feeling %" (sessions |> List.map (lesserShare catalog) |> mean) Better.Higher
+        line
+            "several"
+            "travel hours per mixed trip"
+            (trips |> List.map (fun (_, trip) -> legs trip |> List.sumBy hours) |> mean)
+            Better.Lower
+        line "several" "mixed trips not built" (float (sessions.Length - trips.Length)) Better.Zero
+    ]
+
+/// The lines every run is judged by come from travellers planning from one feeling or none,
+/// so they compare with earlier baselines. Those planning from several have their own group.
 let scorecard (catalog: Catalog) (sessions: Session list) : Line list =
-    variety catalog sessions
-    @ direction catalog sessions
-    @ comfort catalog sessions
-    @ pace catalog sessions
+    let mixed, main =
+        sessions |> List.partition (fun session -> session.Persona.Feelings.Length > 1)
+
+    variety catalog main
+    @ direction catalog main
+    @ comfort catalog main
+    @ pace catalog main
+    @ several catalog mixed

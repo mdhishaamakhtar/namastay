@@ -11,8 +11,9 @@ open Namastay.Shared.Contracts
 
 type Plan = {
     Label: string
-    Scope: string option
-    Slug: string
+    /// What the trip is limited to. None plans from anywhere.
+    Scope: TripScope option
+    /// How the journey names that limit.
     Name: string
 }
 
@@ -25,7 +26,7 @@ let shownInCard = 5
 
 let planUrl (plan: Plan) =
     match plan.Scope with
-    | Some scope -> Route.url [] [ "scope", scope; "of", plan.Slug; "label", plan.Name ] Routes.journey
+    | Some scope -> Route.url [] (TripScopes.toQuery scope @ [ "label", plan.Name ]) Routes.journey
     | None -> Routes.journey.Template
 
 let planButton (plan: Plan) =
@@ -43,11 +44,18 @@ let planButton (plan: Plan) =
 let anywhere = {
     Label = "Plan a trip"
     Scope = None
-    Slug = ""
     Name = ""
 }
 
-let head section (crumb: (string * string) option) (title: string) (line: string) plan (art: ReactElement) =
+/// `plan` is the plan button, with anything a page offers beside it.
+let head
+    section
+    (crumb: (string * string) option)
+    (title: string)
+    (line: string)
+    (plan: ReactElement)
+    (art: ReactElement)
+    =
     Html.header [
         prop.className "browse-head"
         prop.children [
@@ -64,7 +72,7 @@ let head section (crumb: (string * string) option) (title: string) (line: string
                             | None -> Html.none
                             Html.h1 title
                             Html.p line
-                            planButton plan
+                            plan
                         ]
                     ]
                     art

@@ -290,9 +290,9 @@ let bestMonths (stops: RoutedStop list) = [
             month
 ]
 
-/// "14 days of Hindu temples in Rajasthan and Delhi" for a feeling, else just the places.
+/// "14 days of hindu temples and beaches in Tamil Nadu and Goa" for feelings, else just the places.
 let private title (catalog: Catalog) (request: TripRequest) (stops: RoutedStop list) =
-    let names =
+    let regions =
         stops
         |> List.map (fun stop ->
             catalog.Clusters
@@ -302,18 +302,20 @@ let private title (catalog: Catalog) (request: TripRequest) (stops: RoutedStop l
             |> Option.map _.Name
             |> Option.defaultValue stop.Place.State)
         |> List.distinct
-
-    let joined =
-        match List.rev names with
-        | last :: (_ :: _ as earlier) -> String.Join(", ", List.rev earlier) + " and " + last
-        | _ -> String.Join("", names)
+        |> Sentence.listed
 
     match request.Scope with
     | Some {
                Kind = ScopeKind.Feeling
-               Slug = feeling
-           } -> $"{request.Days} days of {(interestName catalog feeling).ToLowerInvariant()} in {joined}"
-    | _ -> $"{request.Days} days in {joined}"
+               Slugs = feelings
+           } ->
+        let names =
+            feelings
+            |> List.map (fun feeling -> (interestName catalog feeling).ToLowerInvariant())
+            |> Sentence.listed
+
+        $"{request.Days} days of {names} in {regions}"
+    | _ -> $"{request.Days} days in {regions}"
 
 let private assemble catalog profile (request: TripRequest) places stops : Trip = {
     Title = title catalog request stops

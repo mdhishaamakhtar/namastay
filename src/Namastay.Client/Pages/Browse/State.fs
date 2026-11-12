@@ -20,6 +20,10 @@ type Model = {
     Query: string
     /// Only the Food page offers this.
     Diet: Diet
+    /// Every feeling, for a feeling page to offer the others to plan with.
+    Feelings: Remote<Feeling list>
+    /// The feelings added to a feeling page's own, in the order they were chosen.
+    Mixed: string list
 }
 
 type Msg =
@@ -28,6 +32,8 @@ type Msg =
     | Refreshed of Result<Content, Client.ClientError>
     | QueryChanged of string
     | DietChanged of Diet
+    | FeelingsLoaded of Result<Feeling list, Client.ClientError>
+    | MixToggled of slug: string
 
 let private bySlug (slug: string) route = Route.at [ "slug", slug ] [] route
 
@@ -58,6 +64,12 @@ let private fromSeed target =
     | Browse.Feeling slug -> Client.seeded (bySlug slug Routes.feelingDetail) |> Option.map Content.Listed
     | Browse.Dish slug -> Client.seeded (bySlug slug Routes.dishDetail) |> Option.map Content.Dish
 
+/// Only a feeling page mixes feelings, so only it asks for them.
+let private loadFeelings target =
+    match target with
+    | Browse.Feeling _ -> Cmd.OfPromise.perform Client.get (Route.address Routes.feelings) FeelingsLoaded
+    | _ -> Cmd.none
+
 /// A saved page shows straight away, then quietly catches up with the API.
 let init target =
     let started content = {
@@ -65,11 +77,15 @@ let init target =
         Content = content
         Query = ""
         Diet = Diet.Everything
+        Feelings = Remote.Loading
+        Mixed = []
     }
 
     match fromSeed target with
-    | Some content -> started (Remote.Loaded content), Cmd.OfPromise.perform loader target Refreshed
-    | None -> started Remote.Loading, load target
+    | Some content ->
+        started (Remote.Loaded content),
+        Cmd.batch [ Cmd.OfPromise.perform loader target Refreshed; loadFeelings target ]
+    | None -> started Remote.Loading, Cmd.batch [ load target; loadFeelings target ]
 
 let update msg (model: Model) =
     match msg with
@@ -95,3 +111,22 @@ let update msg (model: Model) =
     | Refreshed(Error _) -> model, Cmd.none
     | QueryChanged query -> { model with Query = query }, Cmd.none
     | DietChanged diet -> { model with Diet = diet }, Cmd.none
+    | FeelingsLoaded(Ok feelings) ->
+        {
+            model with
+                Feelings = Remote.Loaded feelings
+        },
+        Cmd.none
+    // The page plans from its own feeling without them, so the offer to mix just isn't shown.
+    | FeelingsLoaded(Error error) ->
+        {
+            model with
+                Feelings = Remote.Failed error
+        },
+        Cmd.none
+    | MixToggled slug ->
+        {
+            model with
+                Mixed = TripScopes.mix slug model.Mixed
+        },
+        Cmd.none

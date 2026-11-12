@@ -159,7 +159,7 @@ let page (model: Model) dispatch (page: FoodPage) =
                 None
                 "Eat your way across India"
                 "What to order, and where people go for it."
-                anywhere
+                (planButton anywhere)
                 Html.none
             Html.main [
                 prop.children [

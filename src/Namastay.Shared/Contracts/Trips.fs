@@ -23,7 +23,8 @@ type ScopeKind =
     | Feeling
     | Dish
 
-type TripScope = { Kind: ScopeKind; Slug: string }
+/// A trip can be planned around several feelings at once. Every other kind names one thing.
+type TripScope = { Kind: ScopeKind; Slugs: string list }
 
 type TripRequest = {
     Answers: CardAnswer list

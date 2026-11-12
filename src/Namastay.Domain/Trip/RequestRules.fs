@@ -1,5 +1,6 @@
 module Namastay.Domain.Trip.RequestRules
 
+open Namastay.Shared
 open Namastay.Shared.Contracts
 
 let minDays = 5
@@ -18,6 +19,13 @@ let check (request: TripRequest) : FieldError list = [
     | Some month when month < 1 || month > 12 -> {
         Field = "month"
         Message = "Please choose a month from January to December."
+      }
+    | _ -> ()
+
+    match request.Scope with
+    | Some scope when not (TripScopes.isValid scope) -> {
+        Field = "scope"
+        Message = $"Please plan from one place, dish or region, or from up to {TripScopes.maxFeelings} feelings."
       }
     | _ -> ()
 

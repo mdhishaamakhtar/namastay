@@ -2903,6 +2903,56 @@ button:focus-visible {
   text-decoration: none;
 }
 
+.browse-plans {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.browse-mix {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.browse-title .browse-mix p {
+  font-size: 15px;
+}
+
+.mix-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mix-chip {
+  min-width: 96px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  background: transparent;
+  color: inherit;
+  font: 600 15px/1 Mukta, system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.mix-chip[aria-pressed="true"] {
+  border-color: var(--paper);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.mix-chip:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.mix-chip.bone {
+  border: 0;
+}
+
 .browse-art {
   overflow: hidden;
   border-radius: 2px;

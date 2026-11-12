@@ -6,12 +6,14 @@
     <Compile Include="Contracts/Errors.fs" />
     <Compile Include="Contracts/Places.fs" />
     <Compile Include="Contracts/Trips.fs" />
+    <Compile Include="TripScopes.fs" />
     <Compile Include="Contracts/Journey.fs" />
     <Compile Include="Contracts/Accounts.fs" />
     <Compile Include="DishKinds.fs" />
     <Compile Include="NoticeOrder.fs" />
     <Compile Include="PlanDays.fs" />
     <Compile Include="PlaceName.fs" />
+    <Compile Include="Sentence.fs" />
     <Compile Include="Routes.fs" />
     <Compile Include="JourneyPath.fs" />
   </ItemGroup>

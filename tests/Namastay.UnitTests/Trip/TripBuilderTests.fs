@@ -1696,7 +1696,7 @@ let ``any trip that can be built fills exactly the days asked for``
 let ``a feeling leads the mix and names the title`` () =
     let scope = {
         Kind = ScopeKind.Feeling
-        Slug = "beaches"
+        Slugs = [ "beaches" ]
     }
 
     let planned = {
@@ -1713,6 +1713,56 @@ let ``a feeling leads the mix and names the title`` () =
     Assert.Equal("Name of beaches", trip.Mix.Head.Name)
     Assert.Equal(100, trip.Mix.Head.Share)
     Assert.All(trip.Stops, (fun stop -> Assert.Equal("ocean", stop.FamilySlug)))
+
+let private plannedFrom (feelings: string list) answers days =
+    let planned = {
+        request answers days None with
+            Scope =
+                Some {
+                    Kind = ScopeKind.Feeling
+                    Slugs = feelings
+                }
+    }
+
+    let world = {
+        catalog with
+            Links = catalog.Links @ both "lake" "fort"
+    }
+
+    match Builder.buildWithin (Some(Scope.feelingsPlaces world feelings)) world planned with
+    | Ok trip -> trip
+    | Error error -> raise (Xunit.Sdk.XunitException $"expected a trip, got {error}")
+
+[<Fact>]
+let ``a trip planned from two feelings covers both, whatever the swipes favoured`` () =
+    let trip =
+        plannedFrom [ "mountains"; "forts" ] (liked [ "likes-hills"; "peak-card" ]) 10
+
+    Assert.Contains("fort", slugs trip)
+    Assert.Contains(slugs trip, (fun slug -> List.contains slug [ "peak"; "valley"; "lake" ]))
+
+[<Fact>]
+let ``several feelings lead the mix level and name the title in the order chosen`` () =
+    let trip = plannedFrom [ "forts"; "mountains" ] (liked [ "likes-hills" ]) 10
+    Assert.StartsWith("10 days of name of forts and name of mountains in ", trip.Title)
+
+    Assert.Equal<(string * int) list>(
+        [ "Name of mountains", 100; "Name of forts", 100 ],
+        trip.Mix |> List.map (fun share -> share.Name, share.Share)
+    )
+
+[<Fact>]
+let ``a scope that names too much is a problem with the request`` () =
+    let crowded = {
+        request [] 7 None with
+            Scope =
+                Some {
+                    Kind = ScopeKind.Feeling
+                    Slugs = [ "mountains"; "forts"; "food"; "yoga" ]
+                }
+    }
+
+    Assert.Equal<string list>([ "scope" ], RequestRules.check crowded |> List.map _.Field)
 
 [<Fact>]
 let ``a place whose every card was passed is left out when another will do`` () =

@@ -35,7 +35,7 @@ let ``a feeling's places suit it strongly and are published`` () =
 let ``a thin feeling deck keeps every card from its places`` () =
     let scope = {
         Kind = ScopeKind.Feeling
-        Slug = "mountains"
+        Slugs = [ "mountains" ]
     }
 
     let kept = Scope.within scope (Set.ofList [ "peak" ]) graph
@@ -45,7 +45,7 @@ let ``a thin feeling deck keeps every card from its places`` () =
 let ``a food trip keeps only the food cards`` () =
     let scope = {
         Kind = ScopeKind.FoodInRegion
-        Slug = "hills"
+        Slugs = [ "hills" ]
     }
 
     let kept = Scope.within scope (Set.ofList [ "peak"; "quiet-beach" ]) graph
@@ -79,7 +79,7 @@ let private fullDeck = {
 let ``a feeling deck keeps the cards that speak for it, children included`` () =
     let scope = {
         Kind = ScopeKind.Feeling
-        Slug = "mountains"
+        Slugs = [ "mountains" ]
     }
 
     let kept =
@@ -89,4 +89,25 @@ let ``a feeling deck keeps the cards that speak for it, children included`` () =
     Assert.Equal(12, slugs.Length)
     Assert.Contains("snow", slugs)
     Assert.DoesNotContain("eat", slugs)
+    Assert.DoesNotContain("dance", slugs)
+
+[<Fact>]
+let ``several feelings share the places of each`` () =
+    let found = Scope.feelingsPlaces TripBuilderTests.catalog [ "mountains"; "forts" ]
+    Assert.Equal<Set<string>>(Set.ofList [ "peak"; "valley"; "lake"; "fort" ], found)
+
+[<Fact>]
+let ``a deck for several feelings keeps the cards that speak for any of them`` () =
+    let scope = {
+        Kind = ScopeKind.Feeling
+        Slugs = [ "mountains"; "food" ]
+    }
+
+    let kept =
+        Scope.within scope (Set.ofList [ "peak" ]) (ContractMapping.journeyGraph fullDeck)
+
+    let slugs = kept.Cards |> List.map _.Slug
+    Assert.Equal(13, slugs.Length)
+    Assert.Contains("eat", slugs)
+    Assert.Contains("snow", slugs)
     Assert.DoesNotContain("dance", slugs)

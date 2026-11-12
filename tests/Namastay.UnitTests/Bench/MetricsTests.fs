@@ -21,7 +21,7 @@ let private hiker = {
     Travellers = TravellerType.Solo
     Budget = BudgetLevel.Mid
     Comfort = TransportComfort.Anything
-    Scoped = false
+    Feelings = []
     Seed = 5
 }
 
@@ -99,7 +99,13 @@ let ``a trip on taste spends every day on it`` () =
 
 [<Fact>]
 let ``first cards count the open deck only`` () =
-    let scoped = Session.play catalog graph { hiker with Scoped = true; Seed = 9 }
+    let scoped =
+        Session.play catalog graph {
+            hiker with
+                Feelings = [ "mountains" ]
+                Seed = 9
+        }
+
     Assert.Equal(1.0, value "first cards, open deck" [ session; scoped; session ])
 
 [<Fact>]
@@ -156,8 +162,56 @@ let ``coin flippers who settle early are counted on their own`` () =
     Assert.Equal(50.0, value "coin flip settles early %" [ early 9 flipper; flipper; early 9 session ])
     Assert.Equal(100.0, value "taste settles early %" [ early 9 flipper; flipper; early 9 session ])
 
+let private pair =
+    Session.play catalog graph {
+        hiker with
+            Interests = [ "mountains"; "beaches" ]
+            Feelings = [ "mountains"; "beaches" ]
+    }
+
+[<Fact>]
+let ``travellers planning from several feelings are scored apart from the rest`` () =
+    Assert.Equal(1.0, value "first cards, open deck" [ session; pair ])
+    Assert.Equal(100.0, value "top interest in trip %" [ session; pair ])
+
+[<Fact>]
+let ``a trip that reaches only one of its feelings doesn't cover every feeling`` () =
+    let hillsOnly = {
+        pair with
+            Trip = Ok { trip with Stops = [ stop "peak" ] }
+    }
+
+    let both = {
+        pair with
+            Trip =
+                Ok {
+                    trip with
+                        Stops = [ stop "peak"; stop "quiet-beach" ]
+                }
+    }
+
+    Assert.Equal(50.0, value "every feeling in trip %" [ hillsOnly; both ])
+
+[<Fact>]
+let ``the opening is level when each feeling has as many cards`` () =
+    let shown slug =
+        graph.Cards |> List.find (fun card -> card.Slug = slug)
+
+    let level = {
+        pair with
+            Shown = [ shown "peak-card"; shown "quiet-card" ]
+    }
+
+    let lopsided = {
+        pair with
+            Shown = [ shown "peak-card"; shown "likes-hills" ]
+    }
+
+    Assert.Equal(50.0, value "opening, lesser feeling %" [ level ])
+    Assert.Equal(0.0, value "opening, lesser feeling %" [ lopsided ])
+
 [<Fact>]
 let ``every line has a direction`` () =
     let lines = Metrics.scorecard catalog [ session ]
-    Assert.Equal(21, lines.Length)
+    Assert.Equal(25, lines.Length)
     Assert.Equal(lines.Length, (lines |> List.map _.Name |> List.distinct).Length)
