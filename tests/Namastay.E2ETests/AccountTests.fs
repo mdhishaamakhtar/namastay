@@ -44,9 +44,35 @@ type AccountTests(browser: BrowserFixture) =
     let saveNewTrip () =
         task {
             let! page = browser.NewPage()
+            let seen = System.Collections.Concurrent.ConcurrentQueue<string>()
+            let clock = System.Diagnostics.Stopwatch.StartNew()
+
+            let note (text: string) =
+                seen.Enqueue $"{clock.ElapsedMilliseconds}ms {text}"
+
+            page.Response.Add(fun response -> note $"{response.Status} {response.Request.Method} {response.Url}")
+            page.RequestFailed.Add(fun request -> note $"FAILED {request.Method} {request.Url} {request.Failure}")
+            page.Console.Add(fun message -> note $"console.{message.Type}: {message.Text}")
+            page.PageError.Add(fun error -> note $"pageerror: {error}")
+            page.FrameNavigated.Add(fun frame -> note $"navigated {frame.Url}")
             do! openNewTrip page
+            note "trip shown"
             do! (button page "Save and change this trip").ClickAsync()
-            do! page.WaitForURLAsync "**/sign-in**"
+            note "clicked save"
+
+            try
+                do! page.WaitForURLAsync "**/sign-in**"
+            with :? TimeoutException ->
+                let! text = page.EvaluateAsync<string> "document.body.innerText.slice(0, 700)"
+
+                let! focus =
+                    page.EvaluateAsync<string> "document.activeElement?.outerHTML?.slice(0, 200) ?? ''"
+
+                let log = String.Join("\n  ", seen)
+
+                failwith
+                    $"DIAGNOSE no sign-in page. url={page.Url}\nfocus={focus}\nevents:\n  {log}\npage says:\n{text}"
+
             do! (button page "Create an account").ClickAsync()
             do! fillAccount page (email ())
             do! (button page "Create account").ClickAsync()
