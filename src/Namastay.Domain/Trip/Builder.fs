@@ -155,6 +155,7 @@ let toStop (catalog: Catalog) budget diet (stop: RoutedStop) : TripStop =
     {
         PlaceSlug = stop.Place.Slug
         Name = plainName stop.Place
+        Reason = None
         Days = stop.Days
         FamilySlug = family.Slug
         Colours = {
@@ -328,8 +329,11 @@ let private assemble catalog profile (request: TripRequest) places stops : Trip 
     Arrive = arrive catalog stops
     Depart = depart catalog stops
     Stops =
-        stops
-        |> List.map (toStop catalog request.Budget (Option.defaultValue Diet.Everything request.Diet))
+        List.zip stops (Reasons.forStops catalog profile request stops)
+        |> List.map (fun (stop, reason) -> {
+            toStop catalog request.Budget (Option.defaultValue Diet.Everything request.Diet) stop with
+                Reason = reason
+        })
     Swaps = swaps profile request places stops
     Mix = mix catalog profile
     LeftOut = leftOut catalog profile stops

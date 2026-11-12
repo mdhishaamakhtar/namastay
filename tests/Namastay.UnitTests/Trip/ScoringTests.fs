@@ -13,6 +13,7 @@ let private wants interests : TravellerProfile = {
     Parents = Map.ofList [ "snow-peaks", "mountains" ]
     Depth = 0
     Offbeat = 0
+    Liked = []
     Collected = []
     Likes = Map.empty
     Declined = []

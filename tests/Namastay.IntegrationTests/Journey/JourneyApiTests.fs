@@ -106,6 +106,22 @@ type JourneyApiTests(postgres: PostgresFixture) =
         http.GetFromJsonAsync<SavedTrip>(Route.url [ "shareToken", token ] [] Routes.getItinerary, Json.options)
 
     [<Fact>]
+    member _.``a trip says why a liked stop is in it and keeps saying so``() =
+        task {
+            let! http, _ = start ()
+            let! saved = create http
+            let kasol = saved.Trip.Stops |> List.find (fun stop -> stop.PlaceSlug = "kasol")
+            Assert.Equal(Some "Because you liked “Green valleys?”", kasol.Reason)
+
+            let! again = fetch http saved.ShareToken
+
+            Assert.Equal<string option list>(
+                saved.Trip.Stops |> List.map _.Reason,
+                again.Trip.Stops |> List.map _.Reason
+            )
+        }
+
+    [<Fact>]
     member _.``start returns whole card graph``() =
         task {
             let! http, _ = start ()

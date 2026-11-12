@@ -318,7 +318,13 @@ let view token (trip: Trip) (openSlug: string option) dispatch firstDay (stop: T
                         prop.children [
                             Html.span [
                                 prop.className "stop-title"
-                                prop.children [ Html.small (dayRange firstDay stop.Days); Html.strong stop.Name ]
+                                prop.children [
+                                    Html.small (dayRange firstDay stop.Days)
+                                    Html.strong stop.Name
+                                    match stop.Reason with
+                                    | Some reason -> Html.span [ prop.className "stop-why"; prop.text reason ]
+                                    | None -> Html.none
+                                ]
                             ]
                             Icons.chevron isOpen
                         ]
