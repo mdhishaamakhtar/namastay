@@ -129,7 +129,7 @@ type TripTests(browser: BrowserFixture) =
         task {
             let! page, _ = openTrip ()
             do! page.GetByRole(AriaRole.Link, PageGetByRoleOptions(Name = "Read the full guide")).ClickAsync()
-            do! page.WaitForURLAsync "**/places/**"
+            do! waitForAddress page "**/places/**"
         }
 
     [<Fact>]
@@ -137,9 +137,9 @@ type TripTests(browser: BrowserFixture) =
         task {
             let! page, token = openTrip ()
             do! page.GetByRole(AriaRole.Link, PageGetByRoleOptions(Name = "Read the full guide")).ClickAsync()
-            do! page.WaitForURLAsync "**/places/**"
+            do! waitForAddress page "**/places/**"
             do! page.GetByRole(AriaRole.Link, PageGetByRoleOptions(Name = "Your trip")).ClickAsync()
-            do! page.WaitForURLAsync $"**/trip/{token}"
+            do! waitForAddress page $"**/trip/{token}"
             do! page.Locator(".stop-head").First.WaitForAsync()
         }
 
@@ -148,9 +148,9 @@ type TripTests(browser: BrowserFixture) =
         task {
             let! page, token = openTrip ()
             do! page.GetByRole(AriaRole.Link, PageGetByRoleOptions(Name = "Read the full guide")).ClickAsync()
-            do! page.WaitForURLAsync "**/places/**"
+            do! waitForAddress page "**/places/**"
             let! _ = page.GoBackAsync()
-            do! page.WaitForURLAsync $"**/trip/{token}"
+            do! waitForAddress page $"**/trip/{token}"
             do! page.Locator(".stop-head").First.WaitForAsync()
         }
 

@@ -2,6 +2,7 @@ namespace Namastay.E2ETests
 
 open System
 open System.Text.Json
+open System.Text.RegularExpressions
 open System.Threading.Tasks
 open Microsoft.Playwright
 open Xunit
@@ -14,6 +15,19 @@ module private Photos =
 
     let serveTiny (route: IRoute) =
         route.FulfillAsync(RouteFulfillOptions(ContentType = "image/png", BodyBytes = tinyPng))
+
+[<AutoOpen>]
+module Addresses =
+    let private stepTimeout = 8000.0f
+
+    /// Waits until the page's address matches `glob`, however it got there. The site changes
+    /// pages without loading one, and that can be over before a wait for navigation starts
+    /// listening. Such a wait then never hears it and times out on a page that's already right.
+    let waitForAddress (page: IPage) (glob: string) : Task =
+        let pattern =
+            "^" + Regex.Escape(glob).Replace(@"\*\*", ".*").Replace(@"\*", "[^/]*") + "$"
+
+        Assertions.Expect(page).ToHaveURLAsync(Regex pattern, PageAssertionsToHaveURLOptions(Timeout = stepTimeout))
 
 /// One Chromium per test class, so classes run in parallel. Sized like a phone. Run with `make test-e2e`.
 type BrowserFixture() =

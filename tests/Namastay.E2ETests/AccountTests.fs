@@ -46,13 +46,13 @@ type AccountTests(browser: BrowserFixture) =
             let! page = browser.NewPage()
             do! openNewTrip page
             do! (button page "Save and change this trip").ClickAsync()
-            do! page.WaitForURLAsync "**/sign-in**"
+            do! waitForAddress page "**/sign-in**"
             do! (button page "Create an account").ClickAsync()
             do! fillAccount page (email ())
             do! (button page "Create account").ClickAsync()
-            do! page.WaitForURLAsync "**/trip/**"
+            do! waitForAddress page "**/trip/**"
             do! (button page "Save and change this trip").ClickAsync()
-            do! page.WaitForURLAsync "**/my/**"
+            do! waitForAddress page "**/my/**"
             do! page.Locator(".stop-head").First.WaitForAsync()
             return page
         }
@@ -62,7 +62,7 @@ type AccountTests(browser: BrowserFixture) =
         task {
             let! page = browser.NewPage()
             let! _ = page.GotoAsync $"{browser.BaseUrl}/my"
-            do! page.WaitForURLAsync "**/sign-in?next=%2Fmy"
+            do! waitForAddress page "**/sign-in?next=%2Fmy"
         }
 
     [<Fact>]
@@ -144,7 +144,7 @@ type AccountTests(browser: BrowserFixture) =
             let! page = saveNewTrip ()
             do! (link page "My trips").ClickAsync()
             do! (link page "Plan a new trip").ClickAsync()
-            do! page.WaitForURLAsync "**/journey"
+            do! waitForAddress page "**/journey"
         }
 
     [<Fact>]
@@ -154,7 +154,7 @@ type AccountTests(browser: BrowserFixture) =
             do! (link page "Change this trip").ClickAsync()
             do! page.GetByLabel("Trip name").FillAsync "Our honeymoon"
             do! (button page "Save changes").ClickAsync()
-            do! page.WaitForURLAsync "**/my/*"
+            do! waitForAddress page "**/my/*"
             do! page.GetByRole(AriaRole.Heading, PageGetByRoleOptions(Name = "Our honeymoon")).WaitForAsync()
         }
 

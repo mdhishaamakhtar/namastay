@@ -16,9 +16,9 @@ type NavigationTests(browser: BrowserFixture) =
             let! page = browser.NewPage()
             let! _ = page.GotoAsync browser.BaseUrl
             do! page.GetByRole(AriaRole.Button, PageGetByRoleOptions(Name = "Plan my trip")).ClickAsync()
-            do! page.WaitForURLAsync "**/journey"
+            do! waitForAddress page "**/journey"
             let! _ = page.GoBackAsync()
-            do! page.WaitForURLAsync(browser.BaseUrl + "/")
+            do! waitForAddress page (browser.BaseUrl + "/")
 
             do!
                 page

@@ -21,7 +21,7 @@ type HomeTests(browser: BrowserFixture) =
         task {
             let! page = openHome ()
             do! page.GetByRole(AriaRole.Button, PageGetByRoleOptions(Name = "Plan my trip")).ClickAsync()
-            do! page.WaitForURLAsync "**/journey"
+            do! waitForAddress page "**/journey"
         }
 
     [<Fact>]
@@ -49,7 +49,7 @@ type HomeTests(browser: BrowserFixture) =
                     .GetByRole(AriaRole.Link, LocatorGetByRoleOptions(Name = "Example Valley"))
                     .ClickAsync()
 
-            do! page.WaitForURLAsync "**/places/example-valley"
+            do! waitForAddress page "**/places/example-valley"
             let! title = page.Locator("h1").First.TextContentAsync()
             Assert.Equal("Example Valley", title)
         }
@@ -109,7 +109,7 @@ type HomeTests(browser: BrowserFixture) =
 
             Assert.Equal(title, chip)
             do! plan.ClickAsync()
-            do! page.WaitForURLAsync "**/journey?scope=feeling&of=mountains%2Cbeaches**"
+            do! waitForAddress page "**/journey?scope=feeling&of=mountains%2Cbeaches**"
             do! Assertions.Expect(page.Locator ".journey-scope").ToHaveTextAsync "Mountains and Beaches only"
             do! page.Locator(".card-label:not(:has(.bone))").WaitForAsync()
         }
@@ -181,7 +181,7 @@ type HomeTests(browser: BrowserFixture) =
         task {
             let! page = openHome ()
             do! page.Locator(".label-link").First.ClickAsync()
-            do! page.WaitForURLAsync "**/places/**"
+            do! waitForAddress page "**/places/**"
         }
 
     [<Fact>]
@@ -189,7 +189,7 @@ type HomeTests(browser: BrowserFixture) =
         task {
             let! page = openHome ()
             do! page.Locator(".home-again").ClickAsync()
-            do! page.WaitForURLAsync "**/journey"
+            do! waitForAddress page "**/journey"
         }
 
     [<Fact>]
@@ -198,9 +198,9 @@ type HomeTests(browser: BrowserFixture) =
             let! page = browser.NewPage()
             let! _ = page.GotoAsync(browser.BaseUrl + "/explore")
             do! page.Locator("a.region-top").First.ClickAsync()
-            do! page.WaitForURLAsync "**/explore/**"
+            do! waitForAddress page "**/explore/**"
             do! page.Locator(".browse-plan a").ClickAsync()
-            do! page.WaitForURLAsync "**/journey?scope=region**"
+            do! waitForAddress page "**/journey?scope=region**"
             do! page.Locator(".journey-scope").WaitForAsync()
         }
 
@@ -210,7 +210,7 @@ type HomeTests(browser: BrowserFixture) =
             let! page = browser.NewPage()
             let! _ = page.GotoAsync(browser.BaseUrl + "/food")
             do! page.Locator(".region-card li a").First.ClickAsync()
-            do! page.WaitForURLAsync "**/dishes/**"
+            do! waitForAddress page "**/dishes/**"
             do! page.Locator("a.listing").First.WaitForAsync()
         }
 
