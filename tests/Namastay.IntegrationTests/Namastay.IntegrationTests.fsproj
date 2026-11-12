@@ -19,6 +19,7 @@
     <Compile Include="Web/WiringTests.fs" />
     <Compile Include="Web/TripSnapshotTests.fs" />
     <Compile Include="Data/ImporterTests.fs" />
+    <Compile Include="Data/PublishTests.fs" />
   </ItemGroup>
 
   <ItemGroup>

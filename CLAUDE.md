@@ -30,11 +30,10 @@ A free trip planner for first-time foreign visitors to India. F# everywhere: ASP
 
 The site is in alpha, so a brief break around a deploy is fine. Saved and shared trips must keep opening, so add new trip fields to `TripSnapshot.fs`.
 
-- **Small changes:** import locally, then send only the changed rows through a `railway ssh` tunnel in one transaction. Insert a committed row into `import_batches` so the API reloads its data, wait 5 seconds for it to notice, then run `railway cdn purge all --service api`.
-- **`make publish`:** rewrites all content row by row, so it takes 20 minutes or more. It keeps accounts and trips. See issue #10.
-- **`pg_dump` streaming:** fast, but it wipes accounts and saved trips. Never use it unless the owner chooses that. See `docs/deploy.md`.
+- **`make publish`:** builds the local database from `data/`, streams its content tables to production through a `railway ssh` tunnel and writes only the rows that differ, in one transaction. It takes seconds and never touches accounts or trips. `make publish-check` shows what would change first.
+- **`pg_dump` streaming:** it wipes accounts and saved trips. Never use it unless the owner chooses that. See `docs/deploy.md`.
 
-Only the importer runs migrations, so a new column reaches production before the code that reads it merges. Importer changes need `data/core/places.json` updated as well as `data/places/*.json`, because both are parsed even though place files win. Never change production, wipe data or merge without saying what will happen first.
+Only the importer runs migrations, and publishing runs them first, so a new column reaches production before the code that reads it merges. A new content table or column also goes in `src/Namastay.Data/Import/ContentTables.fs`, or it isn't published. Importer changes need `data/core/places.json` updated as well as `data/places/*.json`, because both are parsed even though place files win. Never change production, wipe data or merge without saying what will happen first.
 
 ## Food
 

@@ -29,7 +29,8 @@ let private countsOf (catalog: Catalog) : ImportCounts =
         "cards", catalog.Cards.Length
     ]
 
-let private recordBatch (connection: NpgsqlConnection) (hash: string) (status: string) (counts: ImportCounts) =
+/// A committed batch is how the API learns its data changed.
+let recordBatch (connection: NpgsqlConnection) (hash: string) (status: string) (counts: ImportCounts) =
     use transaction = connection.BeginTransaction()
 
     exec
