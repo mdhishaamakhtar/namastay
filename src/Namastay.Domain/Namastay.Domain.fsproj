@@ -16,6 +16,7 @@
     <Compile Include="Trip/Scoring.fs" />
     <Compile Include="Trip/Routing.fs" />
     <Compile Include="Trip/Gateways.fs" />
+    <Compile Include="Trip/Reasons.fs" />
     <Compile Include="Trip/RequestRules.fs" />
     <Compile Include="Trip/Builder.fs" />
     <Compile Include="Trip/Rules.fs" />

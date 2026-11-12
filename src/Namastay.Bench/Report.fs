@@ -113,6 +113,9 @@ let session (found: Session) =
                 |> Option.map (fun leg -> $" ({leg.Mode} {leg.MinutesMin / 60}h{leg.MinutesMin % 60:D2})")
                 |> Option.defaultValue ""
 
-            printfn "  %s, %d days%s" stop.Name stop.Days leg
+            let reason =
+                stop.Reason |> Option.map (fun why -> $". {why}") |> Option.defaultValue ""
+
+            printfn "  %s, %d days%s%s" stop.Name stop.Days leg reason
 
         gateway "fly home from" trip.Depart

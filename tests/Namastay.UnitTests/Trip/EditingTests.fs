@@ -45,6 +45,25 @@ let ``reordering connected stops works`` () =
     Assert.Equal("My trip", edited.Trip.Title)
 
 [<Fact>]
+let ``a kept stop keeps its reason and an added one has none`` () =
+    let before = original.Stops |> List.map (fun stop -> stop.PlaceSlug, stop.Reason)
+    Assert.All(before, (fun (_, reason) -> Assert.True(reason.IsSome)))
+
+    let edited =
+        apply (edit [ known "valley" 3; known "peak" 2; custom "Our friends" 2 ])
+        |> applied
+
+    for stop in edited.Trip.Stops do
+        let expected =
+            before
+            |> List.tryFind (fun (slug, _) -> slug = stop.PlaceSlug)
+            |> Option.bind snd
+
+        Assert.Equal(expected, stop.Reason)
+
+    Assert.Equal(None, (List.last edited.Trip.Stops).Reason)
+
+[<Fact>]
 let ``travel legs follow the new order`` () =
     let edited = apply (edit [ known "valley" 3; known "peak" 4 ]) |> applied
     Assert.True(edited.Trip.Stops.Head.Arrival.IsNone)

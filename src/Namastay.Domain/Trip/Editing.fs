@@ -21,6 +21,7 @@ let private route (catalog: Catalog) stops =
                     Place = place
                     Days = days
                     Arrival = arrival
+                    Closing = false
                 },
                 Some place
             | Unchecked _ -> None, None)
@@ -41,6 +42,7 @@ let private colours (catalog: Catalog) (original: Trip) family =
 let private customStop (catalog: Catalog) (original: Trip) family index name days : TripStop = {
     PlaceSlug = $"custom-{index + 1}"
     Name = name
+    Reason = None
     Days = days
     FamilySlug = family
     Colours = colours catalog original family
@@ -66,6 +68,12 @@ let private leadingFamily (original: Trip) (routed: RoutedStop list) =
     | [] -> original.BaseFamily
     | _ -> routed |> List.map familyDays |> Builder.baseFamily []
 
+/// A stop the traveller kept is there for the reason it was first chosen. One they added has none.
+let private reasonBefore (original: Trip) (slug: string) =
+    original.Stops
+    |> List.tryFind (fun stop -> stop.PlaceSlug = slug && not stop.Custom)
+    |> Option.bind _.Reason
+
 let private rebuild (catalog: Catalog) (original: Trip) (edit: TripEdit) (review: Review) : Trip =
     let legs = route catalog review.Stops
     let routed = legs |> List.choose id
@@ -77,7 +85,10 @@ let private rebuild (catalog: Catalog) (original: Trip) (edit: TripEdit) (review
         |> List.mapi (fun index (stop, leg) ->
             match stop, leg with
             | Unchecked(name, days), _ -> customStop catalog original family index name days
-            | Known _, Some known -> Builder.toStop catalog original.Budget diet known
+            | Known _, Some known -> {
+                Builder.toStop catalog original.Budget diet known with
+                    Reason = reasonBefore original known.Place.Slug
+              }
             | Known _, None -> invalidOp "Every known stop has a leg.")
 
     {

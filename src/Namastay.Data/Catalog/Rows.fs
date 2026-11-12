@@ -153,6 +153,7 @@ type PhotoRow = {
 type CardRow = {
     Slug: string
     PlaceSlug: string option
+    Title: string
 }
 
 [<CLIMutable>]

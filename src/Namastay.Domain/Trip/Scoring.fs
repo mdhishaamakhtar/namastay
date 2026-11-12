@@ -33,7 +33,8 @@ let private budgetLevel =
     | BudgetLevel.Mid -> 2
     | BudgetLevel.Luxury -> 3
 
-let private related (parents: Map<string, string>) (one: string) (other: string) =
+/// Parent and child: quiet beaches and beaches.
+let related (parents: Map<string, string>) (one: string) (other: string) =
     parents.TryFind one = Some other || parents.TryFind other = Some one
 
 /// Whether a place is strongly about an interest, or a parent or child of it.
@@ -73,6 +74,21 @@ let private interestScore
     |> List.sortDescending
     |> List.truncate topInterests
     |> List.sum
+
+/// Which of the traveller's interests a place answers best, when it's strongly about one
+/// of them or about a parent or child of it.
+let leadingInterest (profile: TravellerProfile) (request: TripRequest) (place: Place) =
+    [
+        for slug, score in profile.Interests |> List.truncate (interestLimit request.Days) do
+            for item in place.Interests |> List.filter (fun item -> item.Weight >= Scope.strongFit) do
+                if slug = item.InterestSlug then
+                    slug, score * item.Weight
+                elif related profile.Parents slug item.InterestSlug then
+                    slug, score * item.Weight / kinShare
+    ]
+    |> List.sortBy (fun (slug, worth) -> -worth, slug)
+    |> List.tryHead
+    |> Option.map fst
 
 let private fitScore (request: TripRequest) (place: Place) =
     place.TravellerFit

@@ -39,7 +39,8 @@ let private stop index =
                         prop.children [
                             Html.span [
                                 prop.className "stop-title"
-                                prop.children [ bone "bone-short"; bone "bone-line" ]
+                                // Days, the name, and the line that says why the stop is there.
+                                prop.children [ bone "bone-short"; bone "bone-line"; bone "bone-why" ]
                             ]
                         ]
                     ]

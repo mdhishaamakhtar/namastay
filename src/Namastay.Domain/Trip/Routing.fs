@@ -8,6 +8,8 @@ type RoutedStop = {
     Place: Place
     Days: int
     Arrival: TransportLink option
+    /// Added at the end so the trip finishes somewhere people fly home from.
+    Closing: bool
 }
 
 let private beamWidth = 60
@@ -100,6 +102,7 @@ let private start (search: Search) (place: Place) =
                 Place = place
                 Days = search.StopDays place
                 Arrival = None
+                Closing = false
             }
         ]
         Regions = Set.singleton (regionOf search.Catalog place)
@@ -146,6 +149,7 @@ let private extend (search: Search) (path: Path) =
                             Place = place
                             Days = search.StopDays place
                             Arrival = Some link
+                            Closing = false
                         }
                         :: path.Stops
                     Regions = regions
@@ -407,5 +411,6 @@ let route
                 Place = city
                 Days = closing
                 Arrival = Some link
+                Closing = true
             }
         ]

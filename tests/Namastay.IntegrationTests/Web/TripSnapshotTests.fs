@@ -28,3 +28,8 @@ let ``a trip saved before food existed still opens without any`` () =
     Assert.True(trip.IsSome, "the old trip should still read")
     Assert.True(trip.Value.Diet.IsNone)
     Assert.True(trip.Value.Stops.Head.Food.IsNone)
+
+[<Fact>]
+let ``a trip saved before stops had reasons still opens without any`` () =
+    let trip = TripSnapshot.read stored
+    Assert.True(trip.Value.Stops.Head.Reason.IsNone)

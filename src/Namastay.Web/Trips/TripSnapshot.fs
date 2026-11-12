@@ -21,6 +21,7 @@ let private upgrade (trip: JsonObject) =
     match trip["stops"] with
     | :? JsonArray as stops ->
         for stop in stops do
+            ensure "reason" (fun () -> null) (stop.AsObject())
             ensure "photo" (fun () -> null) (stop.AsObject())
             ensure "food" (fun () -> null) (stop.AsObject())
             ensure "custom" (fun () -> JsonValue.Create false) (stop.AsObject())

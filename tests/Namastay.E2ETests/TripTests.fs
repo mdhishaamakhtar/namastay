@@ -45,6 +45,33 @@ type TripTests(browser: BrowserFixture) =
         }
 
     [<Fact>]
+    member _.``a stop says why it is in the trip, under its name``() =
+        task {
+            let! page, _ = openTrip ()
+            let why = page.Locator(".stop-head .stop-why").First
+            do! Assertions.Expect(why).ToHaveTextAsync "Because you liked “Green valleys”"
+
+            let! name =
+                page.EvaluateAsync<float> "document.querySelector('.stop-title strong').getBoundingClientRect().left"
+
+            let! reason =
+                page.EvaluateAsync<float> "document.querySelector('.stop-why').getBoundingClientRect().left"
+
+            Assert.Equal(name, reason)
+        }
+
+    [<Fact>]
+    member _.``a trip saved before reasons existed shows none``() =
+        task {
+            let! page =
+                openChangedTrip (fun json -> (firstStop json).AsObject().Remove "reason" |> ignore)
+
+            do! Assertions.Expect(page.Locator(".stop-title strong").First).ToBeVisibleAsync()
+            let! first = page.Locator(".stop-head").First.Locator(".stop-why").CountAsync()
+            Assert.Equal(0, first)
+        }
+
+    [<Fact>]
     member _.``a slow trip shows the page skeleton``() =
         task {
             let! page = browser.NewPage()

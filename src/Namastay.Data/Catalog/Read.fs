@@ -194,7 +194,7 @@ let private loadPhotos source =
 let private loadCards source =
     task {
         let! cards =
-            query<CardRow> source "select slug, place_slug from cards order by slug" null
+            query<CardRow> source "select slug, place_slug, title from cards order by slug" null
 
         let! signals =
             query<SignalRow> source "select card_slug, signal, weight from card_signals" null
@@ -204,7 +204,8 @@ let private loadCards source =
             |> List.map (fun card -> {
                 Slug = card.Slug
                 PlaceSlug = card.PlaceSlug
-                Title = ""
+                // A trip names the cards a visitor liked, so the title is read. The rest isn't needed.
+                Title = card.Title
                 Line = ""
                 PhotoSlug = None
                 IllustrationSlug = None

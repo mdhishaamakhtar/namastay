@@ -9,6 +9,8 @@ type TravellerProfile = {
     Parents: Map<string, string>
     Depth: int
     Offbeat: int
+    /// The liked cards, first like first.
+    Liked: Card list
     /// Places whose cards were liked, first like first.
     Collected: string list
     /// How many cards were liked at each collected place.
@@ -31,6 +33,12 @@ let private signalTotal (signal: string) (cards: Card list) =
     |> List.collect _.Signals
     |> List.filter (fun item -> item.Signal = signal)
     |> List.sumBy _.Weight
+
+/// The interests a card speaks for.
+let interestsOf (card: Card) =
+    card.Signals
+    |> List.filter _.Signal.StartsWith(interestPrefix)
+    |> List.map (fun item -> item.Signal.Substring interestPrefix.Length)
 
 let private rankedInterests (cards: Card list) =
     cards
@@ -66,6 +74,7 @@ let from (catalog: Catalog) (request: TripRequest) : TravellerProfile =
             catalog.Interests
             |> List.choose (fun interest -> interest.ParentSlug |> Option.map (fun parent -> interest.Slug, parent))
             |> Map.ofList
+        Liked = liked
         Depth = signalTotal "depth" liked
         Offbeat = signalTotal "offbeat" liked
         Collected = collected

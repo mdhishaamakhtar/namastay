@@ -66,6 +66,8 @@ type StopFood = {
 type TripStop = {
     PlaceSlug: string
     Name: string
+    /// Why the stop is in the trip, in one line. Trips saved before reasons existed have none.
+    Reason: string option
     Days: int
     FamilySlug: string
     Colours: PlaceColours
