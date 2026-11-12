@@ -258,7 +258,7 @@ type JourneyTests(browser: BrowserFixture) =
             let! page = openJourney ()
             do! finishCards page
             do! answerQuestions page
-            do! page.WaitForURLAsync "**/trip/**"
+            do! waitForAddress page "**/trip/**"
             do! page.GetByRole(AriaRole.Listitem).First.WaitForAsync()
         }
 
@@ -272,7 +272,7 @@ type JourneyTests(browser: BrowserFixture) =
             do! waitForCard page 2
             do! (buildNow page).ClickAsync()
             do! answerQuestions page
-            do! page.WaitForURLAsync "**/trip/**"
+            do! waitForAddress page "**/trip/**"
         }
 
     [<Fact>]
@@ -292,7 +292,7 @@ type JourneyTests(browser: BrowserFixture) =
             do! (button page "Try again").WaitForAsync()
             block <- false
             do! (button page "Try again").ClickAsync()
-            do! page.WaitForURLAsync "**/trip/**"
+            do! waitForAddress page "**/trip/**"
         }
 
     [<Fact>]
