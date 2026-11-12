@@ -327,6 +327,13 @@ button:focus-visible {
   text-decoration: underline;
 }
 
+.journey-offer {
+  width: 100%;
+  max-width: 460px;
+  background: var(--paper);
+  color: var(--ink);
+}
+
 .card-label {
   flex: 1;
   display: flex;

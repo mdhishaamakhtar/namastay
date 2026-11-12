@@ -118,6 +118,92 @@ let ``mix keeps only the top three`` () =
 [<Fact>]
 let ``mix is empty before any like`` () = Assert.Empty(JourneyPath.mix graph [])
 
+/// Enough cards of four interests to swipe well past the settling window.
+let private tastes = {
+    Cards = [
+        for name, tag in [ "Mountains", "m"; "Beaches", "b"; "Faith", "f"; "Food", "d" ] do
+            for index in 1..12 -> card $"{tag}{index}" false (Some name) None []
+    ]
+    Interests = []
+}
+
+let private likes (slugs: string list) =
+    answered [ for slug in slugs -> slug, true ]
+
+let private passes (slugs: string list) =
+    answered [ for slug in slugs -> slug, false ]
+
+let private opening = likes [ "m1"; "b1"; "m2"; "m3" ]
+
+[<Fact>]
+let ``the swipes settle once the same two interests have led for a while`` () =
+    let answers =
+        opening
+        @ likes [ "b2"; "m4" ]
+        @ passes [ "f1"; "f2" ]
+        @ likes [ "b3"; "m5"; "b4"; "m6" ]
+
+    Assert.True(JourneyPath.settled tastes answers)
+
+[<Fact>]
+let ``the two leaders trading places is still settled`` () =
+    let answers = opening @ likes [ for index in 2..9 -> $"b{index}" ]
+    Assert.Equal<(string * int) list>([ "Beaches", 100; "Mountains", 33 ], JourneyPath.mix tastes answers)
+    Assert.True(JourneyPath.settled tastes answers)
+
+[<Fact>]
+let ``one interest on its own can settle`` () =
+    let answers = likes [ for index in 1..9 -> $"m{index}" ]
+    Assert.True(JourneyPath.settled tastes answers)
+
+[<Fact>]
+let ``a mix that just changed is not settled`` () =
+    let steady = opening @ likes [ for index in 4..10 -> $"m{index}" ]
+    let changed = steady @ likes [ "f1"; "f2" ]
+    Assert.True(JourneyPath.settled tastes steady)
+    Assert.False(JourneyPath.settled tastes changed)
+
+[<Fact>]
+let ``a changed mix settles again once it has held`` () =
+    let changed =
+        opening @ likes [ for index in 4..10 -> $"m{index}" ] @ likes [ "f1"; "f2" ]
+
+    let held =
+        changed
+        @ passes [ for index in 2 .. (JourneyPath.settledAfter + 1) -> $"b{index}" ]
+
+    Assert.True(JourneyPath.settled tastes held)
+
+[<Fact>]
+let ``the swipes are not settled one card short of the window`` () =
+    let answers = likes [ for index in 1 .. JourneyPath.settledAfter -> $"m{index}" ]
+    Assert.False(JourneyPath.settled tastes answers)
+
+[<Theory>]
+[<InlineData(0)>]
+[<InlineData(3)>]
+let ``too few answers are not enough to say`` (count: int) =
+    let answers = likes [ for index in 1..count -> $"m{index}" ]
+    Assert.False(JourneyPath.settled tastes answers)
+
+[<Fact>]
+let ``passing everything after one like is not a clear picture`` () =
+    let answers = likes [ "m1" ] @ passes [ for index in 1..12 -> $"b{index}" ]
+    Assert.False(JourneyPath.settled tastes answers)
+
+[<Fact>]
+let ``liking a little of everything is not a clear picture`` () =
+    let waited = passes [ for index in 3..12 -> $"d{index}" ]
+    let focused = likes [ "m1"; "m2"; "m3"; "b1"; "b2"; "f1" ] @ waited
+    let spread = likes [ "m1"; "m2"; "m3"; "b1"; "b2"; "f1"; "f2"; "d1"; "d2" ] @ waited
+    Assert.True(JourneyPath.settled tastes focused)
+    Assert.False(JourneyPath.settled tastes spread)
+
+[<Fact>]
+let ``nothing liked never settles`` () =
+    let answers = passes [ for index in 1..12 -> $"m{index}" ]
+    Assert.False(JourneyPath.settled tastes answers)
+
 let private travelCard slug place region interest = {
     card slug false (Some interest) None [] with
         Place = Some place

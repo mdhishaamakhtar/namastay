@@ -43,5 +43,15 @@ feeling, the way the feeling pages do.
 - *swaps per trip*: liked places replaced because of the month.
 - *trips not built*: sessions that ended in an error.
 
+**Pace** asks whether the offer to build early reaches the right people. The swipes
+have settled once the same two interests have led for eight cards and make up two
+thirds of the likes (`JourneyPath.settled`).
+
+- *taste settles early %*: tasteful travellers whose swipes settle before the deck ends.
+- *cards to settle*: how many cards that took them.
+- *top interest in early trip %*: of those, the trip built at that point still has a
+  stop that suits their first interest strongly. Compare it with *top interest in trip %*.
+- *coin flip settles early %*: coin flippers told the picture is clear when it isn't.
+
 A scored trip has the full `Trip` the API would return, so a new line is a
 function of `Session` in `Namastay.Bench/Metrics.fs`.

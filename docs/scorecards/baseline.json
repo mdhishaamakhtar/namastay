@@ -100,5 +100,29 @@
     "Name": "trips not built",
     "Value": 0,
     "Better": "Zero"
+  },
+  {
+    "Group": "pace",
+    "Name": "taste settles early %",
+    "Value": 60.833333333333336,
+    "Better": "Higher"
+  },
+  {
+    "Group": "pace",
+    "Name": "cards to settle",
+    "Value": 16.506849315068493,
+    "Better": "Lower"
+  },
+  {
+    "Group": "pace",
+    "Name": "top interest in early trip %",
+    "Value": 84.93150684931507,
+    "Better": "Higher"
+  },
+  {
+    "Group": "pace",
+    "Name": "coin flip settles early %",
+    "Value": 30,
+    "Better": "Lower"
   }
 ]

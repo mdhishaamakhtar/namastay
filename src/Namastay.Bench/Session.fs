@@ -8,11 +8,19 @@ open Namastay.Domain.Trip
 open Namastay.Shared
 open Namastay.Shared.Contracts
 
+/// Where the swipes settled, and the trip they'd have got by building then.
+type EarlyFinish = {
+    Cards: int
+    Trip: Result<Trip, Builder.TripError>
+}
+
 type Session = {
     Persona: Persona
     Shown: JourneyCard list
     Answers: CardAnswer list
     Trip: Result<Trip, Builder.TripError>
+    /// None when the swipes never settled before the deck ran out.
+    Early: EarlyFinish option
 }
 
 let private scopeOf (persona: Persona) =
@@ -58,11 +66,23 @@ let play (catalog: Catalog) (graph: JourneyGraph) (persona: Persona) : Session =
 
     let answers = swipe random catalog deck persona []
 
+    let build swiped =
+        Builder.buildWithin allowed catalog (request persona swiped scope)
+
+    let early =
+        [ 1 .. answers.Length - 1 ]
+        |> List.tryFind (fun cards -> JourneyPath.settled deck (List.truncate cards answers))
+        |> Option.map (fun cards -> {
+            Cards = cards
+            Trip = build (List.truncate cards answers)
+        })
+
     {
         Persona = persona
         Shown =
             answers
             |> List.choose (fun answer -> deck.Cards |> List.tryFind (fun card -> card.Slug = answer.Card))
         Answers = answers
-        Trip = Builder.buildWithin allowed catalog (request persona answers scope)
+        Trip = build answers
+        Early = early
     }

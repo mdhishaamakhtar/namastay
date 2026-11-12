@@ -23,7 +23,7 @@ let cheer (answered: int) =
         | 1 -> Some "Nice. Every swipe sharpens your trip."
         | 2 -> Some "The more you swipe, the better we can build it."
         | 3 -> Some "Halfway there. Your India is taking shape."
-        | _ -> Some "Good picks. Keep going, or build it now."
+        | _ -> Some "Good picks. Your trip is nearly drawn."
 
 let private find (graph: JourneyGraph) (slug: string) =
     graph.Cards |> List.tryFind (fun card -> card.Slug = slug)
@@ -164,15 +164,52 @@ let leadingColours (graph: JourneyGraph) (answers: CardAnswer list) =
     | (colours, likes) :: (_, next) :: _ when likes >= likesToLead && likes - next >= leadToChange -> Some colours
     | _ -> None
 
+/// The liked interests, most liked first. Ties go to the one liked first.
+let private ranked (graph: JourneyGraph) (answers: CardAnswer list) =
+    likedOf graph answers
+    |> List.choose _.Interest
+    |> List.countBy id
+    |> List.sortBy (fun (_, likes) -> -likes)
+
 /// The strongest interests so far, each as a percentage of the strongest.
 let mix (graph: JourneyGraph) (answers: CardAnswer list) =
-    let ranked =
-        likedOf graph answers
-        |> List.choose _.Interest
-        |> List.countBy id
-        |> List.sortBy (fun (_, likes) -> -likes)
-        |> List.truncate mixSize
+    let leading = ranked graph answers |> List.truncate mixSize
 
-    match ranked with
+    match leading with
     | [] -> []
-    | (_, top) :: _ -> ranked |> List.map (fun (name, likes) -> name, likes * 100 / top)
+    | (_, top) :: _ -> leading |> List.map (fun (name, likes) -> name, likes * 100 / top)
+
+/// The leading interests must hold for this many swipes before the picture counts as clear.
+let settledAfter = 8
+let private leaders = 2
+
+/// The leaders must make up this share of everything liked: two thirds.
+let private leadersShare = 2, 3
+
+/// Whether the visitor's leading interests have stopped changing, so more cards would
+/// sharpen the trip without changing what it's about. The same two must have led after
+/// each of the last few swipes, with enough likes to count and most of the likes between
+/// them, so someone who likes a little of everything is never told the picture is clear.
+let settled (graph: JourneyGraph) (answers: CardAnswer list) =
+    let leadingAfter (count: int) =
+        ranked graph (List.truncate count answers)
+        |> List.truncate leaders
+        |> List.map fst
+        |> Set.ofList
+
+    let all = ranked graph answers
+    let leading = all |> List.truncate leaders |> List.sumBy snd
+    let part, whole = leadersShare
+
+    match all with
+    | (_, likes) :: _ when
+        likes >= likesToLead
+        && answers.Length > settledAfter
+        && leading * whole >= List.sumBy snd all * part
+        ->
+        [ answers.Length - settledAfter .. answers.Length - 1 ]
+        |> List.forall (fun count -> leadingAfter count = leadingAfter answers.Length)
+    | _ -> false
+
+/// What the journey says in place of the cheer once the swipes have settled.
+let offer = "We've got a clear picture. Build it, or keep swiping."

@@ -111,8 +111,53 @@ let ``a trip that failed to build is counted`` () =
 
     Assert.Equal(1.0, value "trips not built" [ session; failed ])
 
+let private early cards (found: Session) = {
+    found with
+        Early = Some { Cards = cards; Trip = found.Trip }
+}
+
+[<Fact>]
+let ``pace counts the tasteful travellers who settled early`` () =
+    let sessions = [ early 10 session; early 14 session; session; session ]
+    Assert.Equal(50.0, value "taste settles early %" sessions)
+    Assert.Equal(12.0, value "cards to settle" sessions)
+    Assert.Equal(100.0, value "top interest in early trip %" sessions)
+
+[<Fact>]
+let ``an early trip that missed the taste or failed is not a hit`` () =
+    let failed = {
+        session with
+            Early =
+                Some {
+                    Cards = 9
+                    Trip = Error Namastay.Domain.Trip.Builder.TripError.NoPlaces
+                }
+    }
+
+    let elsewhere = {
+        session with
+            Early =
+                Some {
+                    Cards = 9
+                    Trip = Ok { trip with Stops = [ stop "market" ] }
+                }
+    }
+
+    Assert.Equal(50.0, value "top interest in early trip %" [ early 9 session; failed ])
+    Assert.Equal(0.0, value "top interest in early trip %" [ elsewhere ])
+
+[<Fact>]
+let ``coin flippers who settle early are counted on their own`` () =
+    let flipper = {
+        session with
+            Persona = { hiker with Swiper = Swiper.Random }
+    }
+
+    Assert.Equal(50.0, value "coin flip settles early %" [ early 9 flipper; flipper; early 9 session ])
+    Assert.Equal(100.0, value "taste settles early %" [ early 9 flipper; flipper; early 9 session ])
+
 [<Fact>]
 let ``every line has a direction`` () =
     let lines = Metrics.scorecard catalog [ session ]
-    Assert.Equal(17, lines.Length)
+    Assert.Equal(21, lines.Length)
     Assert.Equal(lines.Length, (lines |> List.map _.Name |> List.distinct).Length)

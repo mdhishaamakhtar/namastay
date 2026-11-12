@@ -237,5 +237,38 @@ let private comfort (catalog: Catalog) (sessions: Session list) =
         line "comfort" "trips not built" (float (sessions.Length - trips.Length)) Better.Zero
     ]
 
+let private ofSwiper (swiper: Swiper) (sessions: Session list) =
+    sessions |> List.filter (fun session -> session.Persona.Swiper = swiper)
+
+let private settledShare (sessions: Session list) =
+    percent (sessions |> List.filter _.Early.IsSome |> List.length) sessions.Length
+
+/// Whether the offer to build early reaches the travellers with a clear taste, how soon,
+/// and whether the trip they'd get then still follows that taste.
+let private pace (catalog: Catalog) (sessions: Session list) =
+    let tasted = ofSwiper Swiper.Taste sessions
+
+    let early =
+        tasted
+        |> List.choose (fun session -> session.Early |> Option.map (fun finish -> session, finish))
+
+    let earlyHit =
+        early
+        |> List.filter (fun (session, finish) ->
+            match finish.Trip with
+            | Ok trip -> hits catalog (List.truncate 1 session.Persona.Interests) trip
+            | Error _ -> false)
+        |> List.length
+
+    [
+        line "pace" "taste settles early %" (settledShare tasted) Better.Higher
+        line "pace" "cards to settle" (early |> List.map (fun (_, finish) -> float finish.Cards) |> mean) Better.Lower
+        line "pace" "top interest in early trip %" (percent earlyHit early.Length) Better.Higher
+        line "pace" "coin flip settles early %" (settledShare (ofSwiper Swiper.Random sessions)) Better.Lower
+    ]
+
 let scorecard (catalog: Catalog) (sessions: Session list) : Line list =
-    variety catalog sessions @ direction catalog sessions @ comfort catalog sessions
+    variety catalog sessions
+    @ direction catalog sessions
+    @ comfort catalog sessions
+    @ pace catalog sessions
