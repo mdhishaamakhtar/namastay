@@ -12,6 +12,8 @@
     <Compile Include="Import/Journey.fs" />
     <Compile Include="Import/Load.fs" />
     <Compile Include="Import/Run.fs" />
+    <Compile Include="Import/ContentTables.fs" />
+    <Compile Include="Import/Publish.fs" />
     <Compile Include="Catalog/Decode.fs" />
     <Compile Include="Places/Rows.fs" />
     <Compile Include="Places/Search.fs" />

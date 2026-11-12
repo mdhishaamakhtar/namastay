@@ -1,4 +1,4 @@
-.PHONY: setup up down dev client bench bench-baseline test-all test-e2e import import-check media-sync media-prune publish sample test test-unit test-integration coverage format lint lint-all check check-all
+.PHONY: setup up down dev client bench bench-baseline test-all test-e2e import import-check media-sync media-prune publish publish-check sample test test-unit test-integration coverage format lint lint-all check check-all
 
 LINT = dotnet dotnet-fsharplint lint --lint-config fsharplint.json
 
@@ -39,9 +39,14 @@ media-sync:
 media-prune:
 	dotnet run --project src/Namastay.Importer -- --media-prune data/media $(MEDIA_BACKUP)
 
-# Sends data/ to production and rebuilds the website. See docs/deploy.md.
+# Builds the local database from data/, sends what changed to production and rebuilds
+# the website. See docs/deploy.md.
 publish:
 	./scripts/publish.sh
+
+# Says what `make publish` would change in production, and writes nothing there.
+publish-check:
+	./scripts/publish.sh --check
 
 sample:
 	dotnet run --project src/Namastay.Importer -- samples/data

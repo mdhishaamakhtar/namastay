@@ -14,7 +14,7 @@ api = variables("api")
 port = os.environ["RAILWAY_TUNNEL_PORT"]
 
 settings = {
-    "NAMASTAY_DB": f"Host=127.0.0.1;Port={port};Database={postgres['PGDATABASE']};Username={postgres['PGUSER']};Password={postgres['PGPASSWORD']};SSL Mode=Disable",
+    "PUBLISH_DB": f"Host=127.0.0.1;Port={port};Database={postgres['PGDATABASE']};Username={postgres['PGUSER']};Password={postgres['PGPASSWORD']};SSL Mode=Disable",
     "MEDIA_ENDPOINT": api["Media__Endpoint"],
     "MEDIA_BUCKET": api["Media__Bucket"],
     "MEDIA_ACCESS_KEY": api["Media__AccessKey"],
