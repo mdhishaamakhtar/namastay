@@ -223,7 +223,7 @@ let private india = {
 
 [<TailCall>]
 let rec private answerCards seed graph (decide: JourneyCard -> bool) limit answers shown =
-    match JourneyPath.next seed graph answers with
+    match JourneyPath.next seed [] graph answers with
     | Some slug when List.length answers < limit ->
         let card = graph.Cards |> List.find (fun item -> item.Slug = slug)
         answerCards seed graph decide limit (answers @ [ { Card = slug; Liked = decide card } ]) (shown @ [ card ])
@@ -248,7 +248,7 @@ let ``the opening mixes interests whatever the seed`` (seed: int) =
 let ``different visits open with different cards`` () =
     let openers =
         [ 1..20 ]
-        |> List.choose (fun seed -> JourneyPath.next seed india [])
+        |> List.choose (fun seed -> JourneyPath.next seed [] india [])
         |> List.distinct
 
     Assert.True(openers.Length >= 4, $"only {openers.Length} different openers")
@@ -330,7 +330,7 @@ let ``a card is never shown twice`` () =
 
 [<Fact>]
 let ``the same seed and answers always give the same next card`` () =
-    Assert.Equal(JourneyPath.next 7 india [], JourneyPath.next 7 india [])
+    Assert.Equal(JourneyPath.next 7 [] india [], JourneyPath.next 7 [] india [])
 
 [<Fact>]
 let ``journey ends at the card limit`` () =
@@ -421,3 +421,56 @@ let ``passing a place twice keeps its other cards away`` () =
         |> List.filter (fun card -> card.Place = Some "agra")
 
     Assert.True(shown.Length <= 2, $"agra was shown {shown.Length} times")
+
+/// Two feelings, each with plenty of cards, and one region holding nearly all of the first.
+let private twoFeelings = {
+    Cards = [
+        for index in 1..12 do
+            travelCard $"temple-{index}" $"temple-town-{index}" "south" "Faith"
+
+        for index in 1..12 do
+            travelCard $"beach-{index}" $"beach-town-{index}" $"coast-{index % 4}" "Beaches"
+    ]
+    Interests = []
+}
+
+let private planned = [ "faith"; "beaches" ]
+
+[<TailCall>]
+let rec private swipeAll seed feelings graph limit (answers: CardAnswer list) =
+    match JourneyPath.next seed feelings graph answers with
+    | Some slug when answers.Length < limit ->
+        swipeAll seed feelings graph limit (answers @ [ { Card = slug; Liked = true } ])
+    | _ -> answers |> List.map _.Card
+
+let private countOf (prefix: string) (slugs: string list) =
+    slugs |> List.filter _.StartsWith(prefix) |> List.length
+
+[<Theory>]
+[<InlineData(1)>]
+[<InlineData(7)>]
+[<InlineData(42)>]
+let ``a deck planned from two feelings opens level between them`` (seed: int) =
+    let opening = swipeAll seed planned twoFeelings 6 []
+    Assert.Equal(3, countOf "temple-" opening)
+    Assert.Equal(3, countOf "beach-" opening)
+
+[<Theory>]
+[<InlineData(1)>]
+[<InlineData(7)>]
+[<InlineData(42)>]
+let ``a deck planned from two feelings keeps showing both once it leans`` (seed: int) =
+    let shown = swipeAll seed planned twoFeelings 20 []
+    let temples, beaches = countOf "temple-" shown, countOf "beach-" shown
+    Assert.True(min temples beaches >= 8, $"{temples} temples and {beaches} beaches")
+
+[<Fact>]
+let ``one feeling spreads the opening across regions, as the open deck does`` () =
+    Assert.Equal<string list>(swipeAll 7 [] twoFeelings 6 [], swipeAll 7 [ "faith" ] twoFeelings 6 [])
+
+[<Fact>]
+let ``a card speaks for its own interest and for the parent of it`` () =
+    let quiet = travelCard "cove" "cove" "coast" "Quiet beaches"
+    Assert.True(JourneyPath.speaksFor withTree.Interests "beaches" quiet)
+    Assert.True(JourneyPath.speaksFor withTree.Interests "quiet beaches" quiet)
+    Assert.False(JourneyPath.speaksFor withTree.Interests "party beaches" quiet)

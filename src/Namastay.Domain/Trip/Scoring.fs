@@ -33,6 +33,21 @@ let private budgetLevel =
     | BudgetLevel.Mid -> 2
     | BudgetLevel.Luxury -> 3
 
+/// The feelings a trip was planned from, if it was planned from any.
+let private planned (request: TripRequest) =
+    match request.Scope with
+    | Some {
+               Kind = ScopeKind.Feeling
+               Slugs = feelings
+           } -> feelings
+    | _ -> []
+
+/// The interests a trip tries to cover: as many as its length allows, and always every
+/// feeling it was planned from.
+let private kept (profile: TravellerProfile) (request: TripRequest) =
+    profile.Interests
+    |> List.truncate (max (planned request).Length (interestLimit request.Days))
+
 /// Parent and child: quiet beaches and beaches.
 let related (parents: Map<string, string>) (one: string) (other: string) =
     parents.TryFind one = Some other || parents.TryFind other = Some one
@@ -79,7 +94,7 @@ let private interestScore
 /// of them or about a parent or child of it.
 let leadingInterest (profile: TravellerProfile) (request: TripRequest) (place: Place) =
     [
-        for slug, score in profile.Interests |> List.truncate (interestLimit request.Days) do
+        for slug, score in kept profile request do
             for item in place.Interests |> List.filter (fun item -> item.Weight >= Scope.strongFit) do
                 if slug = item.InterestSlug then
                     slug, score * item.Weight
@@ -109,10 +124,19 @@ let private popularityScore (profile: TravellerProfile) (place: Place) =
     | Popularity.Between -> 0
     | Popularity.Mainstream -> if profile.Interests.IsEmpty then 2 else 0
 
+/// A trip planned from several feelings owes each of them a stop, so the first place to
+/// answer a feeling the route still lacks is worth as much as one liked twice.
+let private owed (profile: TravellerProfile) (request: TripRequest) (sofar: Place list) (place: Place) =
+    let lacks (feeling: string) =
+        strongIn profile feeling place
+        && not (sofar |> List.exists (strongIn profile feeling))
+
+    match planned request with
+    | _ :: _ :: _ as feelings when List.exists lacks feelings -> mostLikeBonus
+    | _ -> 0
+
 /// How well a place suits the traveller after the stops so far, ignoring the season.
 let tasteAfter (profile: TravellerProfile) (request: TripRequest) (sofar: Place list) (place: Place) =
-    let kept = profile.Interests |> List.truncate (interestLimit request.Days)
-
     let liked =
         profile.Likes.TryFind place.Slug
         |> Option.map (fun likes -> min mostLikeBonus (likes * likeBonus))
@@ -124,7 +148,8 @@ let tasteAfter (profile: TravellerProfile) (request: TripRequest) (sofar: Place 
         else
             0
 
-    interestScore profile kept sofar place + liked - declined
+    interestScore profile (kept profile request) sofar place + liked - declined
+    + owed profile request sofar place
     + fitScore request place
     + budgetScore request place
     + popularityScore profile place

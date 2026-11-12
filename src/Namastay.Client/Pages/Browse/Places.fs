@@ -103,7 +103,7 @@ let page (model: Model) dispatch (regions: DirectoryRegion list) =
                 None
                 $"{count} places across India"
                 "Pick a region, or search for a name."
-                anywhere
+                (planButton anywhere)
                 Html.none
             Html.main [ prop.children [ placesBody model dispatch regions ] ]
         ]

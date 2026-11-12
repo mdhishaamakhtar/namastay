@@ -24,13 +24,13 @@ type Session = {
 }
 
 let private scopeOf (persona: Persona) =
-    match persona.Scoped, persona.Interests with
-    | true, first :: _ ->
+    match persona.Feelings with
+    | [] -> None
+    | feelings ->
         Some {
             Kind = ScopeKind.Feeling
-            Slug = first
+            Slugs = feelings
         }
-    | _ -> None
 
 let private request (persona: Persona) answers scope : TripRequest = {
     Answers = answers
@@ -45,7 +45,7 @@ let private request (persona: Persona) answers scope : TripRequest = {
 
 [<TailCall>]
 let rec private swipe random (catalog: Catalog) deck persona answers =
-    match JourneyPath.next persona.Seed deck answers with
+    match JourneyPath.next persona.Seed persona.Feelings deck answers with
     | None -> answers
     | Some slug ->
         let card = catalog.Cards |> List.find (fun item -> item.Slug = slug)
@@ -57,7 +57,7 @@ let play (catalog: Catalog) (graph: JourneyGraph) (persona: Persona) : Session =
     let scope = scopeOf persona
 
     let allowed =
-        scope |> Option.map (fun chosen -> Scope.feelingPlaces catalog chosen.Slug)
+        scope |> Option.map (fun chosen -> Scope.feelingsPlaces catalog chosen.Slugs)
 
     let deck =
         match scope, allowed with

@@ -105,6 +105,58 @@ type JourneyApiTests(postgres: PostgresFixture) =
     let fetch (http: HttpClient) (token: string) =
         http.GetFromJsonAsync<SavedTrip>(Route.url [ "shareToken", token ] [] Routes.getItinerary, Json.options)
 
+    /// Manali is for rivers and Kasol for mountains, so the two feelings have a place each.
+    let startWithRivers () =
+        let rivers = {
+            Sample.catalog.Interests.Head with
+                Slug = "rivers"
+                Name = "Rivers"
+        }
+
+        let rafting = {
+            next with
+                Slug = "rafting"
+                PlaceSlug = Some "manali"
+                Title = "Rafts below the bridge"
+                Signals = [
+                    {
+                        Signal = "interest:rivers"
+                        Weight = 3
+                    }
+                ]
+        }
+
+        let world = {
+            catalog with
+                Interests = catalog.Interests @ [ rivers ]
+                Cards = catalog.Cards @ [ rafting ]
+                Places =
+                    catalog.Places
+                    |> List.map (fun place ->
+                        if place.Slug = "manali" then
+                            {
+                                place with
+                                    Interests = [ { InterestSlug = "rivers"; Weight = 5 } ]
+                            }
+                        else
+                            place)
+        }
+
+        TestApp.start scope world (fun app data ->
+            JourneyApi.map app data
+            TripsApi.map app data)
+
+    let deckFor (http: HttpClient) (feelings: string) =
+        task {
+            let! graph =
+                http.GetFromJsonAsync<JourneyGraph>(
+                    Route.url [] [ "scope", "feeling"; "of", feelings ] Routes.journeyStart,
+                    Json.options
+                )
+
+            return graph.Cards |> List.map _.Slug |> List.sort
+        }
+
     [<Fact>]
     member _.``a trip says why a liked stop is in it and keeps saying so``() =
         task {
@@ -119,6 +171,66 @@ type JourneyApiTests(postgres: PostgresFixture) =
                 saved.Trip.Stops |> List.map _.Reason,
                 again.Trip.Stops |> List.map _.Reason
             )
+        }
+
+    [<Fact>]
+    member _.``a deck for several feelings has the cards of each``() =
+        task {
+            let! http, _ = startWithRivers ()
+            let! mountains = deckFor http "mountains"
+            let! both = deckFor http "mountains,rivers"
+            Assert.Equal<string list>([ "start" ], mountains)
+            Assert.Equal<string list>([ "rafting"; "start" ], both)
+        }
+
+    [<Fact>]
+    member _.``a deck asked for too many feelings is the open deck``() =
+        task {
+            let! http, _ = startWithRivers ()
+            let! deck = deckFor http "mountains,rivers,one,two"
+            Assert.Equal<string list>([ "next"; "rafting"; "start" ], deck)
+        }
+
+    [<Fact>]
+    member _.``a trip planned from two feelings stops at a place for each``() =
+        task {
+            let! http, _ = startWithRivers ()
+
+            let planned = {
+                tripRequest with
+                    Scope =
+                        Some {
+                            Kind = ScopeKind.Feeling
+                            Slugs = [ "mountains"; "rivers" ]
+                        }
+            }
+
+            let! response = post http planned
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode)
+            let! saved = response.Content.ReadFromJsonAsync<SavedTrip>(Json.options)
+            Assert.StartsWith("5 days of mountains and rivers in ", saved.Trip.Title)
+            Assert.Equal<string list>([ "kasol"; "manali" ], saved.Trip.Stops |> List.map _.PlaceSlug)
+            Assert.Equal(Some "Rivers, which this trip is planned around", saved.Trip.Stops[1].Reason)
+        }
+
+    [<Fact>]
+    member _.``a trip planned from too many feelings returns 400``() =
+        task {
+            let! http, _ = start ()
+
+            let crowded = {
+                tripRequest with
+                    Scope =
+                        Some {
+                            Kind = ScopeKind.Feeling
+                            Slugs = [ "one"; "two"; "three"; "four" ]
+                        }
+            }
+
+            let! response = post http crowded
+            let! error = response.Content.ReadFromJsonAsync<ApiError>(Json.options)
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode)
+            Assert.Equal("scope", error.Fields.Head.Field)
         }
 
     [<Fact>]

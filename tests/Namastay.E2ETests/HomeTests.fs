@@ -87,6 +87,49 @@ type HomeTests(browser: BrowserFixture) =
         }
 
     [<Fact>]
+    member _.``a feeling page plans a trip around it and another feeling``() =
+        task {
+            let! page = browser.NewPage()
+            let! _ = page.GotoAsync(browser.BaseUrl + "/feelings/mountains")
+            let plan = page.Locator ".browse-plan .button"
+
+            let beaches =
+                page.GetByRole(AriaRole.Button, PageGetByRoleOptions(Name = "Beaches"))
+
+            do! Assertions.Expect(plan).ToHaveTextAsync "Plan a mountains trip"
+            do! beaches.ClickAsync()
+            do! Assertions.Expect(beaches).ToHaveAttributeAsync("aria-pressed", "true")
+            do! Assertions.Expect(plan).ToHaveTextAsync "Plan a trip around both"
+
+            let! title =
+                page.EvaluateAsync<float> "document.querySelector('.browse-title h1').getBoundingClientRect().left"
+
+            let! chip =
+                page.EvaluateAsync<float> "document.querySelector('.mix-chip').getBoundingClientRect().left"
+
+            Assert.Equal(title, chip)
+            do! plan.ClickAsync()
+            do! page.WaitForURLAsync "**/journey?scope=feeling&of=mountains%2Cbeaches**"
+            do! Assertions.Expect(page.Locator ".journey-scope").ToHaveTextAsync "Mountains and Beaches only"
+            do! page.Locator(".card-label:not(:has(.bone))").WaitForAsync()
+        }
+
+    [<Fact>]
+    member _.``a feeling taken out again plans from the page's own``() =
+        task {
+            let! page = browser.NewPage()
+            let! _ = page.GotoAsync(browser.BaseUrl + "/feelings/mountains")
+
+            let beaches =
+                page.GetByRole(AriaRole.Button, PageGetByRoleOptions(Name = "Beaches"))
+
+            do! beaches.ClickAsync()
+            do! beaches.ClickAsync()
+            do! Assertions.Expect(beaches).ToHaveAttributeAsync("aria-pressed", "false")
+            do! Assertions.Expect(page.Locator ".browse-plan .button").ToHaveTextAsync "Plan a mountains trip"
+        }
+
+    [<Fact>]
     member _.``clearing the search removes results``() =
         task {
             let! page = openHome ()

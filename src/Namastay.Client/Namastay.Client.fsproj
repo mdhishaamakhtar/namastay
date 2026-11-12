@@ -46,6 +46,7 @@
     <Compile Include="Pages/Browse/Parts.fs" />
     <Compile Include="Pages/Browse/Places.fs" />
     <Compile Include="Pages/Browse/Food.fs" />
+    <Compile Include="Pages/Browse/Mix.fs" />
     <Compile Include="Pages/Browse/View.fs" />
     <Compile Include="App.fs" />
   </ItemGroup>

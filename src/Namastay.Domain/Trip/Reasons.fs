@@ -33,11 +33,12 @@ let private likesFor (profile: TravellerProfile) (slug: string) =
     |> List.length
 
 let private isPlannedAround (request: TripRequest) (slug: string) =
-    request.Scope =
-        Some {
-            Kind = ScopeKind.Feeling
-            Slug = slug
-        }
+    match request.Scope with
+    | Some {
+               Kind = ScopeKind.Feeling
+               Slugs = feelings
+           } -> List.contains slug feelings
+    | _ -> false
 
 let private forInterest (catalog: Catalog) (profile: TravellerProfile) (request: TripRequest) (slug: string) =
     let name =

@@ -11,20 +11,13 @@ open Namastay.Shared.Contracts
 open Namastay.Web.Http
 
 let private scopeFrom (context: HttpContext) : TripScope option =
-    let slug = string context.Request.Query["of"]
-
-    let kind =
-        match string context.Request.Query["scope"] with
-        | "region" -> Some ScopeKind.Region
-        | "food" -> Some ScopeKind.FoodInRegion
-        | "feeling" -> Some ScopeKind.Feeling
-        | "dish" -> Some ScopeKind.Dish
+    let value (name: string) =
+        match context.Request.Query.TryGetValue name with
+        | true, found -> Some(string found)
         | _ -> None
 
-    if Input.isSlug slug then
-        kind |> Option.map (fun chosen -> { Kind = chosen; Slug = slug })
-    else
-        None
+    TripScopes.ofQuery (value "scope") (value "of")
+    |> Option.filter (fun scope -> scope.Slugs |> List.forall Input.isSlug)
 
 let private start data (context: HttpContext) : Task<Result<JourneyGraph, ApiError>> =
     task {

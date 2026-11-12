@@ -19,7 +19,7 @@ let private persona = {
     Travellers = TravellerType.Solo
     Budget = BudgetLevel.Mid
     Comfort = TransportComfort.Anything
-    Scoped = false
+    Feelings = []
     Seed = 5
 }
 
@@ -38,7 +38,11 @@ let ``the same traveller gets the same session`` () =
 
 [<Fact>]
 let ``a scoped session only sees cards from the feeling's places`` () =
-    let scoped = { persona with Scoped = true }
+    let scoped = {
+        persona with
+            Feelings = [ "mountains" ]
+    }
+
     let session = Session.play TripBuilderTests.catalog graph scoped
     Assert.NotEmpty session.Shown
 
@@ -69,3 +73,15 @@ let ``a clear taste settles early and still gets a trip`` () =
         Assert.InRange(finish.Cards, JourneyPath.settledAfter + 1, session.Answers.Length - 1)
         Assert.True(Result.isOk finish.Trip)
     | None -> failwith "expected the swipes to settle"
+
+[<Fact>]
+let ``a session planned from two feelings sees cards from the places of both`` () =
+    let both = {
+        persona with
+            Interests = [ "mountains"; "beaches" ]
+            Feelings = [ "mountains"; "beaches" ]
+    }
+
+    let session = Session.play TripBuilderTests.catalog graph both
+    let places = session.Shown |> List.choose _.Place |> List.distinct |> List.sort
+    Assert.Equal<string list>([ "peak"; "quiet-beach" ], places)

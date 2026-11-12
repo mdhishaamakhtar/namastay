@@ -124,5 +124,29 @@
     "Name": "coin flip settles early %",
     "Value": 30,
     "Better": "Lower"
+  },
+  {
+    "Group": "several",
+    "Name": "every feeling in trip %",
+    "Value": 88.33333333333333,
+    "Better": "Higher"
+  },
+  {
+    "Group": "several",
+    "Name": "opening, lesser feeling %",
+    "Value": 47.146164021164005,
+    "Better": "Higher"
+  },
+  {
+    "Group": "several",
+    "Name": "travel hours per mixed trip",
+    "Value": 24.7375,
+    "Better": "Lower"
+  },
+  {
+    "Group": "several",
+    "Name": "mixed trips not built",
+    "Value": 0,
+    "Better": "Zero"
   }
 ]

@@ -23,8 +23,8 @@ type Persona = {
     Travellers: TravellerType
     Budget: BudgetLevel
     Comfort: TransportComfort
-    /// Planned from the first interest as a feeling, the way the feeling pages do.
-    Scoped: bool
+    /// The feelings the trip is planned from, the way the feeling pages do. None for the open deck.
+    Feelings: string list
     Seed: int
 }
 
@@ -44,7 +44,7 @@ let private swipeable (catalog: Catalog) =
     catalog.Interests
     |> List.filter (fun interest -> signalled.Contains(interestPrefix + interest.Slug))
 
-let private shape (random: Random) swiper name interests scoped = {
+let private shape (random: Random) swiper name interests feelings = {
     Name = name
     Swiper = swiper
     Interests = interests
@@ -63,7 +63,7 @@ let private shape (random: Random) swiper name interests scoped = {
             TransportComfort.NoFlights
         else
             TransportComfort.Anything
-    Scoped = scoped
+    Feelings = feelings
     Seed = random.Next()
 }
 
@@ -85,7 +85,8 @@ let private taste (interests: Interest list) (random: Random) index =
             [ first; pick random unrelated ]
 
     let scoped = first.ParentSlug.IsNone && random.Next 5 = 0
-    shape random Swiper.Taste $"taste-{index}" (wanted |> List.map _.Slug) scoped
+    let feelings = if scoped then [ first.Slug ] else []
+    shape random Swiper.Taste $"taste-{index}" (wanted |> List.map _.Slug) feelings
 
 /// The same travellers every run, so two runs differ only by the planner.
 let set (catalog: Catalog) (seed: int) : Persona list =
@@ -96,7 +97,30 @@ let set (catalog: Catalog) (seed: int) : Persona list =
         for index in 1..tasteCount do
             taste interests random index
         for index in 1..randomCount do
-            shape random Swiper.Random $"random-{index}" [] false
+            shape random Swiper.Random $"random-{index}" [] []
         for index in 1..everythingCount do
-            shape random Swiper.Everything $"everything-{index}" [] false
+            shape random Swiper.Everything $"everything-{index}" [] []
+    ]
+
+let private pairCount = 60
+
+/// Travellers who want two unrelated feelings and plan from both. They're drawn apart from
+/// the main set, so adding them moves none of its lines.
+let pairs (catalog: Catalog) (seed: int) : Persona list =
+    let random = Random(seed + 1)
+
+    let feelings =
+        swipeable catalog
+        |> List.filter (fun interest ->
+            interest.ParentSlug.IsNone
+            && not (Namastay.Domain.Trip.Scope.feelingPlaces catalog interest.Slug).IsEmpty)
+
+    [
+        for index in 1..pairCount do
+            let first = pick random feelings
+            let others = feelings |> List.filter (fun other -> other.Slug <> first.Slug)
+
+            if not others.IsEmpty then
+                let wanted = [ first.Slug; (pick random others).Slug ]
+                shape random Swiper.Taste $"pair-{index}" wanted wanted
     ]

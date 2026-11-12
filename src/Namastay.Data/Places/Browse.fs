@@ -189,30 +189,35 @@ let dish (source: NpgsqlDataSource) (slug: string) : Task<DishPage option> =
             })
     }
 
-/// The places a trip may use when it's limited to this scope.
+/// The places a trip may use when it's limited to this scope. Several feelings share
+/// the places of each.
 let placesIn (source: NpgsqlDataSource) (scope: TripScope) : Task<Set<string>> =
+    let slugsOf (items: Listing list option) =
+        items
+        |> Option.map (List.map _.Slug >> Set.ofList)
+        |> Option.defaultValue Set.empty
+
+    let one (slug: string) =
+        task {
+            match scope.Kind with
+            | ScopeKind.Region
+            | ScopeKind.FoodInRegion ->
+                let! page = region source slug
+                return page |> Option.map _.Items |> slugsOf
+            | ScopeKind.Feeling ->
+                let! page = feeling source slug
+                return page |> Option.map _.Items |> slugsOf
+            | ScopeKind.Dish ->
+                let! page = dish source slug
+                return page |> Option.map _.Places |> slugsOf
+        }
+
     task {
-        match scope.Kind with
-        | ScopeKind.Region
-        | ScopeKind.FoodInRegion ->
-            let! page = region source scope.Slug
+        let mutable places = Set.empty
 
-            return
-                page
-                |> Option.map (_.Items >> List.map _.Slug >> Set.ofList)
-                |> Option.defaultValue Set.empty
-        | ScopeKind.Feeling ->
-            let! page = feeling source scope.Slug
+        for slug in scope.Slugs do
+            let! found = one slug
+            places <- Set.union places found
 
-            return
-                page
-                |> Option.map (_.Items >> List.map _.Slug >> Set.ofList)
-                |> Option.defaultValue Set.empty
-        | ScopeKind.Dish ->
-            let! page = dish source scope.Slug
-
-            return
-                page
-                |> Option.map (_.Places >> List.map _.Slug >> Set.ofList)
-                |> Option.defaultValue Set.empty
+        return places
     }

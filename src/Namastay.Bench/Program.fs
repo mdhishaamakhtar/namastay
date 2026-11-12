@@ -32,7 +32,7 @@ let private run options =
         let graph = ContractMapping.journeyGraph catalog
 
         let sessions =
-            Personas.set catalog seed
+            Personas.set catalog seed @ Personas.pairs catalog seed
             |> List.toArray
             |> Array.Parallel.map (Session.play catalog graph)
             |> Array.toList

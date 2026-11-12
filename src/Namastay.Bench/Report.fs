@@ -83,7 +83,11 @@ let private gateway (label: string) (found: TripGateway option) =
 let session (found: Session) =
     let persona = found.Persona
     let month = persona.Month |> Option.map string |> Option.defaultValue "any month"
-    let scope = if persona.Scoped then " (scoped)" else ""
+
+    let scope =
+        match persona.Feelings with
+        | [] -> ""
+        | feelings -> sprintf " (planned from %s)" (String.concat " + " feelings)
 
     printfn
         "%s: %s%s, %d days, %s, %A, %A"

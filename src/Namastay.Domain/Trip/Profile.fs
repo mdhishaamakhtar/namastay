@@ -48,17 +48,26 @@ let private rankedInterests (cards: Card list) =
     |> List.map (fun (signal, items) -> signal.Substring interestPrefix.Length, items |> List.sumBy _.Weight)
     |> List.sortBy (fun (slug, score) -> -score, slug)
 
-/// A feeling the trip was planned from leads the mix, ahead of whatever the swipes said.
+/// The feelings a trip was planned from lead the mix level with each other, ahead of
+/// whatever the swipes said, so the trip covers each of them. Between themselves they
+/// keep the order the swipes gave, then the order they were chosen in.
 let private lead (scope: TripScope option) (ranked: (string * int) list) =
     match scope with
     | Some {
                Kind = ScopeKind.Feeling
-               Slug = feeling
+               Slugs = feelings
            } ->
         let strongest = ranked |> List.map snd |> List.fold max 0
 
-        (feeling, strongest + 1)
-        :: (ranked |> List.filter (fun (slug, _) -> slug <> feeling))
+        let swiped (feeling: string) =
+            ranked
+            |> List.tryFindIndex (fun (slug, _) -> slug = feeling)
+            |> Option.defaultValue System.Int32.MaxValue
+
+        (feelings
+         |> List.sortBy swiped
+         |> List.map (fun feeling -> feeling, strongest + 1))
+        @ (ranked |> List.filter (fun (slug, _) -> not (List.contains slug feelings)))
     | _ -> ranked
 
 /// Turns swipes into a ranked mix of interests. Unknown cards are ignored.

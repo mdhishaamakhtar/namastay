@@ -10,13 +10,13 @@ open Namastay.Client.Routing.Page
 open Namastay.Shared
 open Namastay.Shared.Contracts
 
-let private listedPage (target: Browse) (page: BrowsePage) =
-    let plan label scope = {
-        Label = label
-        Scope = Some scope
-        Slug = page.Slug
-        Name = page.Name
-    }
+let private listedPage (model: Model) dispatch (page: BrowsePage) =
+    let plan label kind =
+        planButton {
+            Label = label
+            Scope = Some { Kind = kind; Slugs = [ page.Slug ] }
+            Name = page.Name
+        }
 
     let heading (text: string) =
         text.Substring(0, 1).ToUpperInvariant() + text.Substring 1
@@ -39,7 +39,7 @@ let private listedPage (target: Browse) (page: BrowsePage) =
 
     let food = "Food", Routes.foodPage.Template
 
-    match target with
+    match model.Target with
     | Browse.FoodRegion _ ->
         let path = Route.url [ "slug", page.Slug ] [] Routes.foodRegionPage
 
@@ -55,7 +55,7 @@ let private listedPage (target: Browse) (page: BrowsePage) =
             ("All food", Routes.foodPage.Template)
             $"Food of {page.Name}"
             $"{page.Items.Length} dishes worth finding."
-            (plan $"Plan a food trip in {page.Name}" "food")
+            (plan $"Plan a food trip in {page.Name}" ScopeKind.FoodInRegion)
             "/feelings/food.svg"
             "Dishes here"
             dishUrl
@@ -75,7 +75,7 @@ let private listedPage (target: Browse) (page: BrowsePage) =
             allPlaces
             page.Name
             $"{page.Items.Length} places that suit it."
-            (plan $"Plan a {page.Name.ToLowerInvariant()} trip" "feeling")
+            (Mix.view page model dispatch)
             $"/feelings/{slug}.svg"
             "Places for this"
             guideUrl
@@ -95,18 +95,22 @@ let private listedPage (target: Browse) (page: BrowsePage) =
             allPlaces
             page.Name
             $"{page.Items.Length} places."
-            (plan $"Plan a trip in {page.Name}" "region")
+            (plan $"Plan a trip in {page.Name}" ScopeKind.Region)
             $"/regions/{page.Slug}.svg"
             "Places here"
             guideUrl
 
 let private dishPage (page: DishPage) =
-    let plan = {
-        Label = $"Plan a trip around {page.Name.ToLowerInvariant()}"
-        Scope = Some "dish"
-        Slug = page.Slug
-        Name = page.Name
-    }
+    let plan =
+        planButton {
+            Label = $"Plan a trip around {page.Name.ToLowerInvariant()}"
+            Scope =
+                Some {
+                    Kind = ScopeKind.Dish
+                    Slugs = [ page.Slug ]
+                }
+            Name = page.Name
+        }
 
     let art =
         match page.Photo with
@@ -159,5 +163,5 @@ let view (model: Model) dispatch =
         ]
     | Remote.Loaded(Content.Places regions) -> Places.page model dispatch regions
     | Remote.Loaded(Content.Food page) -> Food.page model dispatch page
-    | Remote.Loaded(Content.Listed page) -> listedPage model.Target page
+    | Remote.Loaded(Content.Listed page) -> listedPage model dispatch page
     | Remote.Loaded(Content.Dish page) -> dishPage page

@@ -92,7 +92,7 @@ let ``a trip planned from a feeling says so at its stops`` () =
             Scope =
                 Some {
                     Kind = ScopeKind.Feeling
-                    Slug = "mountains"
+                    Slugs = [ "mountains" ]
                 }
     }
 

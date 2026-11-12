@@ -11,7 +11,7 @@ the lines it moved, not by one number going up.
   full: who the traveller is, what they liked, and the trip they got.
 
 The travellers are the same every run (`Namastay.Bench/Personas.fs`), so two runs
-differ only by the planner. 240 have a taste of one or two interests and like the
+differ only by the planner. Of the 300, 240 have a taste of one or two interests and like the
 cards that match it, with a little noise. 40 flip a coin on every card. 20 like
 everything. A fifth of the tasteful ones plan from their first interest as a
 feeling, the way the feeling pages do.
@@ -52,6 +52,17 @@ thirds of the likes (`JourneyPath.settled`).
 - *top interest in early trip %*: of those, the trip built at that point still has a
   stop that suits their first interest strongly. Compare it with *top interest in trip %*.
 - *coin flip settles early %*: coin flippers told the picture is clear when it isn't.
+
+**Several** asks whether a trip planned from more than one feeling serves all of them.
+Sixty more travellers each want two unrelated feelings and plan from both
+(`Personas.pairs`). They're scored only here, so the lines above still compare with
+earlier baselines.
+
+- *every feeling in trip %*: each chosen feeling has a stop that suits it strongly.
+- *opening, lesser feeling %*: of the first six cards that speak for a chosen
+  feeling, the share for whichever got fewer. Fifty is an even opening.
+- *travel hours per mixed trip*: what covering two feelings costs in travel.
+- *mixed trips not built*: sessions that ended in an error.
 
 A scored trip has the full `Trip` the API would return, so a new line is a
 function of `Session` in `Namastay.Bench/Metrics.fs`.

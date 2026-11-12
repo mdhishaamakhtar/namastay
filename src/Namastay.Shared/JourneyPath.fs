@@ -56,12 +56,40 @@ let private shuffle (seed: int) (range: int) (slug: string) =
     let letters = (slug |> Seq.sumBy int) % 1013 + 1
     visit * letters % 1021 % range
 
-/// Rewards whatever the visitor hasn't seen yet.
-let private freshness (shown: JourneyCard list) (card: JourneyCard) =
+/// The feeling itself, or one of its children: quiet beaches speak for beaches.
+let speaksFor (interests: JourneyInterest list) (feeling: string) (card: JourneyCard) =
+    card.Interests
+    |> List.exists (fun item ->
+        item.Slug = feeling
+        || interests
+           |> List.exists (fun interest -> interest.Slug = item.Slug && interest.Parent = Some feeling))
+
+/// How far ahead a card's feeling is of the feeling shown least, in a deck planned from
+/// several. A card for the feeling that's behind, or for none of them, is not ahead at all.
+let private ahead (graph: JourneyGraph) (feelings: string list) (shown: JourneyCard list) (card: JourneyCard) =
+    let seen (feeling: string) =
+        shown |> List.filter (speaksFor graph.Interests feeling) |> List.length
+
+    match feelings |> List.filter (fun feeling -> speaksFor graph.Interests feeling card) with
+    | [] -> 0
+    | spoken -> (spoken |> List.map seen |> List.min) - (feelings |> List.map seen |> List.min)
+
+/// What each card a feeling is ahead by costs, while the deck opens and once it leans.
+let private openingSpread = 20
+let private leaningSpread = 10
+
+/// Rewards whatever the visitor hasn't seen yet: another region, or, in a deck planned
+/// from several feelings, whichever of them has been shown least.
+let private freshness (graph: JourneyGraph) (feelings: string list) (shown: JourneyCard list) (card: JourneyCard) =
     let start = if card.IsStart then startBonus else 0
 
+    let spread =
+        match feelings with
+        | _ :: _ :: _ -> openingSpread * ahead graph feelings shown card
+        | _ -> openingSpread * countOf card.Region _.Region shown
+
     start
-    - 20 * countOf card.Region _.Region shown
+    - spread
     - 10 * countOf card.Interest _.Interest shown
     - 30 * countOf card.Place _.Place shown
 
@@ -120,7 +148,8 @@ let private isWildcard (answered: int) =
 /// The next card. The first few show how varied India is, then the deck leans towards
 /// what the visitor likes, and every so often it offers something different.
 /// The seed is the visit's own, so two visitors don't open with the same cards.
-let next (seed: int) (graph: JourneyGraph) (answers: CardAnswer list) =
+/// `feelings` are the ones the trip is planned from. With several, the deck keeps them level.
+let next (seed: int) (feelings: string list) (graph: JourneyGraph) (answers: CardAnswer list) =
     let shown = shownCards graph answers
     let seen = answers |> List.map _.Card
     let last = shown |> List.tryLast |> Option.bind _.Place
@@ -138,9 +167,11 @@ let next (seed: int) (graph: JourneyGraph) (answers: CardAnswer list) =
 
     let score card =
         if answers.Length < openingCards || isWildcard answers.Length then
-            freshness shown card + shuffle seed openingShuffle card.Slug
+            freshness graph feelings shown card + shuffle seed openingShuffle card.Slug
         else
-            leaning graph answers shown card + shuffle seed leaningShuffle card.Slug
+            leaning graph answers shown card
+            - leaningSpread * ahead graph feelings shown card
+            + shuffle seed leaningShuffle card.Slug
 
     if answers.Length >= maxCards then
         None
