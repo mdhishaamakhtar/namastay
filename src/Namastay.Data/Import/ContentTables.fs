@@ -186,6 +186,7 @@ let notContent = [
     "itineraries"
     "saved_trips"
     "trip_reactions"
+    "journey_starts"
     "import_batches"
     "schemaversions"
 ]

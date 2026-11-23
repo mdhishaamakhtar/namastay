@@ -1,6 +1,7 @@
 module Namastay.Web.Journey.JourneyApi
 
 open System.Threading.Tasks
+open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Routing
 open Namastay.Data.Journey
@@ -30,5 +31,14 @@ let private start data (context: HttpContext) : Task<Result<JourneyGraph, ApiErr
             return Ok(Scope.within scope places graph)
     }
 
+let private started (data: DataCache) (_: HttpContext) : Task<Result<NoBody, ApiError>> =
+    task {
+        let! _ = Starts.record data.Source
+        return Ok()
+    }
+
 let map (app: IEndpointRouteBuilder) (data: DataCache) =
     Endpoint.mapData app data Routes.journeyStart (start data)
+    // Anyone can call this, so it shares the limit on building trips.
+    let limited = (app.MapGroup "").RequireRateLimiting Limits.tripsPolicy
+    Endpoint.mapAction limited Routes.journeyStarted (started data)

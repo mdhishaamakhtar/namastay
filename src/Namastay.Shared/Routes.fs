@@ -48,6 +48,9 @@ let feelingPlaces: Route<NoBody, PlaceSummary list> =
     Route.get "/api/feelings/{slug}/places"
 
 let journeyStart: Route<NoBody, JourneyGraph> = Route.get "/api/journey/start"
+/// A traveller answered their first card. Counted by day, with nothing about who.
+let journeyStarted: Route<NoBody, NoBody> = Route.post "/api/journey/started"
+
 let createItinerary: Route<TripRequest, SavedTrip> = Route.post "/api/itineraries"
 
 let getItinerary: Route<NoBody, SavedTrip> =

@@ -84,3 +84,14 @@ from itineraries i
 left join trip_reactions r using (share_token)
 where i.created_at > now() - interval '30 days';
 ```
+
+How many travellers finish is the trips built against the decks begun. A deck counts as
+begun at its first answered card, in `journey_starts`, one row a day:
+
+```sql
+select s.day, s.starts, count(i.share_token) as trips
+from journey_starts s
+left join itineraries i on i.created_at::date = s.day
+group by s.day, s.starts
+order by s.day desc;
+```
