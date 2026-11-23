@@ -117,20 +117,60 @@ type GuidePageTests(postgres: PostgresFixture) =
         }
 
     [<Fact>]
-    member _.``conflict fact uses hedged wording``() =
+    member _.``an uncertain fact is marked to check locally``() =
         task {
             let! http, db = start ()
             do! sql db "update experiences set status = 'conflict' where slug = 'kheerganga'"
             let! html = page http "/places/kasol"
-            Assert.Contains("Sources differ on this", html)
+            Assert.Contains("<p class=\"hedge\">Check locally</p>", html)
+            Assert.Contains("Sources differ on anything marked", html)
         }
 
     [<Fact>]
-    member _.``two source fact has no hedge``() =
+    member _.``a section with several uncertain facts explains the mark once``() =
+        task {
+            let! http, db = start ()
+
+            do!
+                sql
+                    db
+                    "insert into experiences (slug, place_slug, name, description, sort, status, last_checked)
+                     select 'second-walk', place_slug, 'A second walk', 'Another way up.', 2, 'one_source', last_checked
+                     from experiences where slug = 'kheerganga'"
+
+            do! sql db "update experiences set status = 'conflict' where slug = 'kheerganga'"
+            let! html = page http "/places/kasol"
+            let count (text: string) = html.Split(text).Length - 1
+            Assert.Equal(2, count "class=\"hedge\"")
+            Assert.Equal(1, count "class=\"hedge-note\"")
+        }
+
+    [<Fact>]
+    member _.``the mark is explained beside the notices that carry it``() =
+        task {
+            let! http, db = start ()
+
+            do!
+                sql
+                    db
+                    "insert into notices (slug, scope, scope_ref, kind, severity, body, status, last_checked)
+                     select 'extra-' || n, 'place', 'kasol', 'safety', 'info', 'Notice ' || n,
+                            (case when n = 4 then 'one_source' else 'two_sources' end)::fact_status, date '2026-10-01'
+                     from generate_series(1, 4) as n"
+
+            let! html = page http "/places/kasol"
+            let hidden = html.Substring(html.IndexOf "<details class=\"more-notices\"")
+            Assert.Equal(1, html.Split("class=\"hedge-note\"").Length - 1)
+            Assert.Contains("class=\"hedge-note\"", hidden.Substring(0, hidden.IndexOf "</details>"))
+        }
+
+    [<Fact>]
+    member _.``a guide with nothing uncertain has no mark and no explanation``() =
         task {
             let! http, _ = start ()
             let! html = page http "/places/kasol"
-            Assert.DoesNotContain("Sources differ on this", html)
+            Assert.DoesNotContain("class=\"hedge", html)
+            Assert.DoesNotContain("Check locally", html)
         }
 
     [<Fact>]

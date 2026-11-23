@@ -45,6 +45,7 @@ let place slug cluster family interest : Place = {
     GettingThere = None
     Airport = None
     Hub = false
+    Position = None
     FoodIntro = None
     Dishes = []
     Eateries = []
@@ -595,8 +596,8 @@ let ``depth lovers get fewer stops than breadth lovers`` () =
             Cards = deep :: catalog.Cards
     }
 
-    let broad = build world (request (liked [ "likes-hills" ]) 12 None)
-    let slow = build world (request (liked [ "likes-hills"; "slow" ]) 12 None)
+    let broad = build world (request (liked [ "likes-hills" ]) 10 None)
+    let slow = build world (request (liked [ "likes-hills"; "slow" ]) 10 None)
     Assert.True(slow.Stops.Length < broad.Stops.Length, $"slow {slow.Stops.Length}, broad {broad.Stops.Length}")
 
 [<Fact>]
@@ -964,7 +965,7 @@ let ``a long fixed stay is not trimmed out of a short trip`` () =
     let trip = build world (request (liked [ "likes-far" ]) 7 None)
     Assert.Equal<string list>([ "far" ], trip.Stops |> List.map _.PlaceSlug)
 
-let private airport slug cluster family interest = {
+let airport slug cluster family interest = {
     place slug cluster family interest with
         Airport = Some "Test International (TST)"
 }
@@ -986,7 +987,8 @@ let private gatewayTrip days =
 [<Fact>]
 let ``a place with no airport link is reached through the nearest city`` () =
     let trip = gatewayTrip 6
-    Assert.Equal<string list>([ "hub"; "remote"; "capital" ], trip.Stops |> List.map _.PlaceSlug)
+    Assert.Equal<string list>([ "remote"; "capital" ], trip.Stops |> List.map _.PlaceSlug)
+    Assert.Equal(Some "HUB", trip.Arrive.Value.Via)
 
 [<Fact>]
 let ``the trip says where you land and how you get to the first stop`` () =
@@ -1030,7 +1032,7 @@ let ``a trip that includes the landing city stays there last`` () =
     let trip = build world (request (liked [ "likes-side" ]) 6 None)
     Assert.Equal<string list>([ "side"; "capital" ], trip.Stops |> List.map _.PlaceSlug)
 
-let private hubAirport slug cluster family interest = {
+let hubAirport slug cluster family interest = {
     airport slug cluster family interest with
         Hub = true
 }
@@ -1045,7 +1047,7 @@ let private landing places links =
 
     (build world (request (liked [ "likes-remote" ]) 6 None)).Arrive.Value
 
-let private timed from target minutes =
+let timed from target minutes =
     both from target
     |> List.map (fun link -> {
         link with
@@ -1354,7 +1356,7 @@ let ``a limited trip only uses the allowed places`` () =
     | Ok trip -> Assert.Equal<string list>([ "inside" ], trip.Stops |> List.map _.PlaceSlug)
     | Error error -> raise (Xunit.Sdk.XunitException $"expected a trip, got {error}")
 
-let private likingRemote places links days month =
+let likingRemote places links days month =
     let world = {
         catalog with
             Places = places
@@ -1405,7 +1407,10 @@ let ``the closing city gets a day or two and the days still add up`` days closin
         likingRemote
             [
                 hubAirport "main" "c-plains" "stone" "forts"
-                place "remote" "c-hills" "pine" "mountains"
+                {
+                    place "remote" "c-hills" "pine" "mountains" with
+                        DaysMax = 14
+                }
             ]
             (both "main" "remote")
             days
@@ -1515,7 +1520,7 @@ let ``a place one city away from a hub still ends with a stay there`` () =
     let last = List.last trip.Stops
     Assert.Equal("main", last.PlaceSlug)
     Assert.Equal(320, last.Arrival.Value.MinutesMin)
-    Assert.Equal(Some "Through BETWEEN.", last.Arrival.Value.ComfortNote)
+    Assert.Equal(Some "Drive to BETWEEN, about 2 hours, then about 3.5 hours by road.", last.Arrival.Value.ComfortNote)
 
 [<Fact>]
 let ``a major city passed through mid-trip becomes the last stay`` () =
@@ -1537,7 +1542,7 @@ let ``a major city passed through mid-trip becomes the last stay`` () =
     Assert.Equal<string list>([ "main"; "north"; "south" ], slugs trip |> List.sort)
     Assert.Equal("main", (List.last trip.Stops).PlaceSlug)
     Assert.Equal(300, trip.Stops[1].Arrival.Value.MinutesMin)
-    Assert.Equal(Some "Through MAIN.", trip.Stops[1].Arrival.Value.ComfortNote)
+    Assert.StartsWith("Drive to MAIN, ", trip.Stops[1].Arrival.Value.ComfortNote.Value)
 
 [<Fact>]
 let ``a closer airport city with no guide is flown from directly`` () =
@@ -1826,7 +1831,8 @@ let ``a route reaches past a hub by passing through it`` () =
         trip.Stops
         |> List.find (fun stop ->
             stop.Arrival
-            |> Option.exists (fun leg -> leg.ComfortNote = Some "Through MAIN."))
+            |> Option.exists (fun leg ->
+                leg.ComfortNote |> Option.exists (fun note -> note.StartsWith "Drive to MAIN, ")))
 
     Assert.Equal(300, through.Arrival.Value.MinutesMin)
 
@@ -1868,7 +1874,7 @@ let ``the closing stay prefers a hub that is fine in the month over a nearer har
 [<Fact>]
 let ``families move less than friends`` () =
     let travelling who = {
-        request (liked [ "likes-hills" ]) 12 None with
+        request (liked [ "likes-hills" ]) 10 None with
             Travellers = who
     }
 

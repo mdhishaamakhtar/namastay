@@ -168,6 +168,11 @@ let private legs (trip: Trip) =
 
 let private hours (leg: TravelLeg) = float leg.MinutesMin / 60.0
 
+let private longLegs (trip: Trip) =
+    legs trip
+    |> List.filter (fun leg -> leg.MinutesMin >= Routing.fullDayJourney)
+    |> List.length
+
 let private avoidStops (catalog: Catalog) (session: Session) (trip: Trip) =
     match session.Persona.Month with
     | None -> 0
@@ -183,6 +188,14 @@ let private freeDays (trip: Trip) =
     |> List.collect _.Plans
     |> List.filter (fun day -> day.Plan = Builder.spareDay)
     |> List.length
+
+/// Days a stop is given beyond the longest its place is worth.
+let private daysPastLimit (catalog: Catalog) (trip: Trip) =
+    trip.Stops
+    |> List.sumBy (fun stop ->
+        placeOf catalog stop.PlaceSlug
+        |> Option.map (fun place -> max 0 (stop.Days - place.DaysMax))
+        |> Option.defaultValue 0)
 
 /// A city visited twice, or an airport city that's also a stop in the middle of the route.
 /// Landing somewhere and flying home from it is a normal out-and-back, so the ends don't count.
@@ -220,6 +233,7 @@ let private comfort (catalog: Catalog) (sessions: Session list) =
              |> List.map (fun (_, trip) -> legs trip |> List.map hours |> List.fold max 0.0)
              |> mean)
             Better.Lower
+        line "comfort" "long legs per trip" (trips |> List.map (snd >> longLegs >> float) |> mean) Better.Lower
         line
             "comfort"
             "avoid-month stops per trip"
@@ -228,6 +242,11 @@ let private comfort (catalog: Catalog) (sessions: Session list) =
              |> mean)
             Better.Lower
         line "comfort" "free days per trip" (trips |> List.map (snd >> freeDays >> float) |> mean) Better.Lower
+        line
+            "comfort"
+            "days past a stay's limit"
+            (trips |> List.map (snd >> daysPastLimit catalog >> float) |> mean)
+            Better.Zero
         line "comfort" "city twice %" (percent (count cityTwice) trips.Length) Better.Zero
         line
             "comfort"

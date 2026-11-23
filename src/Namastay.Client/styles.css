@@ -31,6 +31,7 @@
   --brand: #f2b52b;
   --ink: #2b2108;
   --paper: #fff8e6;
+  --beyond: #ebe2cc;
   --warning: #1c1b1a;
   --deep: var(--brand);
   --mid: var(--brand);
@@ -629,15 +630,83 @@ button:focus-visible {
   line-height: 1.15;
 }
 
+.route-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 4px;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.route-sketch {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 2px;
+  background: var(--beyond);
+}
+
+.route-land {
+  fill: var(--paper);
+  stroke: color-mix(in srgb, var(--ink) 45%, transparent);
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+
+.route-inset-back {
+  fill: var(--beyond);
+  stroke: var(--ink);
+  stroke-width: 1;
+}
+
+.route-inset .route-land {
+  stroke-width: 0.6;
+}
+
+.route-inset-mark {
+  fill: color-mix(in srgb, var(--brand) 55%, transparent);
+  stroke: var(--ink);
+  stroke-width: 1;
+}
+
+.route-line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.route-stop {
+  stroke: var(--paper);
+  stroke-width: 2;
+}
+
+.route-number {
+  font: 700 12px Mukta, system-ui, sans-serif;
+}
+
+.route-landmark circle {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.5;
+  opacity: 0.55;
+}
+
+.route-landmark text {
+  fill: var(--ink);
+  font: 500 11px Mukta, system-ui, sans-serif;
+  opacity: 0.7;
+}
+
 .route {
   display: flex;
   flex-direction: column;
   gap: 4px;
   margin: 0;
-  padding: 12px;
-  border-radius: 4px;
-  background: var(--paper);
-  color: var(--ink);
+  padding: 0;
   list-style: none;
 }
 
@@ -650,10 +719,13 @@ button:focus-visible {
 }
 
 .route-dot {
+  display: grid;
   flex: none;
-  width: 16px;
-  height: 16px;
+  place-items: center;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
+  font: 700 12px/1 Mukta, system-ui, sans-serif;
 }
 
 .trip-mix {
@@ -705,6 +777,143 @@ button:focus-visible {
 
 .trip-best {
   margin: 0;
+}
+
+.trip-start {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 360px;
+  font-weight: 500;
+}
+
+.trip-start-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--ink);
+  font: 400 17px/1.4 Mukta, system-ui, sans-serif;
+  text-align: left;
+  cursor: pointer;
+}
+
+.trip-start-clear {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: 500 16px/1.4 Mukta, system-ui, sans-serif;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  background: #fff;
+}
+
+.calendar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.calendar-head strong {
+  font-family: "Yatra One", Mukta, serif;
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.calendar-month {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.calendar-month svg {
+  transform: rotate(-90deg);
+}
+
+.calendar-earlier svg {
+  transform: rotate(90deg);
+}
+
+.calendar-month:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+}
+
+.calendar-weekday {
+  padding: 4px 0;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.calendar-day {
+  min-height: 44px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  background: none;
+  color: var(--ink);
+  font: 500 16px/1 Mukta, system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.calendar-day:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.calendar-day:not(:disabled):hover {
+  border-color: var(--ink);
+}
+
+.calendar-today {
+  border-color: color-mix(in srgb, var(--ink) 35%, transparent);
+}
+
+.calendar-trip {
+  background: color-mix(in srgb, var(--brand) 45%, #fff);
+}
+
+.calendar-start {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.calendar-day:focus-visible,
+.calendar-month:focus-visible,
+.trip-start-button:focus-visible,
+.trip-start-clear:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
 }
 
 .trip-stops {
@@ -892,14 +1101,16 @@ button:focus-visible {
   border-top: 0;
 }
 
-.stop-eat {
+.stop-eat,
+.stop-do {
   display: flex;
   flex-direction: column;
   gap: 10px;
   min-width: 0;
 }
 
-.stop-eat strong {
+.stop-eat strong,
+.stop-do strong {
   font-weight: 600;
 }
 
@@ -1433,6 +1644,7 @@ button:focus-visible {
   .journey-brand,
   .trip-menu,
   .trip-actions,
+  .trip-start,
   .site-foot,
   .trip-share,
   .trip-link,

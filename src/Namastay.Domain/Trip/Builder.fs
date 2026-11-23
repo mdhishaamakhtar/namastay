@@ -25,9 +25,6 @@ type FamilyDays = {
 let spareDay = "Free time to rest or explore at your own pace."
 let travelDay = "A travel day. Arrive, settle in and take the evening slowly."
 
-/// A journey this long takes up the day, so the plans start the day after.
-let private fullDayJourney = 300
-
 /// The family with the most days leads. Ties go to the first one collected.
 let baseFamily (collected: string list) (stops: FamilyDays list) =
     let order (family: string) =
@@ -67,6 +64,7 @@ let private rank profile request (places: Place list) =
 let private plansFor (place: Place) days (arrival: TransportLink option) =
     let variants = place.DayPlans |> List.groupBy _.Variant |> List.sortBy fst
 
+    // A journey that takes up the day leaves the plans to start the day after.
     let travels =
         days > 1
         && arrival |> Option.exists (fun link -> link.MinutesMin >= fullDayJourney)
@@ -112,6 +110,32 @@ let private leadPhoto (catalog: Catalog) (place: Place) =
         Credit = photo.Credit
         Licence = photo.Licence
         SourceUrl = photo.SourceUrl
+    })
+
+/// The main cities a trip doesn't stop in, so its route can be placed in the country.
+let landmarks (catalog: Catalog) (stops: RoutedStop list) : MapLandmark list =
+    let visited = stops |> List.map _.Place.Slug
+
+    catalog.Places
+    |> List.filter (fun place -> place.Hub && place.Published && not (List.contains place.Slug visited))
+    |> List.choose (fun place ->
+        place.Position
+        |> Option.map (fun position -> {
+            Name = plainName place
+            Position = ContractMapping.mapPoint position
+        }))
+
+let private highlightsShown = 4
+
+/// What there is to do, in the guide's order. A trip repeats only what the guide stands behind.
+let private highlights (place: Place) : TripHighlight list =
+    place.Experiences
+    |> List.filter (fun experience -> experience.Evidence.Status <> FactStatus.Unverified)
+    |> List.sortBy _.Sort
+    |> List.truncate highlightsShown
+    |> List.map (fun experience -> {
+        Name = experience.Name
+        Description = experience.Description
     })
 
 let private dishesShown = 3
@@ -164,10 +188,12 @@ let toStop (catalog: Catalog) budget diet (stop: RoutedStop) : TripStop =
             Pale = family.Pale
             TextOnDeep = family.TextOnDeep
         }
+        Position = stop.Place.Position |> Option.map ContractMapping.mapPoint
         Access = ContractMapping.access stop.Place.Gate
         StayArea = stayArea budget stop.Place
         Photo = leadPhoto catalog stop.Place
         Plans = plansFor stop.Place stop.Days stop.Arrival
+        Highlights = highlights stop.Place
         Food = food diet stop.Place
         Arrival = stop.Arrival |> Option.map toLeg
         Retired = false
@@ -336,6 +362,7 @@ let private assemble catalog profile (request: TripRequest) places stops : Trip 
             toStop catalog request.Budget (Option.defaultValue Diet.Everything request.Diet) stop with
                 Reason = reason
         })
+    Landmarks = landmarks catalog stops
     Swaps = swaps profile request places stops
     Mix = mix catalog profile
     LeftOut = leftOut catalog profile stops

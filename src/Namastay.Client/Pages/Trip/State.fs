@@ -15,6 +15,9 @@ module Navigation = Namastay.Client.Routing.Browser
 
 let private copiedNoteMs = 2000
 
+/// The day the traveller lands, as the address carries it.
+let private startParam = "from"
+
 [<RequireQualifiedAccess>]
 type Sharing =
     | Idle
@@ -31,6 +34,10 @@ type Model = {
     Source: Source
     Trip: Remote<SavedTrip>
     Open: string option
+    /// The day the traveller lands, once they've said. It turns day numbers into dates.
+    Start: System.DateTime option
+    /// The month the calendar shows while it's open.
+    Calendar: System.DateTime option
     Sharing: Sharing
     Problem: string option
 }
@@ -39,6 +46,11 @@ type Msg =
     | Load
     | Loaded of Result<SavedTrip, Client.ClientError>
     | Toggle of string
+    | ToggleCalendar
+    | ShowMonth of System.DateTime
+    /// The arrow keys moved to a day, which the calendar then shows and focuses.
+    | MoveToDay of System.DateTime
+    | StartPicked of System.DateTime option
     | Share
     | Shared of Sharing
     | ClearSharing
@@ -62,6 +74,8 @@ let init source =
         Source = source
         Trip = Remote.Loading
         Open = None
+        Start = Navigation.queryParam startParam |> Option.bind TripDates.parse
+        Calendar = None
         Sharing = Sharing.Idle
         Problem = None
     },
@@ -76,6 +90,8 @@ let opened (saved: SavedTrip) =
         Source = Source.Shared saved.ShareToken
         Trip = Remote.Loaded saved
         Open = openFirst saved
+        Start = None
+        Calendar = None
         Sharing = Sharing.Idle
         Problem = None
     },
@@ -95,6 +111,28 @@ let private share () =
 
 let private clearLater () =
     Cmd.OfPromise.perform (fun () -> Promise.sleep copiedNoteMs) () (fun () -> ClearSharing)
+
+/// The calendar opens on the chosen day's month, else on the month the trip was planned for.
+let private calendarOpening (model: Model) =
+    let planned =
+        match model.Trip with
+        | Remote.Loaded saved -> saved.Trip.Month
+        | _ -> None
+
+    model.Start
+    |> Option.defaultValue (TripDates.opening System.DateTime.Today planned)
+
+/// Moves the keyboard to an element once the page has drawn it.
+let private focusOn (id: string) =
+    Cmd.ofEffect (fun _ ->
+        window.requestAnimationFrame (fun _ ->
+            let found = document.getElementById id
+
+            if not (isNull found) then
+                found.focus ())
+        |> ignore)
+
+let private focusDay (date: System.DateTime) = focusOn (Calendar.dayId date)
 
 let update msg (model: Model) =
     match msg with
@@ -125,6 +163,32 @@ let update msg (model: Model) =
                 Open = if model.Open = Some slug then None else Some slug
         },
         Cmd.none
+    | ToggleCalendar ->
+        {
+            model with
+                Calendar =
+                    match model.Calendar with
+                    | Some _ -> None
+                    | None -> Some(calendarOpening model)
+        },
+        // A calendar that closes hands the keyboard back to the button that opened it.
+        (if model.Calendar.IsSome then
+             focusOn Calendar.openerId
+         else
+             Cmd.none)
+    | ShowMonth month -> { model with Calendar = Some month }, Cmd.none
+    | MoveToDay date when date < System.DateTime.Today -> model, Cmd.none
+    | MoveToDay date -> { model with Calendar = Some date }, focusDay date
+    | StartPicked start ->
+        {
+            model with
+                Start = start
+                Calendar = None
+        },
+        Cmd.batch [
+            Cmd.ofEffect (fun _ -> Navigation.keepInAddress startParam (start |> Option.map TripDates.format))
+            focusOn Calendar.openerId
+        ]
     | Share -> model, share ()
     | Shared result -> { model with Sharing = result }, clearLater ()
     | ClearSharing -> { model with Sharing = Sharing.Idle }, Cmd.none
@@ -133,7 +197,13 @@ let update msg (model: Model) =
         | Source.Shared token -> { model with Problem = None }, saveToAccount token
         | Source.Mine _ -> model, Cmd.none
     | SavedToAccount(Ok summary) ->
-        model, Cmd.ofEffect (fun _ -> Navigation.navigate (Route.url [ "id", summary.Id ] [] Routes.myTripPage))
+        // The landing day goes with the trip to its saved copy.
+        let start =
+            model.Start
+            |> Option.map (fun date -> startParam, TripDates.format date)
+            |> Option.toList
+
+        model, Cmd.ofEffect (fun _ -> Navigation.navigate (Route.url [ "id", summary.Id ] start Routes.myTripPage))
     | SavedToAccount(Error error) when Client.isSignedOut error ->
         model, Cmd.ofEffect (fun _ -> Navigation.signInThenReturn ())
     | SavedToAccount(Error error) ->

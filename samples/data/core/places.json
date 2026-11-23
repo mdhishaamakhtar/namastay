@@ -4,6 +4,10 @@
     "clusterSlug": "sample-cluster",
     "name": "Example Valley",
     "state": "Sample State",
+    "position": {
+      "latitude": 32.0,
+      "longitude": 77.2
+    },
     "familySlug": "pine",
     "shade": "deep",
     "gate": "open",
@@ -223,6 +227,10 @@
     "clusterSlug": "sample-cluster",
     "name": "Example Bay",
     "state": "Sample State",
+    "position": {
+      "latitude": 15.3,
+      "longitude": 73.9
+    },
     "familySlug": "ocean",
     "shade": "deep",
     "gate": "open",
@@ -429,6 +437,10 @@
     "clusterSlug": "sample-cluster",
     "name": "Example Island",
     "state": "Sample State",
+    "position": {
+      "latitude": 11.7,
+      "longitude": 92.7
+    },
     "familySlug": "pine",
     "shade": "deep",
     "gate": "open",

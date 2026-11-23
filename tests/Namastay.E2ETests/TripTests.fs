@@ -44,6 +44,14 @@ type TripTests(browser: BrowserFixture) =
             return page
         }
 
+    /// Opens the calendar on next month, so every day in it can still be chosen.
+    let openCalendar (page: IPage) =
+        task {
+            do! page.Locator(".trip-start-button").ClickAsync()
+            do! page.GetByLabel("Later month").ClickAsync()
+            return page.Locator ".calendar-day"
+        }
+
     [<Fact>]
     member _.``a stop says why it is in the trip, under its name``() =
         task {
@@ -58,6 +66,107 @@ type TripTests(browser: BrowserFixture) =
                 page.EvaluateAsync<float> "document.querySelector('.stop-why').getBoundingClientRect().left"
 
             Assert.Equal(name, reason)
+        }
+
+    [<Fact>]
+    member _.``picking the day you land puts dates on the stops and in the link``() =
+        task {
+            let! page, token = openTrip ()
+            let stay = page.Locator(".stop-title small").First
+            let! before = stay.TextContentAsync()
+            let! days = openCalendar page
+            let! id = days.First.GetAttributeAsync "id"
+            let chosen = id.Replace("day-", "")
+            do! days.First.ClickAsync()
+            do! Assertions.Expect(page).ToHaveURLAsync $"{browser.BaseUrl}/trip/{token}?from={chosen}"
+            do! Assertions.Expect(stay).Not.ToHaveTextAsync before
+            do! Assertions.Expect(page.Locator ".calendar").ToHaveCountAsync 0
+        }
+
+    [<Fact>]
+    member _.``the calendar marks every day of the trip from the day you land``() =
+        task {
+            let! page, _ = openTrip ()
+            let! days = openCalendar page
+            do! days.First.ClickAsync()
+            do! page.Locator(".trip-start-button").ClickAsync()
+            let! stops = page.Locator(".stop-title small").AllTextContentsAsync()
+            do! Assertions.Expect(page.Locator ".calendar-start").ToHaveCountAsync 1
+            let! marked = page.Locator(".calendar-trip").CountAsync()
+            Assert.True(marked >= stops.Count, $"{marked} days marked for {stops.Count} stops")
+        }
+
+    [<Fact>]
+    member _.``the arrow keys move through the calendar's days``() =
+        task {
+            let! page, _ = openTrip ()
+            let! days = openCalendar page
+            do! days.First.FocusAsync()
+            do! page.Keyboard.PressAsync "ArrowDown"
+            do! Assertions.Expect(days.Nth 7).ToBeFocusedAsync()
+            do! page.Keyboard.PressAsync "ArrowLeft"
+            do! Assertions.Expect(days.Nth 6).ToBeFocusedAsync()
+            do! page.Keyboard.PressAsync "Escape"
+            do! Assertions.Expect(page.Locator ".calendar").ToHaveCountAsync 0
+            do! Assertions.Expect(page.Locator ".trip-start-button").ToBeFocusedAsync()
+            do! page.Keyboard.PressAsync "Enter"
+            do! page.GetByLabel("Later month").FocusAsync()
+            do! page.Keyboard.PressAsync "Escape"
+            do! Assertions.Expect(page.Locator ".calendar").ToHaveCountAsync 0
+        }
+
+    [<Fact>]
+    member _.``removing the dates goes back to day numbers``() =
+        task {
+            let! page, token = openTrip ()
+            let! days = openCalendar page
+            do! days.First.ClickAsync()
+            do! page.Locator(".trip-start-clear").ClickAsync()
+            do! Assertions.Expect(page).ToHaveURLAsync $"{browser.BaseUrl}/trip/{token}"
+            do! Assertions.Expect(page.Locator(".trip-start-button span").First).ToHaveTextAsync "Pick a day"
+        }
+
+    [<Fact>]
+    member _.``a link that carries the landing day opens with its dates``() =
+        task {
+            let! page, token = openTrip ()
+            let! _ = page.GotoAsync $"{browser.BaseUrl}/trip/{token}?from=2027-02-06"
+            do! Assertions.Expect(page.Locator(".stop-title small").First).ToContainTextAsync "Sat 6"
+            do! Assertions.Expect(page.Locator(".trip-start-button span").First).ToHaveTextAsync "Sat 6 Feb 2027"
+            do! page.Locator(".trip-start-button").ClickAsync()
+            do! Assertions.Expect(page.Locator ".calendar-head strong").ToHaveTextAsync "February 2027"
+
+        }
+
+    [<Fact>]
+    member _.``a stop says what there is to do, on the same lines as its days``() =
+        task {
+            let! page, _ = openTrip ()
+            let things = page.Locator(".stop-open .stop-do").First
+            do! Assertions.Expect(things.Locator("strong").First).ToBeVisibleAsync()
+        }
+
+    [<Fact>]
+    member _.``the route is drawn with a numbered dot for every stop``() =
+        task {
+            let! page, _ = openTrip ()
+            let! stops = page.Locator(".route li").CountAsync()
+            do! Assertions.Expect(page.Locator ".route-sketch .route-stop").ToHaveCountAsync stops
+            do! Assertions.Expect(page.Locator(".route-sketch .route-land").First).ToBeAttachedAsync()
+            do! Assertions.Expect(page.Locator(".route-sketch .route-number").First).ToHaveTextAsync "1"
+            do! Assertions.Expect(page.Locator(".route li .route-dot").First).ToHaveTextAsync "1"
+        }
+
+    [<Fact>]
+    member _.``a trip saved before the map existed lists its stops without a drawing``() =
+        task {
+            let! page =
+                openChangedTrip (fun json ->
+                    for stop in json["trip"].Item("stops").AsArray() do
+                        stop.AsObject().["position"] <- null)
+
+            do! Assertions.Expect(page.Locator(".route li").First).ToBeVisibleAsync()
+            do! Assertions.Expect(page.Locator "svg.route-sketch").ToHaveCountAsync 0
         }
 
     [<Fact>]

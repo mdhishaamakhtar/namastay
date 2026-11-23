@@ -107,6 +107,8 @@ type Place = {
     Airport: string option
     /// One of the main international hubs, which most long-haul flights reach.
     Hub: bool
+    /// Where the place sits on the trip's map. A place without one is left off the map.
+    Position: Coordinates option
     Published: bool
     Interests: PlaceInterest list
     Months: PlaceMonth list

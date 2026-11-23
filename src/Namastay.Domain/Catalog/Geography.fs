@@ -13,6 +13,9 @@ type Cluster = {
     Name: string
 }
 
+/// Where a place is on the map, in degrees north and east.
+type Coordinates = { Latitude: float; Longitude: float }
+
 [<RequireQualifiedAccess>]
 type Shade =
     | Deep

@@ -9,6 +9,17 @@ open Namastay.Shared
 [<Emit("new URLSearchParams($0).get($1)")>]
 let private searchParam (search: string) (name: string) : string option = jsNative
 
+[<Emit("""(() => {
+    const url = new URL(window.location.href);
+    if ($1) url.searchParams.set($0, $1); else url.searchParams.delete($0);
+    window.history.replaceState(null, "", url);
+})()""")>]
+let private writeParam (name: string) (value: string) : unit = jsNative
+
+/// Keeps a choice in the address, so a copied link carries it, without a step to go back through.
+let keepInAddress (name: string) (value: string option) =
+    writeParam name (value |> Option.defaultValue "")
+
 let private changed = "namastay:navigate"
 
 let queryParam (name: string) = searchParam window.location.search name

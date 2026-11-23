@@ -27,6 +27,7 @@ let place: Place = {
     GettingThere = None
     Airport = None
     Hub = false
+    Position = None
     FoodIntro = None
     Dishes = [
         {

@@ -27,7 +27,9 @@
     <Compile Include="Pages/Journey/Questions.fs" />
     <Compile Include="Pages/Journey/SwipeCard.fs" />
     <Compile Include="Pages/Journey/View.fs" />
+    <Compile Include="Pages/Trip/Calendar.fs" />
     <Compile Include="Pages/Trip/State.fs" />
+    <Compile Include="Pages/Trip/IndiaOutline.fs" />
     <Compile Include="Pages/Trip/RouteMap.fs" />
     <Compile Include="Pages/Trip/Stop.fs" />
     <Compile Include="Pages/Trip/View.fs" />

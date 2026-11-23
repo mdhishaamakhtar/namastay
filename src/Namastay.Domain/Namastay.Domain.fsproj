@@ -14,6 +14,7 @@
     <Compile Include="Trip/Scope.fs" />
     <Compile Include="Trip/Profile.fs" />
     <Compile Include="Trip/Scoring.fs" />
+    <Compile Include="Trip/Airports.fs" />
     <Compile Include="Trip/Routing.fs" />
     <Compile Include="Trip/Gateways.fs" />
     <Compile Include="Trip/Reasons.fs" />

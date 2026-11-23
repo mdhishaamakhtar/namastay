@@ -46,10 +46,12 @@ let private customStop (catalog: Catalog) (original: Trip) family index name day
     Days = days
     FamilySlug = family
     Colours = colours catalog original family
+    Position = None
     Access = ContractMapping.access Gate.Open
     StayArea = None
     Photo = None
     Plans = [ for day in 1..days -> { Day = day; Plan = Builder.spareDay } ]
+    Highlights = []
     Food = None
     Arrival = None
     Retired = false
@@ -99,6 +101,7 @@ let private rebuild (catalog: Catalog) (original: Trip) (edit: TripEdit) (review
             Arrive = Gateways.arrive catalog routed
             Depart = Gateways.depart catalog routed
             Stops = stops
+            Landmarks = Builder.landmarks catalog routed
             Swaps = []
             Notices = Builder.notices catalog edit.Month routed
             BestMonths = if routed.IsEmpty then [] else Builder.bestMonths routed

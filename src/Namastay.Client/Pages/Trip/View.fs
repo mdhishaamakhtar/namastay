@@ -45,7 +45,7 @@ let private panel (model: Model) (trip: Trip) dispatch =
                 ]
             | Some Diet.Vegan -> Html.p [ prop.className "trip-diet"; prop.text "Vegan food picked out at every stop." ]
             | _ -> Html.none
-            RouteMap.view trip.Stops
+            RouteMap.view trip
             if not trip.Mix.IsEmpty then
                 Html.div [
                     prop.className "trip-mix"
@@ -100,6 +100,63 @@ let private swaps (trip: Trip) =
             ]
         ]
 
+/// A month other than the one the trip was planned for can change what's open and pleasant.
+let private monthMoved (model: Model) (trip: Trip) =
+    match model.Start, trip.Month with
+    | Some date, Some month when date.Month <> month ->
+        Html.p [
+            prop.className "trip-hard"
+            prop.text
+                $"This trip was planned for {Dates.monthNames[month - 1]}. Seasons change a lot in India, so plan a new one if your month has moved."
+        ]
+    | _ -> Html.none
+
+let private calendar (model: Model) (trip: Trip) dispatch (shown: System.DateTime) =
+    Calendar.view {
+        Shown = shown
+        Start = model.Start
+        Days = trip.Stops |> List.sumBy _.Days
+        Today = System.DateTime.Today
+        OnShow = ShowMonth >> dispatch
+        OnPick = Some >> StartPicked >> dispatch
+        OnMove = MoveToDay >> dispatch
+        OnClose = fun () -> dispatch ToggleCalendar
+    }
+
+/// The day the traveller lands: a button that says it, and our calendar under it.
+let private startField (model: Model) (trip: Trip) dispatch =
+    Html.div [
+        prop.className "trip-start"
+        prop.children [
+            Html.span [
+                prop.id "trip-start-label"
+                prop.text "When do you land? We'll put dates on your days."
+            ]
+            Html.button [
+                prop.type'.button
+                prop.id Calendar.openerId
+                prop.className "trip-start-button press"
+                prop.ariaExpanded model.Calendar.IsSome
+                prop.custom ("aria-describedby", "trip-start-label")
+                prop.onClick (fun _ -> dispatch ToggleCalendar)
+                prop.children [
+                    Html.span (model.Start |> Option.map TripDates.full |> Option.defaultValue "Pick a day")
+                    Icons.chevron model.Calendar.IsSome
+                ]
+            ]
+            match model.Calendar with
+            | Some shown -> calendar model trip dispatch shown
+            | None -> Html.none
+            if model.Start.IsSome then
+                Html.button [
+                    prop.type'.button
+                    prop.className "trip-start-clear"
+                    prop.text "Remove the dates"
+                    prop.onClick (fun _ -> dispatch (StartPicked None))
+                ]
+        ]
+    ]
+
 let private bestMonths (trip: Trip) =
     match trip.BestMonths with
     | [] -> Html.none
@@ -148,7 +205,8 @@ let private stops (model: Model) (saved: SavedTrip) dispatch =
                 | _ -> ()
                 yield!
                     List.zip (firstDays trip.Stops) trip.Stops
-                    |> List.map (fun (day, stop) -> Stop.view saved.ShareToken trip model.Open dispatch day stop)
+                    |> List.map (fun (day, stop) ->
+                        Stop.view saved.ShareToken trip model.Open model.Start dispatch day stop)
                 match trip.Depart with
                 | Some gateway -> yield! Stop.homeward gateway
                 | None -> ()
@@ -189,6 +247,8 @@ let view (model: Model) dispatch =
                 Html.div [
                     prop.className "trip-content"
                     prop.children [
+                        startField model saved.Trip dispatch
+                        monthMoved model saved.Trip
                         swaps saved.Trip
                         bestMonths saved.Trip
                         yield! hardMonths saved.Trip

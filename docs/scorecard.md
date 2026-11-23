@@ -37,8 +37,11 @@ feeling, the way the feeling pages do.
 **Comfort** asks whether the trip is pleasant to travel.
 
 - *travel hours per trip* and *longest leg hours*, from the shortest times recorded.
+  A landing or departure through a city between counts only the hop that touches the airport.
+- *long legs per trip*: legs of five hours or more, which take up the day.
 - *avoid-month stops per trip*: stops rated avoid in the traveller's month.
 - *free days per trip*: days with no plan.
+- *days past a stay's limit*: days a stop gets beyond the longest its place is worth.
 - *city twice %*: a stop repeated, or an airport city that is also a middle stop.
 - *swaps per trip*: liked places replaced because of the month.
 - *trips not built*: sessions that ended in an error.

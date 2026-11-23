@@ -168,6 +168,21 @@ let private checkCopy (place: Place) =
                 error "places" place.Slug $"visitor copy mentions banned word: {word}"
     ]
 
+/// The box India fits in, so a swapped or mistyped coordinate is caught.
+let private south, north, west, east = 6.0, 37.5, 68.0, 97.5
+
+let private checkPosition (place: Place) = [
+    match place.Position with
+    | Some found when
+        found.Latitude < south
+        || found.Latitude > north
+        || found.Longitude < west
+        || found.Longitude > east
+        ->
+        error "places" place.Slug $"position {found.Latitude}, {found.Longitude} is outside India"
+    | _ -> ()
+]
+
 let private checkDishes (place: Place) = [
     for dish in place.Dishes do
         if dish.Vegan && not dish.Vegetarian then
@@ -198,6 +213,7 @@ let check (catalog: Catalog) : ValidationError list =
         yield! catalog.Photos |> List.collect (checkPhoto places)
         yield! catalog.Places |> List.collect checkCopy
         yield! catalog.Places |> List.collect checkDishes
+        yield! catalog.Places |> List.collect checkPosition
         yield! checkUnique "places" (catalog.Places |> List.map _.Slug)
         yield! checkUnique "transport_links" (catalog.Links |> List.map _.Slug)
         yield! checkUnique "cards" (catalog.Cards |> List.map _.Slug)
