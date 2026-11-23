@@ -106,6 +106,31 @@ type JourneyTests(browser: BrowserFixture) =
         }
 
     [<Fact>]
+    member _.``the first answer counts the deck as started, and only the first``() =
+        task {
+            let! page = browser.NewPage()
+            let counted = Collections.Generic.List<string>()
+
+            page.Request.Add(fun request ->
+                if request.Url.EndsWith "/api/journey/started" then
+                    counted.Add request.Method)
+
+            do! goToJourney page
+            Assert.Empty counted
+
+            let! _ =
+                page.RunAndWaitForRequestAsync(
+                    (fun () -> (button page "Love it").ClickAsync()),
+                    fun request -> request.Url.EndsWith "/api/journey/started"
+                )
+
+            do! waitForCard page 2
+            do! (button page "Love it").ClickAsync()
+            do! waitForCard page 3
+            Assert.Equal<string list>([ "POST" ], List.ofSeq counted)
+        }
+
+    [<Fact>]
     member _.``undo brings back the last card``() =
         task {
             let! page = openJourney ()

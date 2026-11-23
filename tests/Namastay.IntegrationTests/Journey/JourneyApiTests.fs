@@ -554,6 +554,22 @@ type JourneyApiTests(postgres: PostgresFixture) =
         }
 
     [<Fact>]
+    member _.``each deck started is counted for its day``() =
+        task {
+            let! http, db = start ()
+            let! first = http.PostAsync(Routes.journeyStarted.Template, null)
+            Assert.Equal(HttpStatusCode.OK, first.StatusCode)
+            let! _ = http.PostAsync(Routes.journeyStarted.Template, null)
+            use source = NpgsqlDataSource.Create db
+
+            use command =
+                source.CreateCommand "select starts from journey_starts where day = current_date"
+
+            let! starts = command.ExecuteScalarAsync()
+            Assert.Equal(2, Convert.ToInt32 starts)
+        }
+
+    [<Fact>]
     member _.``a traveller can say a trip felt right, and change their mind``() =
         task {
             let! http, db = start ()

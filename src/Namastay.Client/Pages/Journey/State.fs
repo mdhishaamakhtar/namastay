@@ -47,6 +47,8 @@ type Model = {
     ScopeName: string option
     /// This visit's own shuffle of the deck.
     Seed: int
+    /// Whether this visit has been counted as a deck begun, which happens once.
+    Started: bool
 }
 
 type Msg =
@@ -92,6 +94,7 @@ let init () =
         Scope = scopeInAddress ()
         ScopeName = Browser.queryParam "label"
         Seed = System.Random().Next()
+        Started = false
     },
     Cmd.batch [ Cmd.ofEffect (fun _ -> Theme.stage None); loadGraph () ]
 
@@ -157,6 +160,13 @@ let private feelings (model: Model) =
            } -> chosen
     | _ -> []
 
+/// Tells the server a deck was begun, so trips built can be read against decks started.
+/// It's a count and nothing else, and the journey goes on whether or not it arrives.
+let private countStart () =
+    Cmd.ofEffect (fun _ ->
+        Client.action Fetch.Types.HttpMethod.POST Routes.journeyStarted.Template
+        |> ignore)
+
 let private decide (graph: JourneyGraph) liked (model: Model) =
     let slug = List.head model.Queue
     let answers = model.Answers @ [ { Card = slug; Liked = liked } ]
@@ -171,8 +181,14 @@ let private decide (graph: JourneyGraph) liked (model: Model) =
             Answers = answers
             Queue = queue
             Step = step
+            Started = true
     },
-    Cmd.batch [ settleStage graph answers; preload graph queue ]
+    Cmd.batch [
+        settleStage graph answers
+        preload graph queue
+        if not model.Started then
+            countStart ()
+    ]
 
 /// Takes back the last answer, so its card can be decided again.
 let private undo (graph: JourneyGraph) (model: Model) =

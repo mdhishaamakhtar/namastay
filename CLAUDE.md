@@ -42,6 +42,13 @@ Only the importer runs migrations, and publishing runs them first, so a new colu
 - Trips store their food when they're built, so older trips don't gain new dishes.
 - Giraffe's `voidTag` leaves SVG shapes unclosed, so use `tag "rect" [ ... ] []` for shapes with siblings.
 
+## Trips
+
+- A place needs a `position` (latitude and longitude, inside India) to appear on a trip's map. A stop without one is left off the drawing and stays in the list.
+- India is always drawn from `src/Namastay.Client/Pages/Trip/IndiaOutline.fs`, which follows the Survey of India boundary. Never sketch the border by hand.
+- Controls are our own, in the house style, not the browser's: the landing-day calendar is `Pages/Trip/Calendar.fs`.
+- `trip_reactions` and `journey_starts` hold what travellers did, not travel content, so they're in `ContentTables.notContent` and publishing never touches them. `docs/scorecard.md` has the queries that read them.
+
 ## Checking the site
 
 Run `make test-e2e` for browser checks. The desktop app's Browser pane pauses animations while hidden, so swipes stall there. After a deploy, check the live site in a fresh browser, because an open tab keeps the old version.
