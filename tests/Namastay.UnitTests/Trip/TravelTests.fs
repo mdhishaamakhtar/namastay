@@ -211,7 +211,7 @@ let ``an airport city between two stops moves to the end, where the trip flies h
                 mountains "south"
             ]
             (timed "north" "port" 100 @ timed "port" "south" 100 @ flown "port" "main" 70)
-            [ "north"; "south"; "port" ]
+            [ "north"; "south" ]
             9
 
     Assert.Equal("port", (List.last trip.Stops).PlaceSlug)
