@@ -376,7 +376,9 @@ let private closingCity
 
     let nearest =
         catalog.Places
-        |> List.filter (fun city -> flownFrom city && city.Slug <> last.Slug)
+        // A smaller airport counts only when the trip may end there. A hub it can't end in
+        // still rules out the others, so a trip kept to one area doesn't leave it to end.
+        |> List.filter (fun city -> city.Slug <> last.Slug && (city.Hub || (city.Airport.IsSome && closes city)))
         |> List.choose reach
         |> List.sortBy (fun (city, link, effort) -> weighed (city, link, effort), city.Slug)
         |> List.tryHead
@@ -508,11 +510,21 @@ let route
         fill (total - planned trimmed) 0 trimmed
 
     let closing = closingDays request.Days
-    let beforeClosing = fitted (request.Days - closing) stops
+    let closingAfter (route: RoutedStop list) = closingFor (List.last route).Place
+
+    let onRoute (city: Place) =
+        stops |> List.exists (fun stop -> stop.Place.Slug = city.Slug)
+
+    // A city already on the route gives up its own days to come last, so nothing else has
+    // to go. Otherwise room is made for it first, which can cost the last stop.
+    let beforeClosing =
+        match closingAfter stops with
+        | Some(city, _) when onRoute city -> stops
+        | _ -> fitted (request.Days - closing) stops
 
     let endsInHub (route: RoutedStop list) = (List.last route).Place.Hub
 
-    match closingCity catalog request links closers (List.last beforeClosing).Place with
+    match closingAfter beforeClosing with
     // Making room can drop a stop after a hub, and then the hub is the natural end.
     | None when endsInHub beforeClosing -> fitted request.Days beforeClosing
     | None -> fitted request.Days stops

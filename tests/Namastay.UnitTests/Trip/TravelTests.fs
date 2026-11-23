@@ -217,3 +217,41 @@ let ``an airport city between two stops moves to the end, where the trip flies h
     Assert.Equal("port", (List.last trip.Stops).PlaceSlug)
     Assert.Equal(1, trip.Stops |> List.filter (fun stop -> stop.PlaceSlug = "port") |> List.length)
     Assert.Equal("PORT", trip.Depart.Value.City)
+
+[<Fact>]
+let ``a full trip still moves its airport city to the end instead of dropping a stop`` () =
+    let places = [
+        mainHub
+        airport "port" "c-plains" "stone" "forts"
+        mountains "north"
+        mountains "south"
+    ]
+
+    let links =
+        timed "north" "port" 100 @ timed "port" "south" 100 @ flown "port" "main" 70
+
+    // Friends keep every stop short, so six days leave none to spare.
+    let trip =
+        build (world places links [ "north"; "south"; "port" ]) {
+            request (liked [ "likes-north"; "likes-south"; "likes-port" ]) 6 None with
+                Travellers = TravellerType.Friends
+        }
+
+    Assert.Equal<string list>([ "north"; "port"; "south" ], slugs trip |> List.sort)
+    Assert.Equal("port", (List.last trip.Stops).PlaceSlug)
+
+[<Fact>]
+let ``an airport city with no guide doesn't stop a trip ending in a main city further on`` () =
+    let hidden = {
+        airport "port" "c-plains" "stone" "forts" with
+            Published = false
+    }
+
+    let trip =
+        tripFor
+            [ mainHub; hidden; mountains "remote" ]
+            (timed "remote" "port" 100 @ timed "remote" "main" 300)
+            [ "remote" ]
+            6
+
+    Assert.Equal("main", (List.last trip.Stops).PlaceSlug)
