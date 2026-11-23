@@ -181,4 +181,11 @@ let all = [
 ]
 
 /// Tables that aren't travel content. Publishing copies none of them.
-let notContent = [ "users"; "itineraries"; "saved_trips"; "import_batches"; "schemaversions" ]
+let notContent = [
+    "users"
+    "itineraries"
+    "saved_trips"
+    "trip_reactions"
+    "import_batches"
+    "schemaversions"
+]

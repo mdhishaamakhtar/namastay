@@ -779,6 +779,12 @@ button:focus-visible {
   margin: 0;
 }
 
+.trip-reaction-answers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 .trip-start {
   display: flex;
   flex-direction: column;
@@ -1645,6 +1651,7 @@ button:focus-visible {
   .trip-menu,
   .trip-actions,
   .trip-start,
+  .trip-reaction,
   .site-foot,
   .trip-share,
   .trip-link,

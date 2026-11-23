@@ -554,6 +554,48 @@ type JourneyApiTests(postgres: PostgresFixture) =
         }
 
     [<Fact>]
+    member _.``a traveller can say a trip felt right, and change their mind``() =
+        task {
+            let! http, db = start ()
+            let! saved = create http
+
+            let react (feltRight: bool) =
+                http.PostAsJsonAsync(
+                    Route.url [ "shareToken", saved.ShareToken ] [] Routes.reactToItinerary,
+                    { FeltRight = feltRight },
+                    Json.options
+                )
+
+            let! first = react true
+            Assert.Equal(HttpStatusCode.OK, first.StatusCode)
+            let! second = react false
+            Assert.Equal(HttpStatusCode.OK, second.StatusCode)
+            use source = NpgsqlDataSource.Create db
+
+            use command =
+                source.CreateCommand
+                    "select count(*) filter (where not felt_right) || ' of ' || count(*) from trip_reactions"
+
+            let! answer = command.ExecuteScalarAsync()
+            Assert.Equal("1 of 1", string answer)
+        }
+
+    [<Fact>]
+    member _.``a reaction to a trip that doesn't exist is not found``() =
+        task {
+            let! http, _ = start ()
+
+            let! response =
+                http.PostAsJsonAsync(
+                    Route.url [ "shareToken", "AAAAAAAAAAAA" ] [] Routes.reactToItinerary,
+                    { FeltRight = true },
+                    Json.options
+                )
+
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode)
+        }
+
+    [<Fact>]
     member _.``trip saved before a format change still opens``() =
         task {
             let! http, db = start ()

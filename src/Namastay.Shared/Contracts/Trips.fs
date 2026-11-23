@@ -137,6 +137,9 @@ type Trip = {
     DataVersion: int
 }
 
+/// A traveller's answer to whether a trip felt like theirs.
+type TripReaction = { FeltRight: bool }
+
 type StopEdit = {
     PlaceSlug: string option
     CustomName: string option
