@@ -4,7 +4,7 @@ module Namastay.Domain.Trip.Airports
 open Namastay.Domain.Catalog
 
 /// How much further a traveller will go for a main hub, which has far more long-haul flights.
-let private hubPreference = 150
+let hubPreference = 150
 
 /// The way between a stop and an airport city: direct, or through one city between.
 type Way = {
