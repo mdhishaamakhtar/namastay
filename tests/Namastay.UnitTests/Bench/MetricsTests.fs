@@ -125,6 +125,21 @@ let ``a leg that takes up the day is a long leg`` () =
     Assert.Equal(2.0, value "long legs per trip" [ withTrip travelled ])
 
 [<Fact>]
+let ``days past a place's longest stay are counted`` () =
+    let longest =
+        (catalog.Places |> List.find (fun place -> place.Slug = "peak")).DaysMax
+
+    let stretched = {
+        trip with
+            Stops = [
+                { stop "peak" with Days = longest + 3 }
+                { stop "valley" with Days = longest }
+            ]
+    }
+
+    Assert.Equal(3.0, value "days past a stay's limit" [ withTrip stretched ])
+
+[<Fact>]
 let ``a trip on taste spends every day on it`` () =
     Assert.Equal(100.0, value "days on taste %" [ session ])
     Assert.Equal(100.0, value "top interest in trip %" [ session ])
@@ -245,5 +260,5 @@ let ``the opening is level when each feeling has as many cards`` () =
 [<Fact>]
 let ``every line has a direction`` () =
     let lines = Metrics.scorecard catalog [ session ]
-    Assert.Equal(26, lines.Length)
+    Assert.Equal(27, lines.Length)
     Assert.Equal(lines.Length, (lines |> List.map _.Name |> List.distinct).Length)

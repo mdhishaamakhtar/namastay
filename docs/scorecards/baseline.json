@@ -8,7 +8,7 @@
   {
     "Group": "variety",
     "Name": "distinct trips %",
-    "Value": 87.33333333333333,
+    "Value": 90,
     "Better": "Higher"
   },
   {
@@ -20,31 +20,31 @@
   {
     "Group": "variety",
     "Name": "places that open a trip",
-    "Value": 59,
+    "Value": 57,
     "Better": "Higher"
   },
   {
     "Group": "variety",
     "Name": "top place in trips %",
-    "Value": 26.666666666666668,
+    "Value": 27.333333333333332,
     "Better": "Lower"
   },
   {
     "Group": "direction",
     "Name": "top interest in trip %",
-    "Value": 77.08333333333333,
+    "Value": 78.33333333333333,
     "Better": "Higher"
   },
   {
     "Group": "direction",
     "Name": "every interest in trip %",
-    "Value": 60.416666666666664,
+    "Value": 61.25,
     "Better": "Higher"
   },
   {
     "Group": "direction",
     "Name": "days on taste %",
-    "Value": 67.81150793650794,
+    "Value": 65.52579365079366,
     "Better": "Higher"
   },
   {
@@ -56,49 +56,55 @@
   {
     "Group": "direction",
     "Name": "passed place in trip %",
-    "Value": 25.333333333333332,
+    "Value": 26,
     "Better": "Lower"
   },
   {
     "Group": "comfort",
     "Name": "travel hours per trip",
-    "Value": 17.83827777777779,
+    "Value": 18.809222222222242,
     "Better": "Lower"
   },
   {
     "Group": "comfort",
     "Name": "longest leg hours",
-    "Value": 6.864444444444445,
+    "Value": 7.0997222222222245,
     "Better": "Lower"
   },
   {
     "Group": "comfort",
     "Name": "long legs per trip",
-    "Value": 1.3566666666666667,
+    "Value": 1.4166666666666667,
     "Better": "Lower"
   },
   {
     "Group": "comfort",
     "Name": "avoid-month stops per trip",
-    "Value": 0.6866666666666666,
+    "Value": 0.69,
     "Better": "Lower"
   },
   {
     "Group": "comfort",
     "Name": "free days per trip",
-    "Value": 1.7133333333333334,
+    "Value": 1.08,
     "Better": "Lower"
   },
   {
     "Group": "comfort",
+    "Name": "days past a stay\u0027s limit",
+    "Value": 0.9633333333333334,
+    "Better": "Zero"
+  },
+  {
+    "Group": "comfort",
     "Name": "city twice %",
-    "Value": 3,
+    "Value": 3.6666666666666665,
     "Better": "Zero"
   },
   {
     "Group": "comfort",
     "Name": "swaps per trip",
-    "Value": 0.25333333333333335,
+    "Value": 0.25666666666666665,
     "Better": "Lower"
   },
   {
@@ -146,7 +152,7 @@
   {
     "Group": "several",
     "Name": "travel hours per mixed trip",
-    "Value": 20.92611111111111,
+    "Value": 21.148333333333333,
     "Better": "Lower"
   },
   {

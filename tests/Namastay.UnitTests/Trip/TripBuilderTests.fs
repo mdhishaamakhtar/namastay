@@ -595,8 +595,8 @@ let ``depth lovers get fewer stops than breadth lovers`` () =
             Cards = deep :: catalog.Cards
     }
 
-    let broad = build world (request (liked [ "likes-hills" ]) 12 None)
-    let slow = build world (request (liked [ "likes-hills"; "slow" ]) 12 None)
+    let broad = build world (request (liked [ "likes-hills" ]) 10 None)
+    let slow = build world (request (liked [ "likes-hills"; "slow" ]) 10 None)
     Assert.True(slow.Stops.Length < broad.Stops.Length, $"slow {slow.Stops.Length}, broad {broad.Stops.Length}")
 
 [<Fact>]
@@ -1405,7 +1405,10 @@ let ``the closing city gets a day or two and the days still add up`` days closin
         likingRemote
             [
                 hubAirport "main" "c-plains" "stone" "forts"
-                place "remote" "c-hills" "pine" "mountains"
+                {
+                    place "remote" "c-hills" "pine" "mountains" with
+                        DaysMax = 14
+                }
             ]
             (both "main" "remote")
             days
@@ -1869,7 +1872,7 @@ let ``the closing stay prefers a hub that is fine in the month over a nearer har
 [<Fact>]
 let ``families move less than friends`` () =
     let travelling who = {
-        request (liked [ "likes-hills" ]) 12 None with
+        request (liked [ "likes-hills" ]) 10 None with
             Travellers = who
     }
 

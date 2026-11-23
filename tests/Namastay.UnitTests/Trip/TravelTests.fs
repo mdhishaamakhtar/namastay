@@ -106,3 +106,23 @@ let ``a week gives up one day to travel sooner than two`` () =
 
     Assert.Contains("one-haul", slugs trip)
     Assert.DoesNotContain("two-hauls", slugs trip)
+
+[<Fact>]
+let ``the last city takes the days the other stops can't honestly fill`` () =
+    let trip =
+        tripFor [ mainHub; mountains "remote" ] (both "main" "remote") [ "remote" ] 8
+
+    Assert.Equal<(string * int) list>(
+        [ "remote", 4; "main", 4 ],
+        trip.Stops |> List.map (fun stop -> stop.PlaceSlug, stop.Days)
+    )
+
+[<Fact>]
+let ``the last city stays short while the other stops have room`` () =
+    let roomy = { mountains "remote" with DaysMax = 9 }
+    let trip = tripFor [ mainHub; roomy ] (both "main" "remote") [ "remote" ] 8
+
+    Assert.Equal<(string * int) list>(
+        [ "remote", 6; "main", 2 ],
+        trip.Stops |> List.map (fun stop -> stop.PlaceSlug, stop.Days)
+    )

@@ -14,7 +14,7 @@ type RoutedStop = {
 }
 
 let private beamWidth = 60
-let private unfilledDayPenalty = 10
+let private unfilledDayPenalty = 20
 /// What an hour on the road or rails costs a route, and for someone who avoids flights
 /// and so expects the long way round.
 let private hourCost = 6
@@ -487,11 +487,16 @@ let route
     | None when endsInHub beforeClosing -> fitted request.Days beforeClosing
     | None -> fitted request.Days stops
     | Some(city, link) ->
-        fitted (request.Days - closing) (without city beforeClosing)
+        let before = without city beforeClosing
+        // A last city with more to see takes the days the other stops can't honestly fill.
+        let unfilled = request.Days - closing - (before |> List.sumBy _.Place.DaysMax)
+        let stay = closing + max 0 (min unfilled (city.DaysMax - closing))
+
+        fitted (request.Days - stay) before
         @ [
             {
                 Place = city
-                Days = closing
+                Days = stay
                 Arrival = Some link
                 Closing = true
             }
