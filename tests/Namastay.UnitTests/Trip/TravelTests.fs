@@ -179,3 +179,41 @@ let ``a trip doesn't pass through one main city to fly home from another`` () =
             (Some 5)
 
     Assert.Equal("near-hub", (List.last trip.Stops).PlaceSlug)
+
+[<Fact>]
+let ``a trip beside an international airport flies home from it, not from a hub further on`` () =
+    let trip =
+        tripFor
+            [ mainHub; airport "port" "c-plains" "stone" "forts"; mountains "remote" ]
+            (timed "remote" "port" 100 @ flown "port" "main" 70)
+            [ "remote" ]
+            6
+
+    Assert.Equal<string list>([ "remote"; "port" ], slugs trip)
+    Assert.Equal("PORT", trip.Depart.Value.City)
+
+[<Fact>]
+let ``a trip that ends in an airport city far from any hub flies home from there`` () =
+    let trip =
+        tripFor [ mainHub; airport "remote" "c-hills" "pine" "mountains" ] (timed "remote" "main" 400) [ "remote" ] 5
+
+    Assert.Equal<string list>([ "remote" ], slugs trip)
+    Assert.Equal("REMOTE", trip.Depart.Value.City)
+
+[<Fact>]
+let ``an airport city between two stops moves to the end, where the trip flies home`` () =
+    let trip =
+        tripFor
+            [
+                mainHub
+                airport "port" "c-plains" "stone" "forts"
+                mountains "north"
+                mountains "south"
+            ]
+            (timed "north" "port" 100 @ timed "port" "south" 100 @ flown "port" "main" 70)
+            [ "north"; "south"; "port" ]
+            9
+
+    Assert.Equal("port", (List.last trip.Stops).PlaceSlug)
+    Assert.Equal(1, trip.Stops |> List.filter (fun stop -> stop.PlaceSlug = "port") |> List.length)
+    Assert.Equal("PORT", trip.Depart.Value.City)

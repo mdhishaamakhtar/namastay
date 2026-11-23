@@ -321,6 +321,13 @@ let private eitherWay (links: Map<string * string, TransportLink>) (from: string
     |> List.sortBy _.MinutesMin
     |> List.tryHead
 
+/// Getting to an airport and through it, which a flight's own time leaves out.
+let private airportTime = 150
+
+/// A journey as it's lived, door to door.
+let private doorToDoor (link: TransportLink) =
+    link.MinutesMin + (if link.Mode = Mode.Flight then airportTime else 0)
+
 /// How much further a trip goes to end in a city that's pleasant in its month. Past that,
 /// a day or two in a hard month beats crossing the country to fly home.
 let private hardMonthDetour = 180
@@ -329,8 +336,8 @@ let private hardMonthDetour = 180
 let private closingDays days = if days <= 7 then 1 else 2
 
 /// Where to stay before flying home, if the route doesn't already end somewhere people fly
-/// home from: the nearest main hub, going up to three hours further for one that's fine in
-/// the month, or failing any hub, the nearest international airport.
+/// home from: the nearest city with an international airport, door to door, going up to
+/// three hours further for one that's fine in the month, and further again for a main hub.
 let private closingCity
     (catalog: Catalog)
     (request: TripRequest)
@@ -342,44 +349,44 @@ let private closingCity
         closers |> List.exists (fun closer -> closer.Slug = city.Slug)
 
     let between = eitherWay links
+    let flownFrom (city: Place) = city.Hub || city.Airport.IsSome
 
-    // Nobody passes through one main city to fly home from another, so a way through a hub ends there.
+    // Nobody passes through one airport city to fly home from another, so a way through one ends there.
     let through (city: Place) (middle: Place) =
         match between last.Slug middle.Slug, between middle.Slug city.Slug with
-        | Some first, Some second when not middle.Hub -> Some(passing middle first second)
+        | Some first, Some second when not (flownFrom middle) ->
+            Some(passing middle first second, doorToDoor first + doorToDoor second)
         | _ -> None
 
     let reach (city: Place) =
         between last.Slug city.Slug
-        |> Option.orElse (
-            catalog.Places
-            |> List.choose (through city)
-            |> List.sortBy _.MinutesMin
-            |> List.tryHead
-        )
-        |> Option.map (fun link -> city, link)
+        |> Option.map (fun link -> link, doorToDoor link)
+        |> Option.orElse (catalog.Places |> List.choose (through city) |> List.sortBy snd |> List.tryHead)
+        |> Option.map (fun (link, effort) -> city, link, effort)
 
-    let nearest (cities: Place list) =
-        cities
-        |> List.filter (fun city -> city.Slug <> last.Slug)
+    /// What a city costs to end in: the journey there, more for a hard month and for
+    /// an airport with fewer long-haul flights than a main hub.
+    let weighed (city: Place, _: TransportLink, effort: int) =
+        effort
+        + (if Scoring.isUsableIn request.Month city then
+               0
+           else
+               hardMonthDetour)
+        + (if city.Hub then 0 else Airports.hubPreference)
+
+    let nearest =
+        catalog.Places
+        |> List.filter (fun city -> flownFrom city && city.Slug <> last.Slug)
         |> List.choose reach
-        |> List.sortBy (fun (city, link) ->
-            let detour =
-                if Scoring.isUsableIn request.Month city then
-                    0
-                else
-                    hardMonthDetour
-
-            link.MinutesMin + detour, city.Slug)
+        |> List.sortBy (fun (city, link, effort) -> weighed (city, link, effort), city.Slug)
         |> List.tryHead
 
-    if last.Hub then
-        None
-    else
-        match nearest (catalog.Places |> List.filter _.Hub) with
-        | None when last.Airport.IsNone -> nearest (catalog.Places |> List.filter _.Airport.IsSome)
-        | found -> found
-        |> Option.filter (fst >> closes)
+    match nearest with
+    | _ when last.Hub -> None
+    // A stop with its own airport hands over only to a main hub close enough to be worth it.
+    | Some found when last.Airport.IsSome && weighed found >= Airports.hubPreference -> None
+    | Some(city, link, _) when closes city -> Some(city, link)
+    | _ -> None
 
 /// Takes a city out of the route, so it can come last and not appear twice.
 /// The stop after it is now reached by passing through.
