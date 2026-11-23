@@ -64,3 +64,55 @@ let private padded (width: int) (value: int) = (string value).PadLeft(width, '0'
 /// 2027-02-06, for a date field and a link.
 let format (date: DateTime) : string =
     $"{padded 4 date.Year}-{padded 2 date.Month}-{padded 2 date.Day}"
+
+let private monthNames = [
+    "January"
+    "February"
+    "March"
+    "April"
+    "May"
+    "June"
+    "July"
+    "August"
+    "September"
+    "October"
+    "November"
+    "December"
+]
+
+let private daysInWeek = 7
+
+/// "February 2027", the heading of a calendar month.
+let monthTitle (month: DateTime) : string =
+    $"{monthNames[month.Month - 1]} {month.Year}"
+
+/// "Sat 6 Feb 2027", a chosen day with nothing left to guess.
+let full (date: DateTime) : string = $"{whole date} {date.Year}"
+
+/// The month a date falls in, as weeks that start on Monday. Days outside the month are
+/// None, so every week has seven places.
+let weeks (month: DateTime) : DateTime option list list =
+    let first = DateTime(month.Year, month.Month, 1)
+    // Sunday is 0, so Monday-first puts it last.
+    let before = (int first.DayOfWeek + daysInWeek - 1) % daysInWeek
+    let length = DateTime.DaysInMonth(month.Year, month.Month)
+    let after = (daysInWeek - (before + length) % daysInWeek) % daysInWeek
+
+    List.replicate before None
+    @ [ for day in 1..length -> Some(DateTime(month.Year, month.Month, day)) ]
+    @ List.replicate after None
+    |> List.chunkBySize daysInWeek
+
+/// Whether a date is one of a trip's days, given the day it starts and how long it runs.
+let covers (start: DateTime) (days: int) (date: DateTime) : bool =
+    date >= start && date < start.AddDays(float days)
+
+/// The month a calendar opens on: the one the trip was planned for, the next time it
+/// comes round, or this month when no month was chosen.
+let opening (today: DateTime) (plannedMonth: int option) : DateTime =
+    let thisMonth = DateTime(today.Year, today.Month, 1)
+
+    match plannedMonth with
+    | Some month when month >= today.Month -> DateTime(today.Year, month, 1)
+    | Some month -> DateTime(today.Year + 1, month, 1)
+    | None -> thisMonth

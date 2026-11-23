@@ -111,16 +111,49 @@ let private monthMoved (model: Model) (trip: Trip) =
         ]
     | _ -> Html.none
 
-let private startField (model: Model) dispatch =
-    Html.label [
-        prop.className "form-field trip-start"
+let private calendar (model: Model) (trip: Trip) dispatch (shown: System.DateTime) =
+    Calendar.view {
+        Shown = shown
+        Start = model.Start
+        Days = trip.Stops |> List.sumBy _.Days
+        Today = System.DateTime.Today
+        OnShow = ShowMonth >> dispatch
+        OnPick = Some >> StartPicked >> dispatch
+        OnMove = MoveToDay >> dispatch
+        OnClose = fun () -> dispatch ToggleCalendar
+    }
+
+/// The day the traveller lands: a button that says it, and our calendar under it.
+let private startField (model: Model) (trip: Trip) dispatch =
+    Html.div [
+        prop.className "trip-start"
         prop.children [
-            Html.span "When do you land? We'll put dates on your days."
-            Html.input [
-                prop.type'.date
-                prop.value (model.Start |> Option.map TripDates.format |> Option.defaultValue "")
-                prop.onChange (StartPicked >> dispatch)
+            Html.span [
+                prop.id "trip-start-label"
+                prop.text "When do you land? We'll put dates on your days."
             ]
+            Html.button [
+                prop.type'.button
+                prop.id Calendar.openerId
+                prop.className "trip-start-button press"
+                prop.ariaExpanded model.Calendar.IsSome
+                prop.custom ("aria-describedby", "trip-start-label")
+                prop.onClick (fun _ -> dispatch ToggleCalendar)
+                prop.children [
+                    Html.span (model.Start |> Option.map TripDates.full |> Option.defaultValue "Pick a day")
+                    Icons.chevron model.Calendar.IsSome
+                ]
+            ]
+            match model.Calendar with
+            | Some shown -> calendar model trip dispatch shown
+            | None -> Html.none
+            if model.Start.IsSome then
+                Html.button [
+                    prop.type'.button
+                    prop.className "trip-start-clear"
+                    prop.text "Remove the dates"
+                    prop.onClick (fun _ -> dispatch (StartPicked None))
+                ]
         ]
     ]
 
@@ -214,7 +247,7 @@ let view (model: Model) dispatch =
                 Html.div [
                     prop.className "trip-content"
                     prop.children [
-                        startField model dispatch
+                        startField model saved.Trip dispatch
                         monthMoved model saved.Trip
                         swaps saved.Trip
                         bestMonths saved.Trip

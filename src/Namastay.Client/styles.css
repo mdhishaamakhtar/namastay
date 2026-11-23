@@ -31,7 +31,7 @@
   --brand: #f2b52b;
   --ink: #2b2108;
   --paper: #fff8e6;
-  --sea: #e2ecdf;
+  --beyond: #ebe2cc;
   --warning: #1c1b1a;
   --deep: var(--brand);
   --mid: var(--brand);
@@ -645,7 +645,7 @@ button:focus-visible {
   width: 100%;
   aspect-ratio: 4 / 3;
   border-radius: 2px;
-  background: var(--sea);
+  background: var(--beyond);
 }
 
 .route-land {
@@ -656,7 +656,7 @@ button:focus-visible {
 }
 
 .route-inset-back {
-  fill: var(--sea);
+  fill: var(--beyond);
   stroke: var(--ink);
   stroke-width: 1;
 }
@@ -780,7 +780,140 @@ button:focus-visible {
 }
 
 .trip-start {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   max-width: 360px;
+  font-weight: 500;
+}
+
+.trip-start-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--ink);
+  font: 400 17px/1.4 Mukta, system-ui, sans-serif;
+  text-align: left;
+  cursor: pointer;
+}
+
+.trip-start-clear {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: 500 16px/1.4 Mukta, system-ui, sans-serif;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  background: #fff;
+}
+
+.calendar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.calendar-head strong {
+  font-family: "Yatra One", Mukta, serif;
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.calendar-month {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.calendar-month svg {
+  transform: rotate(-90deg);
+}
+
+.calendar-earlier svg {
+  transform: rotate(90deg);
+}
+
+.calendar-month:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+}
+
+.calendar-weekday {
+  padding: 4px 0;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.calendar-day {
+  min-height: 44px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  background: none;
+  color: var(--ink);
+  font: 500 16px/1 Mukta, system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.calendar-day:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.calendar-day:not(:disabled):hover {
+  border-color: var(--ink);
+}
+
+.calendar-today {
+  border-color: color-mix(in srgb, var(--ink) 35%, transparent);
+}
+
+.calendar-trip {
+  background: color-mix(in srgb, var(--brand) 45%, #fff);
+}
+
+.calendar-start {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.calendar-day:focus-visible,
+.calendar-month:focus-visible,
+.trip-start-button:focus-visible,
+.trip-start-clear:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
 }
 
 .trip-stops {
