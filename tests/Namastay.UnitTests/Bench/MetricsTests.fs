@@ -92,6 +92,38 @@ let ``a repeated stop is a city twice`` () =
 
     Assert.Equal(100.0, value "city twice %" [ withTrip repeated ])
 
+let private leg minutes = {
+    Mode = TravelMode.Train
+    MinutesMin = minutes
+    MinutesMax = minutes
+    ComfortNote = None
+}
+
+[<Fact>]
+let ``a leg that takes up the day is a long leg`` () =
+    let travelled = {
+        trip with
+            Stops = [
+                stop "peak"
+                {
+                    stop "valley" with
+                        Arrival = Some(leg 300)
+                }
+                {
+                    stop "lake" with
+                        Arrival = Some(leg 299)
+                }
+            ]
+            Arrive =
+                Some {
+                    gateway "PEAK" with
+                        Leg = Some(leg 480)
+                }
+            Depart = None
+    }
+
+    Assert.Equal(2.0, value "long legs per trip" [ withTrip travelled ])
+
 [<Fact>]
 let ``a trip on taste spends every day on it`` () =
     Assert.Equal(100.0, value "days on taste %" [ session ])
@@ -213,5 +245,5 @@ let ``the opening is level when each feeling has as many cards`` () =
 [<Fact>]
 let ``every line has a direction`` () =
     let lines = Metrics.scorecard catalog [ session ]
-    Assert.Equal(25, lines.Length)
+    Assert.Equal(26, lines.Length)
     Assert.Equal(lines.Length, (lines |> List.map _.Name |> List.distinct).Length)

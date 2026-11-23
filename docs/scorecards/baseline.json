@@ -8,7 +8,7 @@
   {
     "Group": "variety",
     "Name": "distinct trips %",
-    "Value": 92,
+    "Value": 87.33333333333333,
     "Better": "Higher"
   },
   {
@@ -20,31 +20,31 @@
   {
     "Group": "variety",
     "Name": "places that open a trip",
-    "Value": 61,
+    "Value": 59,
     "Better": "Higher"
   },
   {
     "Group": "variety",
     "Name": "top place in trips %",
-    "Value": 27.666666666666668,
+    "Value": 26.666666666666668,
     "Better": "Lower"
   },
   {
     "Group": "direction",
     "Name": "top interest in trip %",
-    "Value": 77.91666666666667,
+    "Value": 77.08333333333333,
     "Better": "Higher"
   },
   {
     "Group": "direction",
     "Name": "every interest in trip %",
-    "Value": 61.666666666666664,
+    "Value": 60.416666666666664,
     "Better": "Higher"
   },
   {
     "Group": "direction",
     "Name": "days on taste %",
-    "Value": 66.25198412698414,
+    "Value": 67.81150793650794,
     "Better": "Higher"
   },
   {
@@ -56,43 +56,49 @@
   {
     "Group": "direction",
     "Name": "passed place in trip %",
-    "Value": 26,
+    "Value": 25.333333333333332,
     "Better": "Lower"
   },
   {
     "Group": "comfort",
     "Name": "travel hours per trip",
-    "Value": 21.816444444444446,
+    "Value": 17.83827777777779,
     "Better": "Lower"
   },
   {
     "Group": "comfort",
     "Name": "longest leg hours",
-    "Value": 7.683166666666661,
+    "Value": 6.864444444444445,
+    "Better": "Lower"
+  },
+  {
+    "Group": "comfort",
+    "Name": "long legs per trip",
+    "Value": 1.3566666666666667,
     "Better": "Lower"
   },
   {
     "Group": "comfort",
     "Name": "avoid-month stops per trip",
-    "Value": 0.73,
+    "Value": 0.6866666666666666,
     "Better": "Lower"
   },
   {
     "Group": "comfort",
     "Name": "free days per trip",
-    "Value": 1.38,
+    "Value": 1.7133333333333334,
     "Better": "Lower"
   },
   {
     "Group": "comfort",
     "Name": "city twice %",
-    "Value": 2.3333333333333335,
+    "Value": 3,
     "Better": "Zero"
   },
   {
     "Group": "comfort",
     "Name": "swaps per trip",
-    "Value": 0.26,
+    "Value": 0.25333333333333335,
     "Better": "Lower"
   },
   {
@@ -116,7 +122,7 @@
   {
     "Group": "pace",
     "Name": "top interest in early trip %",
-    "Value": 84.93150684931507,
+    "Value": 81.5068493150685,
     "Better": "Higher"
   },
   {
@@ -140,7 +146,7 @@
   {
     "Group": "several",
     "Name": "travel hours per mixed trip",
-    "Value": 24.7375,
+    "Value": 20.92611111111111,
     "Better": "Lower"
   },
   {

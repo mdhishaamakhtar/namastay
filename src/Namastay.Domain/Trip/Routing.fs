@@ -1,5 +1,6 @@
 module Namastay.Domain.Trip.Routing
 
+open System
 open Namastay.Domain.Catalog
 open Namastay.Shared
 open Namastay.Shared.Contracts
@@ -14,14 +15,21 @@ type RoutedStop = {
 
 let private beamWidth = 60
 let private unfilledDayPenalty = 10
-let private oneLinkCost = 25
-let private farCost = 70
 /// What an hour on the road or rails costs a route, and for someone who avoids flights
 /// and so expects the long way round.
 let private hourCost = 6
 let private groundHourCost = 3
 /// Past this, every hour counts double: a day lost to the road.
 let private longLegMinutes = 480
+/// A journey this long takes up the day.
+let fullDayJourney = 300
+/// A trip can give up one day in five to travel. Each day-long journey past that costs this much.
+let private daysPerLongLeg = 5
+let private extraLongLegCost = 60
+/// Changing in a city on the way is a second journey, with its own wait.
+let private changeCost = 60
+/// What it costs a route to begin or end where no airport city reaches, even through a city between.
+let private unreachableCost = 70
 /// Packing up and moving on costs something, so a stop has to be worth the move:
 /// more for a family or someone who'd rather go deep than far, less for friends.
 let private stopCost = 20
@@ -36,23 +44,57 @@ let private regionLimit days =
 let private allowed (request: TripRequest) (link: TransportLink) =
     request.TransportComfort = TransportComfort.Anything || link.Mode <> Mode.Flight
 
-let private travelCost (request: TripRequest) (link: TransportLink) =
+let private minutesCost (request: TripRequest) (minutes: int) =
     let perHour =
         match request.TransportComfort with
         | TransportComfort.Anything -> hourCost
         | TransportComfort.NoFlights -> groundHourCost
 
-    (link.MinutesMin + max 0 (link.MinutesMin - longLegMinutes)) * perHour / 60
+    (minutes + max 0 (minutes - longLegMinutes)) * perHour / 60
 
-let private throughNote (city: Place) = $"Through {PlaceName.plain city.Name}."
+let private travelCost (request: TripRequest) (link: TransportLink) = minutesCost request link.MinutesMin
 
-/// One leg made of two, for a route that passes through a city without staying.
-let private passing (middle: Place) (first: TransportLink) (second: TransportLink) = {
-    second with
-        MinutesMin = first.MinutesMin + second.MinutesMin
-        MinutesMax = first.MinutesMax + second.MinutesMax
-        ComfortNote = Some(throughNote middle)
-}
+let private setOff (mode: Mode) =
+    match mode with
+    | Mode.Flight -> "Fly"
+    | Mode.Train -> "Take the train"
+    | Mode.Road -> "Drive"
+    | Mode.Ferry -> "Take the ferry"
+    | Mode.CableCar -> "Take the cable car"
+
+let private carriedBy (mode: Mode) =
+    match mode with
+    | Mode.Flight -> "by air"
+    | Mode.Train -> "by train"
+    | Mode.Road -> "by road"
+    | Mode.Ferry -> "by ferry"
+    | Mode.CableCar -> "by cable car"
+
+/// Both parts of a journey that changes in a city:
+/// "Fly to Delhi, about 3 hours, then about 4 hours by road."
+let private throughNote (city: Place) (first: TransportLink) (second: TransportLink) =
+    let time (link: TransportLink) =
+        Duration.describe link.MinutesMin link.MinutesMax
+
+    $"{setOff first.Mode} to {PlaceName.plain city.Name}, {time first}, then {time second} {carriedBy second.Mode}."
+
+/// One leg made of two, for a route that changes in a city without staying.
+/// It's a flight if either part is, else whichever part takes longer.
+let private passing (middle: Place) (first: TransportLink) (second: TransportLink) =
+    let mode =
+        match first.Mode, second.Mode with
+        | Mode.Flight, _
+        | _, Mode.Flight -> Mode.Flight
+        | longer, _ when first.MinutesMin > second.MinutesMin -> longer
+        | _, longer -> longer
+
+    {
+        second with
+            Mode = mode
+            MinutesMin = first.MinutesMin + second.MinutesMin
+            MinutesMax = first.MinutesMax + second.MinutesMax
+            ComfortNote = Some(throughNote middle first second)
+    }
 
 /// The quickest link by any mode, for routes a traveller chose themselves.
 let linkBetween (links: TransportLink list) (from: string) (target: string) =
@@ -91,6 +133,10 @@ type private Search = {
     StopDays: Place -> int
     MoveCost: int
     AllowsRegions: Set<string> -> bool
+    /// The minutes from where a trip lands to a first stop, and from a last stop to where
+    /// it flies home. None when the data has no way between them.
+    Landing: Place -> int option
+    Homeward: Place -> int option
 }
 
 let private start (search: Search) (place: Place) =
@@ -130,7 +176,9 @@ let private extend (search: Search) (path: Path) =
         |> List.tryHead
 
     let reach (place: Place) =
-        search.Links.TryFind(last.Slug, place.Slug) |> Option.orElse (through place)
+        match search.Links.TryFind(last.Slug, place.Slug) with
+        | Some link -> Some(link, 0)
+        | None -> through place |> Option.map (fun link -> link, changeCost)
 
     if path.Planned >= days || (last.Hub && path.Stops.Length > 1) then
         []
@@ -142,7 +190,7 @@ let private extend (search: Search) (path: Path) =
             let used = path.Stops |> List.exists (fun stop -> stop.Place.Slug = place.Slug)
 
             match reach place with
-            | Some link when not used && search.AllowsRegions regions && path.Minimum + place.DaysMin <= days ->
+            | Some(link, change) when not used && search.AllowsRegions regions && path.Minimum + place.DaysMin <= days ->
                 Some {
                     Stops =
                         {
@@ -153,7 +201,7 @@ let private extend (search: Search) (path: Path) =
                         }
                         :: path.Stops
                     Regions = regions
-                    Score = path.Score + score - travelCost search.Request link - search.MoveCost
+                    Score = path.Score + score - travelCost search.Request link - change - search.MoveCost
                     FirstScore = path.FirstScore
                     Planned = path.Planned + search.StopDays place
                     Minimum = path.Minimum + place.DaysMin
@@ -175,32 +223,43 @@ let rec private explore grow reached frontier =
 
         explore grow (next @ reached) next
 
-/// What it costs a route to begin at a place: nothing in an airport city, a little
-/// one link away, and a lot anywhere further. With no airports in the data, every place is free.
-let private startCost (catalog: Catalog) (links: Map<string * string, TransportLink>) =
-    let airports = catalog.Places |> List.filter _.Airport.IsSome |> List.map _.Slug
+/// The route's taste less its travel, counting the journeys from and to the airport,
+/// less penalties for days it can't honestly fill and for more day-long journeys than
+/// the trip has room for.
+let private worth (search: Search) (path: Path) =
+    let days = search.Request.Days
+    let landing = search.Landing (List.last path.Stops).Place
+    let homeward = search.Homeward path.Stops.Head.Place
 
-    fun (slug: string) ->
-        if airports.IsEmpty || List.contains slug airports then
-            0
-        elif airports |> List.exists (fun airport -> links.ContainsKey(airport, slug)) then
-            oneLinkCost
-        else
-            farCost
+    let endCost (minutes: int option) =
+        minutes
+        |> Option.map (minutesCost search.Request)
+        |> Option.defaultValue unreachableCost
 
-/// The route's taste less its travel, less penalties for days it can't honestly fill
-/// and for ends nobody can fly to.
-let private worth days cost (path: Path) =
+    let dayLong =
+        List.choose id [ landing; homeward ]
+        @ (path.Stops |> List.choose _.Arrival |> List.map _.MinutesMin)
+        |> List.filter (fun minutes -> minutes >= fullDayJourney)
+        |> List.length
+
     path.Score
     - unfilledDayPenalty * max 0 (days - path.Capacity)
-    - cost (List.last path.Stops).Place.Slug
-    - cost path.Stops.Head.Place.Slug / 2
+    - endCost landing
+    - endCost homeward
+    - extraLongLegCost * max 0 (dayLong - days / daysPerLongLeg)
 
-let private bestPath days cost (paths: Path list) =
+/// Between routes worth the same, the one that starts nearer to where it lands wins:
+/// the long transfer is easier at the end than straight off a long flight.
+let private bestPath (search: Search) (paths: Path list) =
     paths
     |> List.minBy (fun path ->
         let slugs = path.Stops |> List.map _.Place.Slug
-        -(worth days cost path), -path.FirstScore, slugs)
+
+        let landing =
+            search.Landing (List.last path.Stops).Place
+            |> Option.defaultValue Int32.MaxValue
+
+        -(worth search path), landing, -path.FirstScore, slugs)
 
 /// Shares spare days around the stops, then past their usual maximum if it must.
 [<TailCall>]
@@ -251,6 +310,13 @@ let rec private trim excess (stops: RoutedStop list) =
 
 let private planned (stops: RoutedStop list) = stops |> List.sumBy _.Days
 
+/// The quickest link between two places, whichever way round it was recorded.
+let private eitherWay (links: Map<string * string, TransportLink>) (from: string) (target: string) =
+    [ links.TryFind(from, target); links.TryFind(target, from) ]
+    |> List.choose id
+    |> List.sortBy _.MinutesMin
+    |> List.tryHead
+
 /// A week or less leaves one day for the last city, a longer trip two.
 let private closingDays days = if days <= 7 then 1 else 2
 
@@ -262,18 +328,12 @@ let private closingCity
     (request: TripRequest)
     (links: Map<string * string, TransportLink>)
     (closers: Place list)
-    (stops: RoutedStop list)
+    (last: Place)
     =
-    let last = (List.last stops).Place
-
     let closes (city: Place) =
         closers |> List.exists (fun closer -> closer.Slug = city.Slug)
 
-    let between from target =
-        [ links.TryFind(from, target); links.TryFind(target, from) ]
-        |> List.choose id
-        |> List.sortBy _.MinutesMin
-        |> List.tryHead
+    let between = eitherWay links
 
     let through (city: Place) (middle: Place) =
         match between last.Slug middle.Slug, between middle.Slug city.Slug with
@@ -340,6 +400,20 @@ let private allowsRegions (catalog: Catalog) (request: TripRequest) liked (ranke
     let spare = max 0 (regionLimit request.Days - likedRegions.Count)
     fun (regions: Set<string>) -> (regions - likedRegions).Count <= spare
 
+/// Worked out once for every candidate, because the search asks about each route it reaches.
+let private perPlace (places: Place list) (minutes: Place -> int option) =
+    let found =
+        places |> List.map (fun place -> place.Slug, minutes place) |> Map.ofList
+
+    fun (place: Place) -> found[place.Slug]
+
+let private quickest (links: TransportLink list) =
+    links
+    |> List.sortBy (fun link -> link.MinutesMin, link.Slug)
+    |> List.rev
+    |> List.map (fun link -> (link.FromSlug, link.ToSlug), link)
+    |> Map.ofList
+
 /// Chooses connected stops within the allowed regions, with days adding up exactly.
 /// `closers` are the cities a trip may end in, which a hard month for sightseeing doesn't rule out.
 /// `ranked` are the candidates, best first, and `worthOf` says what one adds after the stops so far.
@@ -360,13 +434,22 @@ let route
         elif quick then place.DaysMin
         else (place.DaysMin + place.DaysMax + 1) / 2
 
-    let links =
-        catalog.Links
-        |> List.filter (allowed request)
-        |> List.sortBy (fun link -> link.MinutesMin, link.Slug)
-        |> List.rev
-        |> List.map (fun link -> (link.FromSlug, link.ToSlug), link)
-        |> Map.ofList
+    let links = catalog.Links |> List.filter (allowed request) |> quickest
+    // The way to an airport is shown from every link, so it's costed from every link.
+    let everyLink = quickest catalog.Links
+
+    let hasAirports = catalog.Places |> List.exists _.Airport.IsSome
+
+    let landing (place: Place) =
+        match Airports.nearest catalog (eitherWay everyLink) place with
+        | Some way -> Some way.Minutes
+        | None when hasAirports -> None
+        | None -> Some 0
+
+    let homeward (place: Place) =
+        match closingCity catalog request links closers place with
+        | Some(_, link) -> Some link.MinutesMin
+        | None -> landing place
 
     let search = {
         Catalog = catalog
@@ -381,15 +464,14 @@ let route
             elif quick then quickStopCost
             else stopCost
         AllowsRegions = allowsRegions catalog request liked ranked
+        Landing = perPlace ranked landing
+        Homeward = perPlace ranked homeward
     }
 
     let starts = ranked |> List.map (start search)
 
     let stops =
-        explore (extend search) starts starts
-        |> bestPath request.Days (startCost catalog links)
-        |> _.Stops
-        |> List.rev
+        explore (extend search) starts starts |> bestPath search |> _.Stops |> List.rev
 
     let fitted total (stops: RoutedStop list) =
         let trimmed = trim (planned stops - total) stops
@@ -400,7 +482,7 @@ let route
 
     let endsInHub (route: RoutedStop list) = (List.last route).Place.Hub
 
-    match closingCity catalog request links closers beforeClosing with
+    match closingCity catalog request links closers (List.last beforeClosing).Place with
     // Making room can drop a stop after a hub, and then the hub is the natural end.
     | None when endsInHub beforeClosing -> fitted request.Days beforeClosing
     | None -> fitted request.Days stops

@@ -168,6 +168,11 @@ let private legs (trip: Trip) =
 
 let private hours (leg: TravelLeg) = float leg.MinutesMin / 60.0
 
+let private longLegs (trip: Trip) =
+    legs trip
+    |> List.filter (fun leg -> leg.MinutesMin >= Routing.fullDayJourney)
+    |> List.length
+
 let private avoidStops (catalog: Catalog) (session: Session) (trip: Trip) =
     match session.Persona.Month with
     | None -> 0
@@ -220,6 +225,7 @@ let private comfort (catalog: Catalog) (sessions: Session list) =
              |> List.map (fun (_, trip) -> legs trip |> List.map hours |> List.fold max 0.0)
              |> mean)
             Better.Lower
+        line "comfort" "long legs per trip" (trips |> List.map (snd >> longLegs >> float) |> mean) Better.Lower
         line
             "comfort"
             "avoid-month stops per trip"

@@ -25,9 +25,6 @@ type FamilyDays = {
 let spareDay = "Free time to rest or explore at your own pace."
 let travelDay = "A travel day. Arrive, settle in and take the evening slowly."
 
-/// A journey this long takes up the day, so the plans start the day after.
-let private fullDayJourney = 300
-
 /// The family with the most days leads. Ties go to the first one collected.
 let baseFamily (collected: string list) (stops: FamilyDays list) =
     let order (family: string) =
@@ -67,6 +64,7 @@ let private rank profile request (places: Place list) =
 let private plansFor (place: Place) days (arrival: TransportLink option) =
     let variants = place.DayPlans |> List.groupBy _.Variant |> List.sortBy fst
 
+    // A journey that takes up the day leaves the plans to start the day after.
     let travels =
         days > 1
         && arrival |> Option.exists (fun link -> link.MinutesMin >= fullDayJourney)
