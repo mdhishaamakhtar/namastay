@@ -987,7 +987,8 @@ let private gatewayTrip days =
 [<Fact>]
 let ``a place with no airport link is reached through the nearest city`` () =
     let trip = gatewayTrip 6
-    Assert.Equal<string list>([ "hub"; "remote"; "capital" ], trip.Stops |> List.map _.PlaceSlug)
+    Assert.Equal<string list>([ "remote"; "capital" ], trip.Stops |> List.map _.PlaceSlug)
+    Assert.Equal(Some "HUB", trip.Arrive.Value.Via)
 
 [<Fact>]
 let ``the trip says where you land and how you get to the first stop`` () =
@@ -1355,7 +1356,7 @@ let ``a limited trip only uses the allowed places`` () =
     | Ok trip -> Assert.Equal<string list>([ "inside" ], trip.Stops |> List.map _.PlaceSlug)
     | Error error -> raise (Xunit.Sdk.XunitException $"expected a trip, got {error}")
 
-let private likingRemote places links days month =
+let likingRemote places links days month =
     let world = {
         catalog with
             Places = places

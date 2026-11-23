@@ -137,6 +137,8 @@ type private Search = {
     /// it flies home. None when the data has no way between them.
     Landing: Place -> int option
     Homeward: Place -> int option
+    /// The days the city a route would end in can take, when a last stop needs one.
+    ClosingRoom: Place -> int
 }
 
 let private start (search: Search) (place: Place) =
@@ -242,8 +244,10 @@ let private worth (search: Search) (path: Path) =
         |> List.filter (fun minutes -> minutes >= fullDayJourney)
         |> List.length
 
+    let capacity = path.Capacity + search.ClosingRoom path.Stops.Head.Place
+
     path.Score
-    - unfilledDayPenalty * max 0 (days - path.Capacity)
+    - unfilledDayPenalty * max 0 (days - capacity)
     - endCost landing
     - endCost homeward
     - extraLongLegCost * max 0 (dayLong - days / daysPerLongLeg)
@@ -317,12 +321,16 @@ let private eitherWay (links: Map<string * string, TransportLink>) (from: string
     |> List.sortBy _.MinutesMin
     |> List.tryHead
 
+/// How much further a trip goes to end in a city that's pleasant in its month. Past that,
+/// a day or two in a hard month beats crossing the country to fly home.
+let private hardMonthDetour = 180
+
 /// A week or less leaves one day for the last city, a longer trip two.
 let private closingDays days = if days <= 7 then 1 else 2
 
 /// Where to stay before flying home, if the route doesn't already end somewhere people fly
-/// home from: the nearest main hub that's fine in the month, else the nearest hub at all,
-/// or failing that, the nearest international airport.
+/// home from: the nearest main hub, going up to three hours further for one that's fine in
+/// the month, or failing any hub, the nearest international airport.
 let private closingCity
     (catalog: Catalog)
     (request: TripRequest)
@@ -335,9 +343,10 @@ let private closingCity
 
     let between = eitherWay links
 
+    // Nobody passes through one main city to fly home from another, so a way through a hub ends there.
     let through (city: Place) (middle: Place) =
         match between last.Slug middle.Slug, between middle.Slug city.Slug with
-        | Some first, Some second -> Some(passing middle first second)
+        | Some first, Some second when not middle.Hub -> Some(passing middle first second)
         | _ -> None
 
     let reach (city: Place) =
@@ -354,7 +363,14 @@ let private closingCity
         cities
         |> List.filter (fun city -> city.Slug <> last.Slug)
         |> List.choose reach
-        |> List.sortBy (fun (city, link) -> not (Scoring.isUsableIn request.Month city), link.MinutesMin, city.Slug)
+        |> List.sortBy (fun (city, link) ->
+            let detour =
+                if Scoring.isUsableIn request.Month city then
+                    0
+                else
+                    hardMonthDetour
+
+            link.MinutesMin + detour, city.Slug)
         |> List.tryHead
 
     if last.Hub then
@@ -401,9 +417,8 @@ let private allowsRegions (catalog: Catalog) (request: TripRequest) liked (ranke
     fun (regions: Set<string>) -> (regions - likedRegions).Count <= spare
 
 /// Worked out once for every candidate, because the search asks about each route it reaches.
-let private perPlace (places: Place list) (minutes: Place -> int option) =
-    let found =
-        places |> List.map (fun place -> place.Slug, minutes place) |> Map.ofList
+let private perPlace (places: Place list) (answer: Place -> 'Answer) =
+    let found = places |> List.map (fun place -> place.Slug, answer place) |> Map.ofList
 
     fun (place: Place) -> found[place.Slug]
 
@@ -446,10 +461,17 @@ let route
         | None when hasAirports -> None
         | None -> Some 0
 
+    let closingFor = perPlace ranked (closingCity catalog request links closers)
+
     let homeward (place: Place) =
-        match closingCity catalog request links closers place with
+        match closingFor place with
         | Some(_, link) -> Some link.MinutesMin
         | None -> landing place
+
+    let closingRoom (place: Place) =
+        closingFor place
+        |> Option.map (fun (city, _) -> city.DaysMax)
+        |> Option.defaultValue 0
 
     let search = {
         Catalog = catalog
@@ -466,6 +488,7 @@ let route
         AllowsRegions = allowsRegions catalog request liked ranked
         Landing = perPlace ranked landing
         Homeward = perPlace ranked homeward
+        ClosingRoom = closingRoom
     }
 
     let starts = ranked |> List.map (start search)

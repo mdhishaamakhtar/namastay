@@ -126,3 +126,56 @@ let ``the last city stays short while the other stops have room`` () =
         [ "remote", 6; "main", 2 ],
         trip.Stops |> List.map (fun stop -> stop.PlaceSlug, stop.Days)
     )
+
+[<Fact>]
+let ``a hub in a hard month still ends the trip when the fine one is across the country`` () =
+    let trip =
+        likingRemote
+            [
+                {
+                    hubAirport "near-hub" "c-plains" "stone" "forts" with
+                        Months = months [] [ 5 ]
+                }
+                hubAirport "far-hub" "c-plains" "stone" "forts"
+                place "remote" "c-hills" "pine" "mountains"
+            ]
+            (timed "near-hub" "remote" 70 @ timed "far-hub" "remote" 600)
+            6
+            (Some 5)
+
+    Assert.Equal("near-hub", (List.last trip.Stops).PlaceSlug)
+
+[<Fact>]
+let ``spare days go to the last city before a place nobody asked for`` () =
+    // The hub is in a hard month, so it can end the trip but isn't somewhere to route through.
+    let hardHub = {
+        mainHub with
+            Months = months [] [ 5 ]
+    }
+
+    let trip =
+        likingRemote
+            [ hardHub; mountains "remote"; mountains "filler" ]
+            (both "main" "remote" @ both "remote" "filler")
+            8
+            (Some 5)
+
+    Assert.Equal<string list>([ "remote"; "main" ], slugs trip)
+
+[<Fact>]
+let ``a trip doesn't pass through one main city to fly home from another`` () =
+    let trip =
+        likingRemote
+            [
+                {
+                    hubAirport "near-hub" "c-plains" "stone" "forts" with
+                        Months = months [] [ 5 ]
+                }
+                hubAirport "far-hub" "c-plains" "stone" "forts"
+                place "remote" "c-hills" "pine" "mountains"
+            ]
+            (timed "near-hub" "remote" 400 @ timed "near-hub" "far-hub" 100)
+            6
+            (Some 5)
+
+    Assert.Equal("near-hub", (List.last trip.Stops).PlaceSlug)
