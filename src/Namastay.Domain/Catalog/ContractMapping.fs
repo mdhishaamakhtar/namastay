@@ -10,6 +10,11 @@ let access =
     | Gate.Warn -> PlaceAccess.Warning
     | Gate.Permit -> PlaceAccess.Permit
 
+let mapPoint (position: Coordinates) : MapPoint = {
+    Latitude = position.Latitude
+    Longitude = position.Longitude
+}
+
 let noticeKind =
     function
     | NoticeKind.Closure -> GuideNoticeKind.Closure

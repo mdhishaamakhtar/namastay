@@ -30,6 +30,7 @@ let private setup =
          SqlMapper.AddTypeMap(typeof<TimeOnly>, DbType.Time)
          SqlMapper.AddTypeHandler(OptionHandler<string>())
          SqlMapper.AddTypeHandler(OptionHandler<int>())
+         SqlMapper.AddTypeHandler(OptionHandler<float>())
          SqlMapper.AddTypeHandler(OptionHandler<DateOnly>())
          SqlMapper.AddTypeHandler(OptionHandler<TimeOnly>()))
 

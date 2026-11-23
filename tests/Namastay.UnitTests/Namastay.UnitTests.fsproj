@@ -5,6 +5,7 @@
     <Compile Include="DurationTests.fs" />
     <Compile Include="PlanDaysTests.fs" />
     <Compile Include="TripDatesTests.fs" />
+    <Compile Include="RouteSketchTests.fs" />
     <Compile Include="NoticeOrderTests.fs" />
     <Compile Include="DishKindsTests.fs" />
     <Compile Include="TripScopesTests.fs" />
@@ -14,6 +15,7 @@
     <Compile Include="Trip/TripBuilderTests.fs" />
     <Compile Include="Trip/TravelTests.fs" />
     <Compile Include="Trip/HighlightsTests.fs" />
+    <Compile Include="Trip/MapTests.fs" />
     <Compile Include="Trip/ScoringTests.fs" />
     <Compile Include="Trip/ReasonsTests.fs" />
     <Compile Include="Trip/EditingTests.fs" />

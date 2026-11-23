@@ -13,6 +13,7 @@
     <Compile Include="NoticeOrder.fs" />
     <Compile Include="PlanDays.fs" />
     <Compile Include="TripDates.fs" />
+    <Compile Include="RouteSketch.fs" />
     <Compile Include="PlaceName.fs" />
     <Compile Include="Sentence.fs" />
     <Compile Include="Routes.fs" />

@@ -63,6 +63,8 @@ let all = [
             "airport"
             "food_intro"
             "hub"
+            "latitude"
+            "longitude"
         ]
         Removal.Retire
     table "place_interests" [ "place_slug"; "interest_slug" ] [ "weight" ] (within "place_slug" "places")

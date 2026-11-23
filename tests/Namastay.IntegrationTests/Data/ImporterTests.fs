@@ -84,6 +84,34 @@ type ImporterTests(postgres: PostgresFixture) =
         }
 
     [<Fact>]
+    member _.``a place's position on the map is imported and read back``() =
+        task {
+            let! db = database ()
+
+            let position = { Latitude = 32.24; Longitude = 77.19 }
+
+            let placed = {
+                Sample.place with
+                    Position = Some position
+            }
+
+            let catalog = {
+                Sample.catalog with
+                    Places =
+                        placed
+                        :: (Sample.catalog.Places |> List.filter (fun other -> other.Slug <> placed.Slug))
+            }
+
+            Run.run db Run.Apply "placed" catalog |> expectOk |> ignore
+            use source = NpgsqlDataSource.Create db
+            let! read = Catalog.Read.load source
+            let saved = read.Places |> List.find (fun other -> other.Slug = placed.Slug)
+            let unplaced = read.Places |> List.find (fun other -> other.Slug <> placed.Slug)
+            Assert.Equal(Some position, saved.Position)
+            Assert.Equal(None, unplaced.Position)
+        }
+
+    [<Fact>]
     member _.``dry run writes nothing``() =
         task {
             let! db = database ()

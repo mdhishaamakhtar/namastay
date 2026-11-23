@@ -56,6 +56,14 @@ let private loadPlaces source =
                 GettingThere = None
                 Airport = place.Airport
                 Hub = place.Hub
+                Position =
+                    Option.map2
+                        (fun latitude longitude -> {
+                            Latitude = latitude
+                            Longitude = longitude
+                        })
+                        place.Latitude
+                        place.Longitude
                 FoodIntro = None
                 Dishes =
                     matching place.Slug dishes _.PlaceSlug

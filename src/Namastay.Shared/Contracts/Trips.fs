@@ -64,6 +64,12 @@ type StopFood = {
     Eateries: TripEatery list
 }
 
+/// Where something is on the trip's map, in degrees north and east.
+type MapPoint = { Latitude: float; Longitude: float }
+
+/// A main city the trip doesn't visit, drawn faintly so the route can be placed in the country.
+type MapLandmark = { Name: string; Position: MapPoint }
+
 /// Something to do at a stop, as its guide describes it.
 type TripHighlight = { Name: string; Description: string }
 
@@ -75,6 +81,8 @@ type TripStop = {
     Days: int
     FamilySlug: string
     Colours: PlaceColours
+    /// None for a stop of the traveller's own, and in trips saved before the map existed.
+    Position: MapPoint option
     Access: PlaceAccess
     StayArea: string option
     Photo: GuidePhoto option
@@ -116,6 +124,8 @@ type Trip = {
     Arrive: TripGateway option
     Depart: TripGateway option
     Stops: TripStop list
+    /// Trips saved before the map existed have none.
+    Landmarks: MapLandmark list
     Swaps: TripSwap list
     Mix: MixShare list
     LeftOut: string list

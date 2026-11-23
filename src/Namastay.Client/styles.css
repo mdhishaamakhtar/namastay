@@ -31,6 +31,7 @@
   --brand: #f2b52b;
   --ink: #2b2108;
   --paper: #fff8e6;
+  --sea: #e2ecdf;
   --warning: #1c1b1a;
   --deep: var(--brand);
   --mid: var(--brand);
@@ -629,15 +630,83 @@ button:focus-visible {
   line-height: 1.15;
 }
 
+.route-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 4px;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.route-sketch {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 2px;
+  background: var(--sea);
+}
+
+.route-land {
+  fill: var(--paper);
+  stroke: color-mix(in srgb, var(--ink) 45%, transparent);
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+
+.route-inset-back {
+  fill: var(--sea);
+  stroke: var(--ink);
+  stroke-width: 1;
+}
+
+.route-inset .route-land {
+  stroke-width: 0.6;
+}
+
+.route-inset-mark {
+  fill: color-mix(in srgb, var(--brand) 55%, transparent);
+  stroke: var(--ink);
+  stroke-width: 1;
+}
+
+.route-line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.route-stop {
+  stroke: var(--paper);
+  stroke-width: 2;
+}
+
+.route-number {
+  font: 700 12px Mukta, system-ui, sans-serif;
+}
+
+.route-landmark circle {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.5;
+  opacity: 0.55;
+}
+
+.route-landmark text {
+  fill: var(--ink);
+  font: 500 11px Mukta, system-ui, sans-serif;
+  opacity: 0.7;
+}
+
 .route {
   display: flex;
   flex-direction: column;
   gap: 4px;
   margin: 0;
-  padding: 12px;
-  border-radius: 4px;
-  background: var(--paper);
-  color: var(--ink);
+  padding: 0;
   list-style: none;
 }
 
@@ -650,10 +719,13 @@ button:focus-visible {
 }
 
 .route-dot {
+  display: grid;
   flex: none;
-  width: 16px;
-  height: 16px;
+  place-items: center;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
+  font: 700 12px/1 Mukta, system-ui, sans-serif;
 }
 
 .trip-mix {

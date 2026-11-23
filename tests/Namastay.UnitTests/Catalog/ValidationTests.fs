@@ -29,6 +29,7 @@ let place: Place = {
     GettingThere = None
     Airport = None
     Hub = false
+    Position = None
     FoodIntro = None
     Dishes = []
     Eateries = []
@@ -519,3 +520,29 @@ let ``a vegan dish must also be vegetarian`` () =
                 Places = [ { place with Dishes = [ dish ] } ]
         }
     )
+
+let private positioned latitude longitude = {
+    catalog with
+        Places =
+            catalog.Places
+            |> List.map (fun found -> {
+                found with
+                    Position =
+                        Some {
+                            Latitude = latitude
+                            Longitude = longitude
+                        }
+            })
+}
+
+[<Fact>]
+let ``a place inside India can go on the map`` () =
+    Assert.Empty(check (positioned 15.33 76.46))
+
+[<Theory>]
+[<InlineData(51.5, -0.1)>]
+[<InlineData(76.46, 15.33)>]
+[<InlineData(2.0, 80.0)>]
+[<InlineData(20.0, 105.0)>]
+let ``a place outside India is a mistake`` latitude longitude =
+    Assert.True(hasError "outside India" (positioned latitude longitude))

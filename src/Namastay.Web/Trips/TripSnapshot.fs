@@ -17,11 +17,13 @@ let private upgrade (trip: JsonObject) =
     ensure "arrive" (fun () -> null) trip
     ensure "depart" (fun () -> null) trip
     ensure "diet" (fun () -> null) trip
+    ensure "landmarks" (fun () -> JsonArray()) trip
 
     match trip["stops"] with
     | :? JsonArray as stops ->
         for stop in stops do
             ensure "reason" (fun () -> null) (stop.AsObject())
+            ensure "position" (fun () -> null) (stop.AsObject())
             ensure "photo" (fun () -> null) (stop.AsObject())
             ensure "food" (fun () -> null) (stop.AsObject())
             ensure "highlights" (fun () -> JsonArray()) (stop.AsObject())

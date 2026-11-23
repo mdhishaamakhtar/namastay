@@ -19,6 +19,8 @@ type PlaceRow = {
     Summary: string
     Airport: string option
     Hub: bool
+    Latitude: float option
+    Longitude: float option
     Published: bool
     Status: string
     LastChecked: DateTime

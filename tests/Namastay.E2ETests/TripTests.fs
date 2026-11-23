@@ -89,6 +89,29 @@ type TripTests(browser: BrowserFixture) =
         }
 
     [<Fact>]
+    member _.``the route is drawn with a numbered dot for every stop``() =
+        task {
+            let! page, _ = openTrip ()
+            let! stops = page.Locator(".route li").CountAsync()
+            do! Assertions.Expect(page.Locator ".route-sketch .route-stop").ToHaveCountAsync stops
+            do! Assertions.Expect(page.Locator(".route-sketch .route-land").First).ToBeAttachedAsync()
+            do! Assertions.Expect(page.Locator(".route-sketch .route-number").First).ToHaveTextAsync "1"
+            do! Assertions.Expect(page.Locator(".route li .route-dot").First).ToHaveTextAsync "1"
+        }
+
+    [<Fact>]
+    member _.``a trip saved before the map existed lists its stops without a drawing``() =
+        task {
+            let! page =
+                openChangedTrip (fun json ->
+                    for stop in json["trip"].Item("stops").AsArray() do
+                        stop.AsObject().["position"] <- null)
+
+            do! Assertions.Expect(page.Locator(".route li").First).ToBeVisibleAsync()
+            do! Assertions.Expect(page.Locator "svg.route-sketch").ToHaveCountAsync 0
+        }
+
+    [<Fact>]
     member _.``a trip saved before reasons existed shows none``() =
         task {
             let! page =

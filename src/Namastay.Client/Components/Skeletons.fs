@@ -99,9 +99,15 @@ let trip (label: string) (buttons: int) =
             prop.className "trip-panel"
             prop.children [
                 Html.h1 (hiddenText "14 days in Rajasthan and North India")
-                Html.ol [
-                    prop.className "route"
-                    prop.children [ for index in 1..6 -> routeRow index ]
+                Html.div [
+                    prop.className "route-card"
+                    prop.children [
+                        Html.div [ prop.className "route-sketch" ]
+                        Html.ol [
+                            prop.className "route"
+                            prop.children [ for index in 1..6 -> routeRow index ]
+                        ]
+                    ]
                 ]
                 Html.div [
                     prop.className "trip-mix"

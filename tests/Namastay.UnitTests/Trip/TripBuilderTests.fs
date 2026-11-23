@@ -45,6 +45,7 @@ let place slug cluster family interest : Place = {
     GettingThere = None
     Airport = None
     Hub = false
+    Position = None
     FoodIntro = None
     Dishes = []
     Eateries = []
