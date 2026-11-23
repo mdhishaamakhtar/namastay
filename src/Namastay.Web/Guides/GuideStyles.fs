@@ -93,7 +93,8 @@ details p{padding:0 12px 12px}
 .more-notices{background:none;border:0;border-top:1px solid color-mix(in srgb,var(--deep) 25%,transparent)}
 .more-notices summary{min-height:48px;padding:8px 0;font:600 16px/1.4 Mukta,system-ui,sans-serif}
 .more-notices p{padding:0}
-.hedge{font-style:italic}
+.hedge{margin:4px 0 0;font-size:14px;font-weight:600;color:var(--deep)}
+.hedge-note{margin:16px 0 0;font-size:15px;font-style:italic}
 footer{font-size:14px}
 a:focus-visible,summary:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 @media (min-width:640px){.facts{grid-template-columns:repeat(4,minmax(0,1fr))}.gallery{grid-template-columns:repeat(3,minmax(0,1fr))}.spots{grid-template-columns:repeat(2,minmax(0,1fr))}.spot:last-child:nth-child(odd){grid-column:1/-1}.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:32px}}

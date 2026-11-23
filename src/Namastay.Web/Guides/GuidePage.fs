@@ -7,8 +7,10 @@ open Giraffe.ViewEngine
 open Namastay.Shared
 open Namastay.Shared.Contracts
 
+let private hedgeMark = "Check locally"
+
 let private hedgeNote =
-    "Sources differ on this, or we have only one, so check locally."
+    $"Sources differ on anything marked “{hedgeMark}”, or we have only one, so confirm it when you're there."
 
 let private monthNames = [
     "January"
@@ -91,9 +93,17 @@ let private shell
         body [] content
     ]
 
+/// A short mark on a fact that rests on one source, or on sources that disagree.
 let private hedge hedged =
     if hedged then
-        [ p [ _class "hedge" ] [ str hedgeNote ] ]
+        [ p [ _class "hedge" ] [ str hedgeMark ] ]
+    else
+        []
+
+/// What the mark means, said once at the end of a section that uses it.
+let private hedgeKey (marked: bool list) =
+    if List.exists id marked then
+        [ p [ _class "hedge-note" ] [ str hedgeNote ] ]
     else
         []
 
@@ -175,7 +185,11 @@ let private experiences (place: PlaceGuide) =
     match place.Experiences with
     | [] -> []
     | items -> [
-        section [] [ h2 [] [ str "What to do" ]; div [ _class "spots" ] (items |> List.map spot) ]
+        section [] [
+            h2 [] [ str "What to do" ]
+            div [ _class "spots" ] (items |> List.map spot)
+            yield! hedgeKey (items |> List.map _.Hedged)
+        ]
       ]
 
 let private photoAddress index = $"#photo-{index + 1}"
@@ -324,6 +338,7 @@ let private logistics (place: PlaceGuide) =
         section [ _class "stays" ] [
             h2 [] [ str "Where to stay" ]
             yield! place.StayAreas |> List.collect stayArea
+            yield! hedgeKey (place.StayAreas |> List.map _.Hedged)
         ]
     ]
 
@@ -335,13 +350,19 @@ let private noticeRow (item: GuideNotice) =
         div [] [ p [] [ str item.Body ]; yield! hedge item.Hedged ]
     ]
 
-let private moreNotices (rest: GuideNotice list) =
+/// The notices kept folded away. `explains` says the mark is explained in here,
+/// because none of the notices in view carries it.
+let private moreNotices (explains: bool) (rest: GuideNotice list) =
     match rest with
     | [] -> []
     | items -> [
         details [ _class "more-notices" ] [
             summary [] [ str $"{items.Length} more to know"; openIcon ]
-            div [] (items |> List.map noticeRow)
+            div [] [
+                yield! items |> List.map noticeRow
+                if explains then
+                    yield! hedgeKey (items |> List.map _.Hedged)
+            ]
         ]
       ]
 
@@ -351,8 +372,10 @@ let private notices (place: PlaceGuide) =
     | shown, rest -> [
         section [ _class "notices"; attr "role" "note" ] [
             h2 [] [ str "Worth knowing" ]
+            let inView = shown |> List.exists _.Hedged
             yield! shown |> List.map noticeRow
-            yield! moreNotices rest
+            yield! moreNotices (not inView) rest
+            yield! hedgeKey [ inView ]
         ]
       ]
 
