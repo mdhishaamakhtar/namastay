@@ -31,3 +31,22 @@ let retiredAmong (source: NpgsqlDataSource) (slugs: string list) : Task<string l
         source
         "select slug from places where slug = any(@slugs) and (retired_at is not null or not published)"
         {| slugs = List.toArray slugs |}
+
+/// Keeps a traveller's latest answer on whether the trip felt like theirs.
+/// False when there's no such trip.
+let react (source: NpgsqlDataSource) (token: string) (feltRight: bool) : Task<bool> =
+    task {
+        let! kept =
+            query<string>
+                source
+                "insert into trip_reactions (share_token, felt_right)
+                 select share_token, @feltRight from itineraries where share_token = @token
+                 on conflict (share_token) do update set felt_right = excluded.felt_right, reacted_at = now()
+                 returning share_token"
+                {|
+                    token = token
+                    feltRight = feltRight
+                |}
+
+        return not kept.IsEmpty
+    }

@@ -53,6 +53,9 @@ let createItinerary: Route<TripRequest, SavedTrip> = Route.post "/api/itinerarie
 let getItinerary: Route<NoBody, SavedTrip> =
     Route.get "/api/itineraries/{shareToken}"
 
+let reactToItinerary: Route<TripReaction, NoBody> =
+    Route.post "/api/itineraries/{shareToken}/reaction"
+
 let signUp: Route<Credentials, Account> = Route.post "/api/auth/sign-up"
 let signIn: Route<Credentials, Account> = Route.post "/api/auth/sign-in"
 let issueToken: Route<Credentials, TokenGrant> = Route.post "/api/auth/token"

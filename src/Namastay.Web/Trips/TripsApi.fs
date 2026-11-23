@@ -105,8 +105,28 @@ let private fetch (data: DataCache) (context: HttpContext) : Task<Result<SavedTr
                 return Ok { ShareToken = token; Trip = marked }
     }
 
+let private react (data: DataCache) (context: HttpContext) (reaction: TripReaction) : Task<Result<NoBody, ApiError>> =
+    task {
+        let token = string context.Request.RouteValues["shareToken"]
+
+        let! kept =
+            if Input.isShareToken token then
+                Itineraries.react data.Source token reaction.FeltRight
+            else
+                Task.FromResult false
+
+        return
+            if kept then
+                Ok()
+            else
+                Error(ApiError.notFound "We couldn't find that trip.")
+    }
+
 let map (app: IEndpointRouteBuilder) (data: DataCache) =
     (Endpoint.mapBody app Routes.createItinerary (create data)).RequireRateLimiting Limits.tripsPolicy
+    |> ignore
+
+    (Endpoint.mapBody app Routes.reactToItinerary (react data)).RequireRateLimiting Limits.tripsPolicy
     |> ignore
 
     Endpoint.mapGet app Routes.getItinerary (fetch data)

@@ -24,6 +24,12 @@ type Sharing =
     | Copied
     | Failed
 
+/// Whether the traveller has said if the trip feels like theirs.
+[<RequireQualifiedAccess>]
+type Reaction =
+    | Unasked
+    | Thanked
+
 /// A trip is either the public shared one or a signed-in traveller's own copy.
 [<RequireQualifiedAccess>]
 type Source =
@@ -39,6 +45,7 @@ type Model = {
     /// The month the calendar shows while it's open.
     Calendar: System.DateTime option
     Sharing: Sharing
+    Reaction: Reaction
     Problem: string option
 }
 
@@ -51,6 +58,7 @@ type Msg =
     /// The arrow keys moved to a day, which the calendar then shows and focuses.
     | MoveToDay of System.DateTime
     | StartPicked of System.DateTime option
+    | React of feltRight: bool
     | Share
     | Shared of Sharing
     | ClearSharing
@@ -77,6 +85,7 @@ let init source =
         Start = Navigation.queryParam startParam |> Option.bind TripDates.parse
         Calendar = None
         Sharing = Sharing.Idle
+        Reaction = Reaction.Unasked
         Problem = None
     },
     Cmd.batch [ Cmd.ofEffect (fun _ -> Theme.neutral ()); load source ]
@@ -93,6 +102,7 @@ let opened (saved: SavedTrip) =
         Start = None
         Calendar = None
         Sharing = Sharing.Idle
+        Reaction = Reaction.Unasked
         Problem = None
     },
     Cmd.batch [ Cmd.ofEffect (fun _ -> Theme.neutral ()); applyBase saved ]
@@ -133,6 +143,13 @@ let private focusOn (id: string) =
         |> ignore)
 
 let private focusDay (date: System.DateTime) = focusOn (Calendar.dayId date)
+
+/// An answer is a kindness, so it's thanked at once and a failure to send it is nobody's problem.
+let private sendReaction (token: string) (feltRight: bool) =
+    Cmd.ofEffect (fun _ ->
+        Client.post (Route.at [ "shareToken", token ] [] Routes.reactToItinerary) { FeltRight = feltRight }
+        |> Promise.catch (fun _ -> Ok())
+        |> ignore)
 
 let update msg (model: Model) =
     match msg with
@@ -189,6 +206,15 @@ let update msg (model: Model) =
             Cmd.ofEffect (fun _ -> Navigation.keepInAddress startParam (start |> Option.map TripDates.format))
             focusOn Calendar.openerId
         ]
+    | React feltRight ->
+        match model.Source with
+        | Source.Shared token ->
+            {
+                model with
+                    Reaction = Reaction.Thanked
+            },
+            sendReaction token feltRight
+        | Source.Mine _ -> model, Cmd.none
     | Share -> model, share ()
     | Shared result -> { model with Sharing = result }, clearLater ()
     | ClearSharing -> { model with Sharing = Sharing.Idle }, Cmd.none

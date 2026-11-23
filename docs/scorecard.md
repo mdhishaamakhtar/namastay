@@ -69,3 +69,18 @@ earlier baselines.
 
 A scored trip has the full `Trip` the API would return, so a new line is a
 function of `Session` in `Namastay.Bench/Metrics.fs`.
+
+## What real travellers say
+
+The scorecard plays invented travellers. A shared trip also ends with one question,
+"Does this feel like your trip?", and the answer is kept in `trip_reactions`, one row a
+trip. Read it beside how many trips were built:
+
+```sql
+select count(*) as trips,
+       count(r.share_token) as answered,
+       count(*) filter (where r.felt_right) as felt_right
+from itineraries i
+left join trip_reactions r using (share_token)
+where i.created_at > now() - interval '30 days';
+```

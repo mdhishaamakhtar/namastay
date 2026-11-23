@@ -139,6 +139,17 @@ type TripTests(browser: BrowserFixture) =
         }
 
     [<Fact>]
+    member _.``saying a trip feels right is thanked, and asked only once``() =
+        task {
+            let! page, _ = openTrip ()
+            let asked = page.Locator ".trip-reaction"
+            do! Assertions.Expect(asked.Locator "button").ToHaveCountAsync 2
+            do! asked.GetByText("Yes, it does").ClickAsync()
+            do! Assertions.Expect(asked).ToContainTextAsync "Thank you"
+            do! Assertions.Expect(asked.Locator "button").ToHaveCountAsync 0
+        }
+
+    [<Fact>]
     member _.``a stop says what there is to do, on the same lines as its days``() =
         task {
             let! page, _ = openTrip ()

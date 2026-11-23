@@ -188,6 +188,42 @@ let private leftOut (trip: Trip) =
             ]
         ]
 
+/// One question at the end of a shared trip: the only way to know if it landed.
+let private reaction (model: Model) dispatch =
+    match model.Source, model.Reaction with
+    | Source.Mine _, _ -> Html.none
+    | Source.Shared _, Reaction.Thanked ->
+        Html.section [
+            prop.className "trip-note trip-reaction"
+            prop.children [
+                Html.p [ prop.role "status"; prop.text "Thank you. That helps us plan better trips." ]
+            ]
+        ]
+    | Source.Shared _, Reaction.Unasked ->
+        Html.section [
+            prop.className "trip-note trip-reaction"
+            prop.children [
+                Html.h2 "Does this feel like your trip?"
+                Html.div [
+                    prop.className "trip-reaction-answers"
+                    prop.children [
+                        Html.button [
+                            prop.type'.button
+                            prop.className "button press"
+                            prop.text "Yes, it does"
+                            prop.onClick (fun _ -> dispatch (React true))
+                        ]
+                        Html.button [
+                            prop.type'.button
+                            prop.className "button press"
+                            prop.text "Not quite"
+                            prop.onClick (fun _ -> dispatch (React false))
+                        ]
+                    ]
+                ]
+            ]
+        ]
+
 let private firstDays (stops: TripStop list) =
     stops
     |> List.scan (fun day stop -> day + stop.Days) 1
@@ -254,6 +290,7 @@ let view (model: Model) dispatch =
                         yield! hardMonths saved.Trip
                         stops model saved dispatch
                         leftOut saved.Trip
+                        reaction model dispatch
                     ]
                 ]
             ]
