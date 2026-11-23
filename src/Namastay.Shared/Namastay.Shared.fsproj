@@ -12,6 +12,7 @@
     <Compile Include="DishKinds.fs" />
     <Compile Include="NoticeOrder.fs" />
     <Compile Include="PlanDays.fs" />
+    <Compile Include="TripDates.fs" />
     <Compile Include="PlaceName.fs" />
     <Compile Include="Sentence.fs" />
     <Compile Include="Routes.fs" />

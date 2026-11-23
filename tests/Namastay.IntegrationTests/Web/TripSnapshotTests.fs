@@ -33,3 +33,8 @@ let ``a trip saved before food existed still opens without any`` () =
 let ``a trip saved before stops had reasons still opens without any`` () =
     let trip = TripSnapshot.read stored
     Assert.True(trip.Value.Stops.Head.Reason.IsNone)
+
+[<Fact>]
+let ``a trip saved before stops said what to do still opens without any`` () =
+    let trip = TripSnapshot.read stored
+    Assert.Empty trip.Value.Stops.Head.Highlights

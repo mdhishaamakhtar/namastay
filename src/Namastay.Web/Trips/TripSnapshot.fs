@@ -24,6 +24,7 @@ let private upgrade (trip: JsonObject) =
             ensure "reason" (fun () -> null) (stop.AsObject())
             ensure "photo" (fun () -> null) (stop.AsObject())
             ensure "food" (fun () -> null) (stop.AsObject())
+            ensure "highlights" (fun () -> JsonArray()) (stop.AsObject())
             ensure "custom" (fun () -> JsonValue.Create false) (stop.AsObject())
     | _ -> ()
 

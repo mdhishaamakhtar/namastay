@@ -27,6 +27,10 @@ let private loadPlaces source =
         let! interests = query<InterestRow> source (ofPlace "place_interests") null
         let! months = query<MonthRow> source (ofPlace "place_months") null
         let! fits = query<FitRow> source (ofPlace "traveller_fit") null
+
+        let! experiences =
+            query<ExperienceRow> source (ofPlace "experiences" + " and retired_at is null") null
+
         let! days = query<DayRow> source (ofPlace "day_plans") null
         let! stays = query<StayRow> source (ofPlace "stay_areas") null
         let! dishes = query<DishRow> source (ofPlace "dishes") null
@@ -97,7 +101,15 @@ let private loadPlaces source =
                         Traveller = Decode.traveller row.Traveller
                         Fit = row.Fit
                     })
-                Experiences = []
+                Experiences =
+                    matching place.Slug experiences _.PlaceSlug
+                    |> List.map (fun row -> {
+                        Slug = row.Slug
+                        Name = row.Name
+                        Description = row.Description
+                        Sort = row.Sort
+                        Evidence = evidence row.Status row.LastChecked
+                    })
                 DayPlans =
                     matching place.Slug days _.PlaceSlug
                     |> List.filter (fun row -> row.Status <> "unverified")

@@ -113,6 +113,7 @@ let trip (label: string) (buttons: int) =
         Html.div [
             prop.className "trip-content"
             prop.children [
+                bone "bone-input"
                 bone "bone-best"
                 Html.ol [
                     prop.className "trip-stops"

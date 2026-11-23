@@ -15,6 +15,9 @@ module Navigation = Namastay.Client.Routing.Browser
 
 let private copiedNoteMs = 2000
 
+/// The day the traveller lands, as the address carries it.
+let private startParam = "from"
+
 [<RequireQualifiedAccess>]
 type Sharing =
     | Idle
@@ -31,6 +34,8 @@ type Model = {
     Source: Source
     Trip: Remote<SavedTrip>
     Open: string option
+    /// The day the traveller lands, once they've said. It turns day numbers into dates.
+    Start: System.DateTime option
     Sharing: Sharing
     Problem: string option
 }
@@ -39,6 +44,7 @@ type Msg =
     | Load
     | Loaded of Result<SavedTrip, Client.ClientError>
     | Toggle of string
+    | StartPicked of string
     | Share
     | Shared of Sharing
     | ClearSharing
@@ -62,6 +68,7 @@ let init source =
         Source = source
         Trip = Remote.Loading
         Open = None
+        Start = Navigation.queryParam startParam |> Option.bind TripDates.parse
         Sharing = Sharing.Idle
         Problem = None
     },
@@ -76,6 +83,7 @@ let opened (saved: SavedTrip) =
         Source = Source.Shared saved.ShareToken
         Trip = Remote.Loaded saved
         Open = openFirst saved
+        Start = None
         Sharing = Sharing.Idle
         Problem = None
     },
@@ -125,6 +133,11 @@ let update msg (model: Model) =
                 Open = if model.Open = Some slug then None else Some slug
         },
         Cmd.none
+    | StartPicked text ->
+        let start = TripDates.parse text
+
+        { model with Start = start },
+        Cmd.ofEffect (fun _ -> Navigation.keepInAddress startParam (start |> Option.map TripDates.format))
     | Share -> model, share ()
     | Shared result -> { model with Sharing = result }, clearLater ()
     | ClearSharing -> { model with Sharing = Sharing.Idle }, Cmd.none
@@ -133,7 +146,13 @@ let update msg (model: Model) =
         | Source.Shared token -> { model with Problem = None }, saveToAccount token
         | Source.Mine _ -> model, Cmd.none
     | SavedToAccount(Ok summary) ->
-        model, Cmd.ofEffect (fun _ -> Navigation.navigate (Route.url [ "id", summary.Id ] [] Routes.myTripPage))
+        // The landing day goes with the trip to its saved copy.
+        let start =
+            model.Start
+            |> Option.map (fun date -> startParam, TripDates.format date)
+            |> Option.toList
+
+        model, Cmd.ofEffect (fun _ -> Navigation.navigate (Route.url [ "id", summary.Id ] start Routes.myTripPage))
     | SavedToAccount(Error error) when Client.isSignedOut error ->
         model, Cmd.ofEffect (fun _ -> Navigation.signInThenReturn ())
     | SavedToAccount(Error error) ->

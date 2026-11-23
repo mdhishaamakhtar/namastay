@@ -112,6 +112,19 @@ let private leadPhoto (catalog: Catalog) (place: Place) =
         SourceUrl = photo.SourceUrl
     })
 
+let private highlightsShown = 4
+
+/// What there is to do, in the guide's order. A trip repeats only what the guide stands behind.
+let private highlights (place: Place) : TripHighlight list =
+    place.Experiences
+    |> List.filter (fun experience -> experience.Evidence.Status <> FactStatus.Unverified)
+    |> List.sortBy _.Sort
+    |> List.truncate highlightsShown
+    |> List.map (fun experience -> {
+        Name = experience.Name
+        Description = experience.Description
+    })
+
 let private dishesShown = 3
 let private eateriesShown = 2
 
@@ -166,6 +179,7 @@ let toStop (catalog: Catalog) budget diet (stop: RoutedStop) : TripStop =
         StayArea = stayArea budget stop.Place
         Photo = leadPhoto catalog stop.Place
         Plans = plansFor stop.Place stop.Days stop.Arrival
+        Highlights = highlights stop.Place
         Food = food diet stop.Place
         Arrival = stop.Arrival |> Option.map toLeg
         Retired = false

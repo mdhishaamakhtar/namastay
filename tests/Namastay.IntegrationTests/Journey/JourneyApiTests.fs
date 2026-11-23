@@ -543,6 +543,17 @@ type JourneyApiTests(postgres: PostgresFixture) =
         }
 
     [<Fact>]
+    member _.``a built trip says what there is to do at a stop``() =
+        task {
+            let! http, _ = start ()
+            let! saved = create http
+
+            let things = saved.Trip.Stops |> List.collect _.Highlights |> List.map _.Name
+
+            Assert.Contains("Kheerganga", things)
+        }
+
+    [<Fact>]
     member _.``trip saved before a format change still opens``() =
         task {
             let! http, db = start ()

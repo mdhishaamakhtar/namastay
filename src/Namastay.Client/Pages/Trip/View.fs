@@ -100,6 +100,30 @@ let private swaps (trip: Trip) =
             ]
         ]
 
+/// A month other than the one the trip was planned for can change what's open and pleasant.
+let private monthMoved (model: Model) (trip: Trip) =
+    match model.Start, trip.Month with
+    | Some date, Some month when date.Month <> month ->
+        Html.p [
+            prop.className "trip-hard"
+            prop.text
+                $"This trip was planned for {Dates.monthNames[month - 1]}. Seasons change a lot in India, so plan a new one if your month has moved."
+        ]
+    | _ -> Html.none
+
+let private startField (model: Model) dispatch =
+    Html.label [
+        prop.className "form-field trip-start"
+        prop.children [
+            Html.span "When do you land? We'll put dates on your days."
+            Html.input [
+                prop.type'.date
+                prop.value (model.Start |> Option.map TripDates.format |> Option.defaultValue "")
+                prop.onChange (StartPicked >> dispatch)
+            ]
+        ]
+    ]
+
 let private bestMonths (trip: Trip) =
     match trip.BestMonths with
     | [] -> Html.none
@@ -148,7 +172,8 @@ let private stops (model: Model) (saved: SavedTrip) dispatch =
                 | _ -> ()
                 yield!
                     List.zip (firstDays trip.Stops) trip.Stops
-                    |> List.map (fun (day, stop) -> Stop.view saved.ShareToken trip model.Open dispatch day stop)
+                    |> List.map (fun (day, stop) ->
+                        Stop.view saved.ShareToken trip model.Open model.Start dispatch day stop)
                 match trip.Depart with
                 | Some gateway -> yield! Stop.homeward gateway
                 | None -> ()
@@ -189,6 +214,8 @@ let view (model: Model) dispatch =
                 Html.div [
                     prop.className "trip-content"
                     prop.children [
+                        startField model dispatch
+                        monthMoved model saved.Trip
                         swaps saved.Trip
                         bestMonths saved.Trip
                         yield! hardMonths saved.Trip

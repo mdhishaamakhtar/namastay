@@ -61,6 +61,34 @@ type TripTests(browser: BrowserFixture) =
         }
 
     [<Fact>]
+    member _.``picking the day you land puts dates on the stops and in the link``() =
+        task {
+            let! page, token = openTrip ()
+            let days = page.Locator(".stop-title small").First
+            do! Assertions.Expect(days).Not.ToContainTextAsync "Feb"
+            do! page.Locator(".trip-start input").FillAsync "2027-02-06"
+            do! Assertions.Expect(days).ToContainTextAsync "Sat 6"
+            do! Assertions.Expect(page).ToHaveURLAsync $"{browser.BaseUrl}/trip/{token}?from=2027-02-06"
+        }
+
+    [<Fact>]
+    member _.``a link that carries the landing day opens with its dates``() =
+        task {
+            let! page, token = openTrip ()
+            let! _ = page.GotoAsync $"{browser.BaseUrl}/trip/{token}?from=2027-02-06"
+            do! Assertions.Expect(page.Locator(".stop-title small").First).ToContainTextAsync "Sat 6"
+            do! Assertions.Expect(page.Locator ".trip-start input").ToHaveValueAsync "2027-02-06"
+        }
+
+    [<Fact>]
+    member _.``a stop says what there is to do, on the same lines as its days``() =
+        task {
+            let! page, _ = openTrip ()
+            let things = page.Locator(".stop-open .stop-do").First
+            do! Assertions.Expect(things.Locator("strong").First).ToBeVisibleAsync()
+        }
+
+    [<Fact>]
     member _.``a trip saved before reasons existed shows none``() =
         task {
             let! page =

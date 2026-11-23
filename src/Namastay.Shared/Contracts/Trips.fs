@@ -64,6 +64,9 @@ type StopFood = {
     Eateries: TripEatery list
 }
 
+/// Something to do at a stop, as its guide describes it.
+type TripHighlight = { Name: string; Description: string }
+
 type TripStop = {
     PlaceSlug: string
     Name: string
@@ -76,6 +79,8 @@ type TripStop = {
     StayArea: string option
     Photo: GuidePhoto option
     Plans: TripDay list
+    /// What there is to do, behind the day plans. Trips saved before these existed have none.
+    Highlights: TripHighlight list
     Food: StopFood option
     Arrival: TravelLeg option
     Retired: bool

@@ -59,6 +59,17 @@ type DayRow = {
 }
 
 [<CLIMutable>]
+type ExperienceRow = {
+    Slug: string
+    PlaceSlug: string
+    Name: string
+    Description: string
+    Sort: int
+    Status: string
+    LastChecked: DateTime
+}
+
+[<CLIMutable>]
 type StayRow = {
     PlaceSlug: string
     Name: string

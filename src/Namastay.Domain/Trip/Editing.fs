@@ -50,6 +50,7 @@ let private customStop (catalog: Catalog) (original: Trip) family index name day
     StayArea = None
     Photo = None
     Plans = [ for day in 1..days -> { Day = day; Plan = Builder.spareDay } ]
+    Highlights = []
     Food = None
     Arrival = None
     Retired = false

@@ -707,6 +707,10 @@ button:focus-visible {
   margin: 0;
 }
 
+.trip-start {
+  max-width: 360px;
+}
+
 .trip-stops {
   display: flex;
   flex-direction: column;
@@ -892,14 +896,16 @@ button:focus-visible {
   border-top: 0;
 }
 
-.stop-eat {
+.stop-eat,
+.stop-do {
   display: flex;
   flex-direction: column;
   gap: 10px;
   min-width: 0;
 }
 
-.stop-eat strong {
+.stop-eat strong,
+.stop-do strong {
   font-weight: 600;
 }
 
@@ -1433,6 +1439,7 @@ button:focus-visible {
   .journey-brand,
   .trip-menu,
   .trip-actions,
+  .trip-start,
   .site-foot,
   .trip-share,
   .trip-link,

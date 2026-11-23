@@ -116,6 +116,12 @@ let private dayRange first days =
     else
         $"Days {first} to {first + days - 1}"
 
+/// The day numbers, and the dates too once the traveller has said when they land.
+let private whenStaying (start: System.DateTime option) first days =
+    match start with
+    | Some date -> $"{dayRange first days}, {TripDates.range date first days}"
+    | None -> dayRange first days
+
 let private photo (stop: TripStop) =
     match stop.Photo with
     | Some item ->
@@ -209,6 +215,22 @@ let private dayRow firstDay (first, last, plan: string) =
 
     row (string first) label (Html.span plan)
 
+/// What there is to do, with the detail a one-line day plan has no room for.
+let private things (found: TripHighlight list) =
+    row
+        "do"
+        "Do"
+        (Html.div [
+            prop.className "stop-do"
+            prop.children [
+                for item in found ->
+                    Html.div [
+                        prop.key item.Name
+                        prop.children [ Html.strong item.Name; Html.p item.Description ]
+                    ]
+            ]
+        ])
+
 let private dishRow (showWord: bool) (dish: TripDish) =
     Html.div [
         prop.key dish.Name
@@ -283,6 +305,8 @@ let private details token (trip: Trip) firstDay (stop: TripStop) =
                 prop.className "stop-text"
                 prop.children [
                     yield! stop.Plans |> PlanDays.group |> List.map (dayRow firstDay)
+                    if not stop.Highlights.IsEmpty then
+                        things stop.Highlights
                     match stop.StayArea with
                     | Some area -> row "stay" "Stay" (Html.span area)
                     | None -> Html.none
@@ -296,7 +320,7 @@ let private details token (trip: Trip) firstDay (stop: TripStop) =
         ]
     ]
 
-let view token (trip: Trip) (openSlug: string option) dispatch firstDay (stop: TripStop) =
+let view token (trip: Trip) (openSlug: string option) start dispatch firstDay (stop: TripStop) =
     let isOpen = openSlug = Some stop.PlaceSlug
 
     Html.li [
@@ -319,7 +343,7 @@ let view token (trip: Trip) (openSlug: string option) dispatch firstDay (stop: T
                             Html.span [
                                 prop.className "stop-title"
                                 prop.children [
-                                    Html.small (dayRange firstDay stop.Days)
+                                    Html.small (whenStaying start firstDay stop.Days)
                                     Html.strong stop.Name
                                     match stop.Reason with
                                     | Some reason -> Html.span [ prop.className "stop-why"; prop.text reason ]
